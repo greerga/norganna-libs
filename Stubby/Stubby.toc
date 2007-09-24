@@ -1,0 +1,14 @@
+## Title: Stubby
+## Notes: Allows on-demand addons to load automatically based upon simple event notification hooks [<%version%>] This AddOn is licenced under the GNU GPL, see GPL.txt for details.
+##
+## Interface: 20100
+## OptionalDeps: !nLog, DebugLib
+## SavedVariables: StubbyConfig
+##
+## Version: <%version%> (<%codename%>)
+## Revision: $Id$
+## URL: http://auctioneeraddon.com/dl/Stubby
+
+Libs\Load.xml
+Stubby.lua
+Stubby.xml

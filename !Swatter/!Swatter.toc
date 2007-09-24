@@ -1,0 +1,11 @@
+## Interface: 20100
+## Title: Swatter
+## Notes: Debugging tool for handling and displaying of error messages in a useful way.
+## OptionalDeps: !nLog
+## SavedVariables: SwatterData
+##
+## Version: <%version%> (<%codename%>)
+## Revision: $Id$
+## URL: http://auctioneeraddon.com/dl/Swatter/
+##
+Swatter.lua

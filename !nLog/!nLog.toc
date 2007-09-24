@@ -1,0 +1,10 @@
+## Interface: 20100
+## Title: nLog
+## Notes: Debugging console to display debugging messages easily.
+## SavedVariables: nLogData
+##
+## Version: <%version%> (<%codename%>)
+## Revision: $Id$
+## URL: http://auctioneeraddon.com/dl/nLog/
+##
+nLog.lua
