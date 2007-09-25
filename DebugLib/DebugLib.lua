@@ -144,24 +144,24 @@ do
 		LibStub = LibStub or {libs = {}, minors = {} }
 		_G[LIBSTUB_MAJOR] = LibStub
 		LibStub.minor = LIBSTUB_MINOR
-		
+
 		function LibStub:NewLibrary(major, minor)
 			assert(type(major) == "string", "Bad argument #2 to `NewLibrary' (string expected)")
 			minor = assert(tonumber(strmatch(minor, "%d+")), "Minor version must either be a number or contain a number.")
-			
+
 			local oldminor = self.minors[major]
 			if oldminor and oldminor >= minor then return nil end
 			self.minors[major], self.libs[major] = minor, self.libs[major] or {}
 			return self.libs[major], oldminor
 		end
-		
+
 		function LibStub:GetLibrary(major, silent)
 			if not self.libs[major] and not silent then
 				error(("Cannot find a library instance of %q."):format(tostring(major)), 2)
 			end
 			return self.libs[major], self.minors[major]
 		end
-		
+
 		function LibStub:IterateLibraries() return pairs(self.libs) end
 		setmetatable(LibStub, { __call = LibStub.GetLibrary })
 	end
@@ -1028,12 +1028,22 @@ function private.format(...)
 end
 
 local kit = {}
-function kit:Debug(...)
-	lib.DebugPrint(self.name, ...)
+if (nLog) then
+	function kit:Debug(...)
+		return lib.DebugPrint(self.name, ...)
+	end
+	function kit:Assert(...)
+		return lib.Assert(self.name, ...)
+	end
+else
+	function kit:Debug(...)
+		return lib.SimpleDebugPrint(self.name, ...)
+	end
+	function kit:Assert(...)
+		return lib.SimpleAssert(self.name, ...)
+	end
 end
-function kit:Assert(...)
-	lib.Assert(self.name, ...)
-end
+
 function kit:Dump(...)
 	return private.dump(...)
 end
