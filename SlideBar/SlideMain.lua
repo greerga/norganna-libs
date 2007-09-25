@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 3
+local LIBRARY_VERSION_MINOR = 4
 
 --[[-----------------------------------------------------------------
 
@@ -160,6 +160,16 @@ function lib.AddButton(id, texture, priority, globalname, quiet)
 		lib.FlashOpen(1.5)
 	end
 	return button
+end
+
+-- Returns an iterator over the button list (id, button)
+function lib.IterateButtons()
+	return pairs(frame.buttons)
+end
+
+-- Gets the button with the associated id (if it exists)
+function lib.GetButton(id)
+	return frame.buttons[id]
 end
 
 -- Removes the button with the associated id from the bar
