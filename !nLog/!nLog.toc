@@ -1,4 +1,4 @@
-## Interface: 20100
+## Interface: 20200
 ## Title: nLog
 ## Notes: Debugging console to display debugging messages easily.
 ## SavedVariables: nLogData

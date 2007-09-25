@@ -463,7 +463,7 @@ function lib.DebugPrint(addon, message, category, title, errorCode, level, ...)
 	-- care of this behavior and handle it by ourself.
 	local textMessage = message or ""
 
-	nLog.AddMessage(addon, category, levelLookupList[level], title, textMessage, ...)
+	nLog.AddMessage(addon, category, private.levelLookupList[level], title, textMessage, ...)
 
 	-- We explicitly do not append any additional passed data to the returned
 	-- errormessage.
@@ -769,7 +769,7 @@ function isDebugLevel(level)
 		return false -- it's not a string, so it can't be a valid level
 	end
 
-	for _, levelString in pairs(levelList) do
+	for _, levelString in pairs(private.levelList) do
 		if levelString == level then
 			return true -- it's a valid level
 		end
@@ -1033,6 +1033,9 @@ function kit:Debug(...)
 end
 function kit:Assert(...)
 	lib.Assert(self.name, ...)
+end
+function kit:Dump(...)
+	return private.dump(...)
 end
 function lib:New(addonName)
 	assert(addonName, "Usage: DebugLib(addonName)")

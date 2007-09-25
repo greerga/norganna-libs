@@ -1,4 +1,4 @@
-## Interface: 20100
+## Interface: 20200
 ## Title: Swatter
 ## Notes: Debugging tool for handling and displaying of error messages in a useful way.
 ## OptionalDeps: !nLog

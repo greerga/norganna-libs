@@ -1,7 +1,7 @@
 ## Title: Babylonian
 ## Notes: A localization library that allows localization in languages other than those supported by the client locale.
 ##
-## Interface: 21000
+## Interface: 20200
 ## LoadOnDemand: 0
 ##
 ## Version: <%version%> (<%codename%>)

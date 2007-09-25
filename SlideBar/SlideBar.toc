@@ -1,7 +1,7 @@
 ## Title: SlideBar
 ## Notes: Allows alternative placement of minimap icons into an expanding bar tab that sits on the side of the screen.
 ##
-## Interface: 21000
+## Interface: 20200
 ## LoadOnDemand: 0
 ##
 ## Version: <%version%> (<%codename%>)
