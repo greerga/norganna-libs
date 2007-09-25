@@ -114,6 +114,13 @@ function lib.Release()
 	frame.captured = nil
 end
 
+-- Capture the bar and stop it from closing before object
+function lib.WaitFor(object)
+	frame.PopTimer = 0.01
+	frame.PopDirection = 1
+	frame.captured = object
+end
+
 -- Add a button to the bar, where:
 --   id = the id for this button (you will use this to reference the button).
 --   texture = the path to your button's texture.
@@ -472,8 +479,15 @@ function private:Popper(...)
 		if self.PopTimer < 0 then
 			if self.PopDirection > 0 then
 				private:PerformOpen(true)
-			elseif not frame.captured then
-				private:PerformClose(true)
+			else
+				if frame.captured
+				and type(frame.captured) == "table"
+				and frame.captured:IsShown() then
+					frame.captured = nil
+				end
+				if not frame.captured then
+					private:PerformClose(true)
+				end
 			end
 		end
 	end
