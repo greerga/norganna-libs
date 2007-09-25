@@ -738,9 +738,9 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 	retCategory = retCategory or "unspecified"
 	if not retLevel then
 		if retErrorCode then
-			retLevel = levelList.Error
+			retLevel = private.levelList.Error
 		else
-			retLevel = levelList.Debug
+			retLevel = private.levelList.Debug
 		end
 	end
 	if not retTitle then
