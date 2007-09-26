@@ -457,6 +457,8 @@ lib.Level = private.levelList
 function lib.DebugPrint(addon, message, category, title, errorCode, level, ...)
 	addon, message, category, title, errorCode, level = private.normalizeParameters(addon, message, category, title, errorCode, level)
 
+	if not nLog then return end
+
 	-- nLog.AddMessage() uses select() to check if any message is there.
 	-- Since select() will count even passed nil values, nLog would create "NIL"
 	-- as the message rather than an empty string. Therefore we need to take
@@ -868,7 +870,9 @@ function lib.Assert(addon, test, ...)
 
 	getglobal("ChatFrame1"):AddMessage(message, 1.0, 0.3, 0.3)
 
-	nLog.AddMessage(addon, "Assertion", N_CRITICAL, "assertion failed", message)
+	if nLog then
+		nLog.AddMessage(addon, "Assertion", N_CRITICAL, "assertion failed", message)
+	end
 
 	return false -- test failed
 end
