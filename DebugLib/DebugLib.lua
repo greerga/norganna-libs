@@ -988,6 +988,9 @@ function private.dump(...)
 	end
 	return out
 end
+function lib.Dump(...)
+	return private.dump(...)
+end
 
 -------------------------------------------------------------------------------
 -- Transforms all parameters into string representations and concatenates those
