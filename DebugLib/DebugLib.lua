@@ -479,6 +479,7 @@ function lib.DebugPrint(addon, message, category, title, errorCode, level, ...)
 	return errorCode, message
 end
 
+
 -------------------------------------------------------------------------------
 -- The function does not do anything but processing the parameters and returning
 -- the errorCode and message.
@@ -877,6 +878,7 @@ function lib.Assert(addon, test, ...)
 	return false -- test failed
 end
 
+
 -------------------------------------------------------------------------------
 -- Used to make sure that conditions are met within functions.
 -- If test is false, the error message will be written to the user's default
@@ -1034,6 +1036,19 @@ function private.format(...)
 	return out
 end
 
+
+--local versions of debugPrint and assert
+--Note that these are not reference implementations, since we cannot call LibStub("DebugLib") or LibStub:GetLibrary here inside DebugLib
+local addonName = "DebugLib"
+local function debugPrint(message, category, title, errorCode, level, ...)
+	return lib.DebugPrint(addonName, message, category, title, errorCode, level, ...)
+end
+local function assert(test, ...)
+	return lib.Assert(addonName, test, ...)
+end
+
+--Kit functions
+--These are the preferred ways to access the DebugLib functions now.  The lib functions above are maintained for compatibility reasons only.
 local kit = {}
 if (nLog) then
 	function kit:Debug(...)
