@@ -188,9 +188,9 @@ function nLog.OnEvent(frame, event, ...)
 			-- enable nlog each session
 			nLogData.enabled = true
 
-			-- default chatPrint to true
+			-- default chatPrint to false
 			if nLogData.chatPrint == nil then
-				nLogData.chatPrint = true
+				nLogData.chatPrint = false
 			end
 
 			-- initialize nlog's message frame
