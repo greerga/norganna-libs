@@ -176,6 +176,8 @@ if not lib.private then
 end
 local private = lib.private
 
+local debug
+
 -------------------------------------------------------------------------------
 -- Error Codes
 -------------------------------------------------------------------------------
@@ -571,13 +573,13 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 	-- process the addon parameter
 	if addon == nil then
 		-- addon is not defined
-		debugPrint("No addon specified! Defaulting to \"unspecified\" and continue with processing the debug message.",
-		           "debugPrint",
+		debug("No addon specified! Defaulting to \"unspecified\" and continue with processing the debug message.",
+		           "debug",
 		           1)
 	elseif type(addon) ~= "string" then
 		-- addon is of an invalid type
-		debugPrint("Invalid addon parameter! The type "..type(addon).." is not supported. Defaulting to \"unspecified\" and continue with processing the debug message.",
-		           "debugPrint",
+		debug("Invalid addon parameter! The type "..type(addon).." is not supported. Defaulting to \"unspecified\" and continue with processing the debug message.",
+		           "debug",
 		           1)
 	else
 		-- addon content is valid
@@ -589,16 +591,16 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 		-- The level parameter is present. It should contain the level content.
 		if type(level) ~= "string" then
 			-- It's not a string, therefore it's invalid.
-			debugPrint("Invalid level parameter. The type "..type(level).." is not supported.  Removing the value and continue with processing the debug message.",
-			           "debugPrint",
+			debug("Invalid level parameter. The type "..type(level).." is not supported.  Removing the value and continue with processing the debug message.",
+			           "debug",
 			           1)
 		else
 			-- It's a string and should be one of the valid levels.
 			if not isDebugLevel(level) then
 				-- It's not one of the valid levels, therefore the content is
 				-- invalid.
-				debugPrint("Invalid level parameter. The given string is no valid debug level. Removing the value and continue with processing the debug message.",
-				           "debugPrint",
+				debug("Invalid level parameter. The given string is no valid debug level. Removing the value and continue with processing the debug message.",
+				           "debug",
 				           1)
 			else
 				-- level content is valid
@@ -616,14 +618,14 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			if not isDebugLevel(errorCode) then
 				-- It does not contain a valid level, therefore the parameter is
 				-- invalid.
-				debugPrint("Invalid errorCode parameter. The given string is no valid debug level. Removing the value and continue with processing the debug message.",
-				           "debugPrint",
+				debug("Invalid errorCode parameter. The given string is no valid debug level. Removing the value and continue with processing the debug message.",
+				           "debug",
 				           1)
 			elseif retLevel ~= nil then
 				-- ErrorCode contains a valid level parameter, but level parameter
 				-- is set, too.
-				debugPrint("Multiple level parameters specified. Ignoring the one in errorCode and continue processing the debug message.",
-				           "debugPrint",
+				debug("Multiple level parameters specified. Ignoring the one in errorCode and continue processing the debug message.",
+				           "debug",
 				           1)
 			else
 				-- ErrorCode contains the valid level parameter and it's the only
@@ -632,8 +634,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			end
 		elseif type(errorCode) ~= "number" then
 			-- errorCode contains an invalid parameter
-			debugPrint("Invalid errorCode type. The type "..type(errorCode).." is not supported. Removing the value and continue with processing the debug message.",
-			           "debugPrint",
+			debug("Invalid errorCode type. The type "..type(errorCode).." is not supported. Removing the value and continue with processing the debug message.",
+			           "debug",
 			           1)
 		else
 			-- errorCode content is valid
@@ -649,8 +651,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			-- It's the error code. Make sure that it's the only one.
 			if retErrorCode then
 				-- errorCode is already present, ignore the one in title
-				debugPrint("Multiple error codes specified! Ignoring the one in title and continue processing the debug message.",
-				           "debugPrint",
+				debug("Multiple error codes specified! Ignoring the one in title and continue processing the debug message.",
+				           "debug",
 				           1)
 			else
 				-- we got the error code, so safe it in the right place
@@ -658,8 +660,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			end
 		elseif type(title) ~= "string" then
 			-- title contains invalid content
-			debugPrint("Invalid title type. The type "..type(title).." is not supported. Removing the value and continue with processing the debug message.",
-			           "debugPrint",
+			debug("Invalid title type. The type "..type(title).." is not supported. Removing the value and continue with processing the debug message.",
+			           "debug",
 			           1)
 		else
 			-- It's either the title or the level content.
@@ -681,8 +683,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			-- It's the error code. Make sure that it's the only one.
 			if retErrorCode then
 				-- errorCode is already present, ignore the one in category
-				debugPrint("Multiple error codes specified! Ignoring the one in category and continue processing the debug message.",
-				           "debugPrint",
+				debug("Multiple error codes specified! Ignoring the one in category and continue processing the debug message.",
+				           "debug",
 				           1)
 			else
 				-- we got the error code, so safe it in the right place
@@ -690,8 +692,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			end
 		elseif type(category) ~= "string" then
 			-- category contains invalid content
-			debugPrint("Invalid category type. The type "..type(category).." is not supported. Removing the value and continue with processing the debug message.",
-			           "debugPrint",
+			debug("Invalid category type. The type "..type(category).." is not supported. Removing the value and continue with processing the debug message.",
+			           "debug",
 			           1)
 		else
 			-- It's either the category or the level content.
@@ -713,8 +715,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			-- It's the error code. Make sure that it's the only one.
 			if retErrorCode then
 				-- errorCode is already present, ignore the one in message
-				debugPrint("Multiple error codes specified! Ignoring the one in message and continue processing the debug message.",
-				           "debugPrint",
+				debug("Multiple error codes specified! Ignoring the one in message and continue processing the debug message.",
+				           "debug",
 				           1)
 			else
 				-- we got the error code, so safe it in the right place
@@ -722,8 +724,8 @@ function private.normalizeParameters(addon, message, category, title, errorCode,
 			end
 		elseif type(message) ~= "string" then
 			-- message contains invalid content
-			debugPrint("Invalid message type. The type "..type(message).." is not supported. Removing the value and continue with processing the debug message.",
-			           "debugPrint",
+			debug("Invalid message type. The type "..type(message).." is not supported. Removing the value and continue with processing the debug message.",
+			           "debug",
 			           1)
 		else
 			-- It's either the message or the level content.
@@ -857,7 +859,7 @@ end
 function lib.Assert(addon, test, ...)
 	-- validate the parameters
 	if type(addon) ~= "string" then
-		debugPrint("Invalid addon parameter. Addon must be a string.",
+		debug("Invalid addon parameter. Addon must be a string.",
 		           "assert",
 		           1)
 		addon = "unspecified"
@@ -907,7 +909,7 @@ end
 function lib.SimpleAssert(addon, test, ...)
 	-- validate the parameters
 	if type(addon) ~= "string" then
-		debugPrint("Invalid addon parameter. Addon must be a string.",
+		debug("Invalid addon parameter. Addon must be a string.",
 		           "assert",
 		           1)
 		addon = "unspecified"
@@ -1037,16 +1039,6 @@ function private.format(...)
 end
 
 
---local versions of debugPrint and assert
---Note that these are not reference implementations, since we cannot call LibStub("DebugLib") or LibStub:GetLibrary here inside DebugLib
-local addonName = "DebugLib"
-local function debugPrint(message, category, title, errorCode, level, ...)
-	return lib.DebugPrint(addonName, message, category, title, errorCode, level, ...)
-end
-local function assert(test, ...)
-	return lib.Assert(addonName, test, ...)
-end
-
 --Kit functions
 --These are the preferred ways to access the DebugLib functions now.  The lib functions above are maintained for compatibility reasons only.
 local kit = {}
@@ -1081,4 +1073,7 @@ function lib:New(addonName)
 	return debugObj, assertObj
 end
 setmetatable(lib, { __call = lib.New })
+
+-- Set our local debug function
+debug = lib:New("DebugLib")
 
