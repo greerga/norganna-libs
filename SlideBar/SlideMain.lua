@@ -235,7 +235,11 @@ function lib.ApplyLayout(useLayout)
 	position = tonumber(position) or 180
 	wide = tonumber(wide)
 	side = side:lower()
-	active = (active ~= "0")
+	if not active or active == "0" or active == 0 then
+		active = false
+	else
+		active = true
+	end
 
 	if not active then
 		frame:Hide()
@@ -389,8 +393,9 @@ else
 	frame.Tab:SetTexture(0.98, 0.78, 0)
 	frame.buttons = {}
 
-	SLASH_NSIDEBAR1 = "/nsb"
-	SLASH_NSIDEBAR2 = "/nsidebar"
+	SLASH_NSIDEBAR1 = "/sbar"
+	SLASH_NSIDEBAR2 = "/slidebar"
+	SLASH_NSIDEBAR3 = "/nsb"
 	SlashCmdList["NSIDEBAR"] = function(msg)
 		private.CommandHandler(msg)
 	end
@@ -547,7 +552,11 @@ function private.CommandHandler(msg)
 	local position = private.config.position or "180"
 	local active = private.config.enabled or "1"
 
-	if not active or active=="0" or active=="" then active = 1 else active = 0 end
+	if not active or active=="0" or active=="" then
+		active = false
+	else
+		active = true
+	end
 
 	local save = false
 	if (not msg or msg == "") then msg = "help" end
@@ -607,16 +616,16 @@ function private.CommandHandler(msg)
 	end
 
 	if (a == "on") then
-		private.config.enabled = 1
+		private.config.enabled = "1"
 		save = true
 	elseif (a == "off") then
-		private.config.enabled = 0
+		private.config.enabled = "0"
 		save = true
 	elseif (a == "toggle") then
-		if active == 1 then
-			private.config.enabled = 0
+		if active then
+			private.config.enabled = "0"
 		else
-			private.config.enabled = 1
+			private.config.enabled = "1"
 		end
 		save = true
 	end
