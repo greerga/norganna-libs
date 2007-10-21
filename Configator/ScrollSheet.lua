@@ -127,7 +127,7 @@ function kit:Render()
 					settings = self.data[vPos+i][pos] --move settings for this row to a local
 				end
 			end	
-			
+
 			for j=1, #cells do
 							
 				if cells[j].layout == "COIN" then
