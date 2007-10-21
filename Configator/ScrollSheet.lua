@@ -121,11 +121,27 @@ function kit:Render()
 		local cells = self.rows[i]
 		local datarow = self.data[vPos+i]
 		if datarow then
+			local settings = {}	
+			for pos,name in pairs(self.data[vPos+i])do
+				if pos == "ScrollSettings" then
+					settings = self.data[vPos+i][pos] --move settings for this row to a local
+				end
+			end	
+			
 			for j=1, #cells do
+							
 				if cells[j].layout == "COIN" then
 					cells[j]:SetText(coins(datarow[j]))
 				else
-					cells[j]:SetText(datarow[j])
+				
+					if settings["color"] then
+						local red, green, blue = settings["color"][1], settings["color"][2], settings["color"][3]
+						cells[j]:SetTextColor(red, green, blue)
+						cells[j]:SetText(datarow[j])
+					else
+						cells[j]:SetTextColor(0.8, 0.8, 0.8)
+						cells[j]:SetText(datarow[j])
+					end
 				end
 			end
 		else
