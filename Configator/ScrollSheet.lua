@@ -28,58 +28,46 @@
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
 local LIBRARY_VERSION_MINOR = 1
 
-do -- LibStub
-	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
-	-- LibStub is hereby placed in the Public Domain
-	-- Credits: Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke
-	local LIBSTUB_MAJOR, LIBSTUB_MINOR = "LibStub", 2  -- NEVER MAKE THIS AN SVN REVISION! IT NEEDS TO BE USABLE IN ALL REPOS!
+--[[-----------------------------------------------------------------
+
+LibStub is a simple versioning stub meant for use in Libraries.
+See <http://www.wowwiki.com/LibStub> for more info.
+LibStub is hereby placed in the Public Domain.
+Credits:
+    Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke
+
+--]]-----------------------------------------------------------------
+do
+	local LIBSTUB_MAJOR, LIBSTUB_MINOR = "LibStub", 2
 	local LibStub = _G[LIBSTUB_MAJOR]
 
-	-- Check to see is this version of the stub is obsolete
 	if not LibStub or LibStub.minor < LIBSTUB_MINOR then
 		LibStub = LibStub or {libs = {}, minors = {} }
 		_G[LIBSTUB_MAJOR] = LibStub
 		LibStub.minor = LIBSTUB_MINOR
-
-		-- LibStub:NewLibrary(major, minor)
-		-- major (string) - the major version of the library
-		-- minor (string or number ) - the minor version of the library
-		--
-		-- returns nil if a newer or same version of the lib is already present
-		-- returns empty library object or old library object if upgrade is needed
+		
 		function LibStub:NewLibrary(major, minor)
 			assert(type(major) == "string", "Bad argument #2 to `NewLibrary' (string expected)")
 			minor = assert(tonumber(strmatch(minor, "%d+")), "Minor version must either be a number or contain a number.")
-
+			
 			local oldminor = self.minors[major]
 			if oldminor and oldminor >= minor then return nil end
 			self.minors[major], self.libs[major] = minor, self.libs[major] or {}
 			return self.libs[major], oldminor
 		end
-
-		-- LibStub:GetLibrary(major, [silent])
-		-- major (string) - the major version of the library
-		-- silent (boolean) - if true, library is optional, silently return nil if its not found
-		--
-		-- throws an error if the library can not be found (except silent is set)
-		-- returns the library object if found
+		
 		function LibStub:GetLibrary(major, silent)
 			if not self.libs[major] and not silent then
 				error(("Cannot find a library instance of %q."):format(tostring(major)), 2)
 			end
 			return self.libs[major], self.minors[major]
 		end
-
-		-- LibStub:IterateLibraries()
-		--
-		-- Returns an iterator for the currently registered libraries
-		function LibStub:IterateLibraries()
-			return pairs(self.libs)
-		end
-
+		
+		function LibStub:IterateLibraries() return pairs(self.libs) end
 		setmetatable(LibStub, { __call = LibStub.GetLibrary })
 	end
-end -- LibStub
+end
+--[End of LibStub]---------------------------------------------------
 
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
@@ -91,6 +79,10 @@ local GSC_COPPER="c8602c"
 local GSC_3 = "|cff%s%d|cff000000.|cff%s%02d|cff000000.|cff%s%02d|r"
 local GSC_2 = "|cff%s%d|cff000000.|cff%s%02d|r"
 local GSC_1 = "|cff%s%d|r"
+
+local Psychler = LibStub("Psychler")
+local recycle = Psychler.Recycle
+local acquire = Psychler.Acquire
 
 local function coins(money)
 	money = math.floor(tonumber(money) or 0)
@@ -106,13 +98,92 @@ local function coins(money)
 	return (GSC_1):format(GSC_COPPER, c)
 end
 
-
 local kit = {}
 
-function kit:SetData(data)
-	self.data = data
-	self.panel.vSize = #data
+
+--[[
+	Format: SetData(input, [inputStyle])
+	Where:
+		input = {
+			{ cellValue, cellValue, ..., styleKey=styleData, ... },
+			{ cellValue, cellValue, ..., styleKey=styleData, ... },
+			...
+		}
+		inputStyle = {
+			{ { styleKey=styleData, ... }, { styleKey=styleData, ... }, ... },
+			{ { styleKey=styleData, ... }, { styleKey=styleData, ... }, ... },
+			...
+		}
+		cellValue = value or { value, styleKey=styleData, ... }
+		styleKey = (string) The style type that affects the cell in question.
+		styleData = (any type) The data that is to be used by the renderer for this cell.
+
+	Note:
+		There are many ways to represent the style for a given cell.
+]]
+
+function kit:SetData(input, instyle)
+	if not (self.sortTable) then
+		self.sortTable = acquire()
+	else
+		local st = self.sortTable
+		local n = #st
+		for i=n, 1, -1 do
+			st[i] = nil
+		end
+	end
+
+	local nRows = #input
+	local nCols = self.hSize
+	
+	local data = self.data
+	local style = self.style
+	local n = #data
+
+	-- Clean up existing data cells
+	for i = n, 1, -1 do
+		data[i] = nil
+		recycle(style, i)
+	end
+	
+
+	-- Clone/Copy the data portion of the input table into the data table,
+	-- and the style portion into the style table.
+	local pos, content
+	for i = 1, nRows do
+		for k,v in pairs(input[i]) do
+			if type(k) == "string" and type(v) == "table" and #v > 0 then
+				style[pos][k] = clone(v)
+			end
+		end
+		for j = 1, nCols do
+			pos = (i-1)*nCols+j
+			content = input[i][j]
+			if type(content) == "table" then
+				input[pos] = content[1]
+				for k,v in pairs(content) do
+					if type(k) == "string" then
+						if not style[pos] then style[pos] = acquire() end
+						style[pos][k] = clone(v)
+					end
+				end
+			else
+				input[pos] = content
+			end
+
+			if instyle and instyle[i] and instyle[i][j] and type(instyle[i][j]) == "table" then
+				for k,v in pairs(instyle[i][j]) do
+					style[pos][k] = clone(v)
+				end
+			end
+		end
+	end
+	self.panel.vSize = nRows
+	self:PerformSort()
 	self.panel:Update()
+end
+
+function kit:ButtonClick(mouseButton)
 end
 
 function kit:Render()
@@ -176,37 +247,45 @@ function lib:Create(frame, layout)
 
 	local labels = {}
 	for i = 1, #layout do
-		local texture = content:CreateTexture(nil, "ARTWORK")
-		texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-		texture:SetTexCoord(0.1, 0.8, 0, 1)
+		local button = CreateFrame("Button", nil, content)
 		if i == 1 then
-			texture:SetPoint("TOPLEFT", content, "TOPLEFT", 5,0)
+			button:SetPoint("TOPLEFT", content, "TOPLEFT", 5,0)
 			totalWidth = totalWidth + 5
 		else
-			texture:SetPoint("TOPLEFT", labels[i-1].texture, "TOPRIGHT", 3,0)
+			button:SetPoint("TOPLEFT", labels[i-1].button, "TOPRIGHT", 3,0)
 			totalWidth = totalWidth + 3
 		end
 		local colWidth = layout[i][3]
 		totalWidth = totalWidth + colWidth
-		texture:SetWidth(colWidth)
-		texture:SetHeight(16)
+		button:SetWidth(colWidth)
+		button:SetHeight(16)
+		button:SetID(i)
+		button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+		button:SetScript("OnClick", function(self, ...) self:ButtonClick(...) end)
+		
+		local texture = content:CreateTexture(nil, "ARTWORK")
+		texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+		texture:SetTexCoord(0.1, 0.8, 0, 1)
+		texture:SetAllPoints(button)
+		button.texture = texture
 
 		local background = content:CreateTexture(nil, "ARTWORK")
 		background:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 		background:SetTexCoord(0.2, 0.9, 0, 0.9)
-		background:SetPoint("TOPLEFT", texture, "BOTTOMLEFT", 0,0)
-		background:SetPoint("TOPRIGHT", texture, "BOTTOMRIGHT", 0,0)
+		background:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0,0)
+		background:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 0,0)
 		background:SetPoint("BOTTOM", content, "BOTTOM", 0,0)
 		background:SetAlpha(0.2)
 
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		label:SetPoint("TOPLEFT", texture, "TOPLEFT", 0,0)
-		label:SetPoint("BOTTOMRIGHT", texture, "BOTTOMRIGHT", 0,0)
+		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
+		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
 		label:SetJustifyH("CENTER")
 		label:SetJustifyV("TOP")
 		label:SetText(layout[i][1])
 		label:SetTextColor(0.8,0.8,0.8)
 
+		label.button = button
 		label.texture = texture
 		label.background = background
 		labels[i] = label
@@ -256,7 +335,9 @@ function lib:Create(frame, layout)
 		panel = panel,
 		labels = labels,
 		rows = rows,
+		hSize = #labels,
 		data = {},
+		style = {},
 	}
 	for k,v in pairs(kit) do
 		sheet[k] = v

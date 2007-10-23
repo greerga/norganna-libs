@@ -1,13 +1,13 @@
 --[[
 
-	Psychler.lua
+	LibRecycle.lua
        A table recycling embeddable library.
        Released into the Public Domain without warranty. Use at your own peril!
-	Credits: Norganna, MentalPower.
+	Credits: Norganna, MentalPower, Esamynn.
 
 ]]
 
-local LIBRARY_VERSION_MAJOR = "Psychler"
+local LIBRARY_VERSION_MAJOR = "LibRecycle"
 local LIBRARY_VERSION_MINOR = 1
 
 --[[-----------------------------------------------------------------
@@ -61,23 +61,35 @@ if not lib.recyclebin then lib.recyclebin = {} end
 local tremove = table.remove
 local tinsert = table.insert
 local recyclebin = lib.recyclebin
-local n, v, tbl, key, item
 
 -- Define a local function so we can do the nested subcalls without lookups.
 local function recycle(...)
+	local tbl, key, item
 	-- Get the passed parameter/s
-	n = select("#", ...)
+	local n = select("#", ...)
 	if n <= 0 then
 		return
 	elseif n == 1 then
 		item = ...
-	else
+		tbl, key = nil, nil
+	elseif n == 2 then
 		tbl, key = ...
 		item = tbl[key]
+	else
+		for i=2, n do
+			key = select(i, ...)
+			recycle(tbl, key)
+		end
+		return
 	end
 
 	-- We can only clean tables
-	if type(item) ~= 'table' then return end
+	if type(item) ~= 'table' then
+		if tbl and key then
+			tbl[key] = nil
+		end
+		return
+	end
 
 	-- Clean out any values from this table
 	for k,v in pairs(item) do
@@ -100,7 +112,9 @@ local function recycle(...)
 end
 lib.Recycle = recycle
 
-function lib.Acquire(...)
+local function acquire(...)
+	local item, v
+	
 	-- Get a recycled table or create a new one.
 	if #recyclebin > 0 then
 		item = tremove(recyclebin)
@@ -117,4 +131,22 @@ function lib.Acquire(...)
 	end
 	return item
 end
+lib.Acquire = acquire
+
+local function clone(source)
+	if type(source) ~= "table" then
+		return source
+	end
+
+	local dest = acquire()
+	for k, v in pairs(source) do
+		if type(v) == "table" then
+			dest[k] = clone(v)
+		else
+			dest[k] = v
+		end
+	end
+	return dest
+end
+lib.Clone = clone
 
