@@ -124,14 +124,10 @@ local kit = {}
 ]]
 
 function kit:SetData(input, instyle)
-	if not (self.sortTable) then
-		self.sortTable = acquire()
-	else
-		local st = self.sortTable
-		local n = #st
-		for i=n, 1, -1 do
-			st[i] = nil
-		end
+	local sort = self.sort
+	local n = #sort
+	for i=n, 1, -1 do
+		sort[i] = nil
 	end
 
 	local nRows = #input
@@ -152,6 +148,8 @@ function kit:SetData(input, instyle)
 	-- and the style portion into the style table.
 	local pos, content
 	for i = 1, nRows do
+		sort[i] = i -- Initialize sort table to natural order
+
 		if input[i] then
 			for k,v in pairs(input[i]) do
 				if type(k) == "string" and type(v) == "table" and #v > 0 then
@@ -161,6 +159,7 @@ function kit:SetData(input, instyle)
 		end
 		for j = 1, nCols do
 			pos = (i-1)*nCols+j
+
 			if input[i] and input[i][j] then
 				content = input[i][j]
 			else
@@ -187,11 +186,58 @@ function kit:SetData(input, instyle)
 		end
 	end
 	self.panel.vSize = nRows
-	-- self:PerformSort()
-	self.panel:Update()
+	self:PerformSort()
 end
 
-function kit:ButtonClick(mouseButton)
+function kit:ButtonClick(column, mouseButton)
+	if (self.curSort == column) then
+		self.curDir = self.curDir * -1
+	else
+		self.curSort = column
+		self.curDir = 1
+		if self.labels[column]
+		and self.labels[column].sort
+		and self.labels[column].sort.DESCENDING
+		then
+			self.curDir = -1
+		end
+	end
+	self:PerformSort()
+end
+
+local function sortDataSet(data, sort, width, column, dir)
+	assert(column <= width)
+	assert(dir == -1 or dir == 1)
+	table.sort(sort, function(a,b)
+		local aPos = (a-1)*width+column
+		local bPos = (b-1)*width+column
+		if dir < 0 then
+			return (data[aPos] > data[bPos])
+		end
+		return (data[aPos] < data[bPos])
+	end)
+end
+
+function kit:PerformSort()
+	if not self.curSort then
+		for i=1, #self.labels do
+			if self.labels[i].sort and self.labels[i].sort.DEFAULT then
+				self.curSort = i
+				if self.labels[i].sort.DESCENDING then
+					self.curDir = -1
+				else
+					self.curDir = 1
+				end
+			end
+		end
+	end
+	if not self.curSort then
+		self.curSort = 1
+		self.curDir = 1
+	end
+
+	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
+	self.panel:Update()
 end
 
 local empty = {}
@@ -202,15 +248,18 @@ function kit:Render()
 
 	local rows = self.rows
 	local data = self.data
+	local sort = self.sort
 	local style = self.style
 
 	for i = 1, #rows do
-		local rowNum = vPos+i-1
-		local rowPos = rowNum*hSize
+		local rowNum = sort[vPos+i]
+		local rowPos = nil
+		if rowNum then rowPos = (rowNum-1)*hSize end
+
 		local cells = rows[i]
 		for j = 1, hSize do
 			local cell = cells[j]
-			if (rowNum < vSize) then
+			if rowPos then
 				local pos = rowPos + j
 				local text = data[pos] or ""
 				local settings = style[pos] or empty
@@ -237,6 +286,7 @@ end
 local PanelScroller = LibStub:GetLibrary("PanelScroller")
 
 function lib:Create(frame, layout)
+	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
 	local id = 1
 	while (getglobal(name..id)) do
@@ -273,7 +323,7 @@ function lib:Create(frame, layout)
 		button:SetHeight(16)
 		button:SetID(i)
 		button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-		button:SetScript("OnClick", function(self, ...) self:ButtonClick(...) end)
+		button:SetScript("OnClick", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
 		
 		local texture = content:CreateTexture(nil, "ARTWORK")
 		texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -300,6 +350,7 @@ function lib:Create(frame, layout)
 		label.button = button
 		label.texture = texture
 		label.background = background
+		label.sort = layout[i][4]
 		labels[i] = label
 	end
 	totalWidth = totalWidth + 5
@@ -341,7 +392,7 @@ function lib:Create(frame, layout)
 	panel:UpdateScrollChildRect()
 	panel:Update()
 
-	local sheet = {
+	sheet = {
 		name = name,
 		content = content,
 		panel = panel,
@@ -350,6 +401,7 @@ function lib:Create(frame, layout)
 		hSize = #labels,
 		data = {},
 		style = {},
+		sort = {},
 	}
 	for k,v in pairs(kit) do
 		sheet[k] = v
