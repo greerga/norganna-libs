@@ -152,16 +152,22 @@ function kit:SetData(input, instyle)
 	-- and the style portion into the style table.
 	local pos, content
 	for i = 1, nRows do
-		for k,v in pairs(input[i]) do
-			if type(k) == "string" and type(v) == "table" and #v > 0 then
-				style[pos][k] = clone(v)
+		if input[i] then
+			for k,v in pairs(input[i]) do
+				if type(k) == "string" and type(v) == "table" and #v > 0 then
+					style[pos][k] = clone(v)
+				end
 			end
 		end
 		for j = 1, nCols do
 			pos = (i-1)*nCols+j
-			content = input[i][j]
+			if input[i] and input[i][j] then
+				content = input[i][j]
+			else
+				content = nil
+			end
 			if type(content) == "table" then
-				input[pos] = content[1]
+				data[pos] = content[1]
 				for k,v in pairs(content) do
 					if type(k) == "string" then
 						if not style[pos] then style[pos] = acquire() end
@@ -169,55 +175,60 @@ function kit:SetData(input, instyle)
 					end
 				end
 			else
-				input[pos] = content
+				data[pos] = content or "NIL"
 			end
 
 			if instyle and instyle[i] and instyle[i][j] and type(instyle[i][j]) == "table" then
 				for k,v in pairs(instyle[i][j]) do
+					if not style[pos] then style[pos] = acquire() end
 					style[pos][k] = clone(v)
 				end
 			end
 		end
 	end
 	self.panel.vSize = nRows
-	self:PerformSort()
+	-- self:PerformSort()
 	self.panel:Update()
 end
 
 function kit:ButtonClick(mouseButton)
 end
 
+local empty = {}
 function kit:Render()
 	local vPos = math.floor(self.panel.vPos)
-	for i = 1, #self.rows do
-		local cells = self.rows[i]
-		local datarow = self.data[vPos+i]
-		if datarow then
-			local settings = {}	
-			for pos,name in pairs(self.data[vPos+i])do
-				if pos == "ScrollSettings" then
-					settings = self.data[vPos+i][pos] --move settings for this row to a local
+	local vSize = self.panel.vSize
+	local hSize = self.hSize
+
+	local rows = self.rows
+	local data = self.data
+	local style = self.style
+
+	for i = 1, #rows do
+		local rowNum = vPos+i-1
+		local rowPos = rowNum*hSize
+		local cells = rows[i]
+		for j = 1, hSize do
+			local cell = cells[j]
+			if (rowNum < vSize) then
+				local pos = rowPos + j
+				local text = data[pos] or ""
+				local settings = style[pos] or empty
+				local red,green,blue = 0.8,0.8,0.8
+
+				if cell.layout == "COIN" then
+					text = coins(data[pos])
 				end
-			end	
-			for j=1, #cells do
-							
-				if cells[j].layout == "COIN" then
-					cells[j]:SetText(coins(datarow[j]))
-				else
-				
-					if settings["color"] then
-						local red, green, blue = settings["color"][1], settings["color"][2], settings["color"][3]
-						cells[j]:SetTextColor(red, green, blue)
-						cells[j]:SetText(datarow[j])
-					else
-						cells[j]:SetTextColor(0.8, 0.8, 0.8)
-						cells[j]:SetText(datarow[j])
-					end
+
+				if settings["textColor"] then
+					red, green, blue = unpack(settings['textColor'])
 				end
-			end
-		else
-			for j=1, #cells do
-				cells[j]:SetText("")
+
+				cell:SetTextColor(red,green,blue)
+				cell:SetText(text)
+				cell:Show()
+			else
+				cell:Hide()
 			end
 		end
 	end
@@ -345,6 +356,7 @@ function lib:Create(frame, layout)
 	end
 	panel.callback = function() sheet:Render() end
 
+	GSS = sheet
 	return sheet
 end
 
