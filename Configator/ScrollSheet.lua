@@ -80,9 +80,10 @@ local GSC_3 = "|cff%s%d|cff000000.|cff%s%02d|cff000000.|cff%s%02d|r"
 local GSC_2 = "|cff%s%d|cff000000.|cff%s%02d|r"
 local GSC_1 = "|cff%s%d|r"
 
-local Psychler = LibStub("Psychler")
-local recycle = Psychler.Recycle
-local acquire = Psychler.Acquire
+local LibRecycle = LibStub("LibRecycle")
+local recycle = LibRecycle.Recycle
+local acquire = LibRecycle.Acquire
+local clone = LibRecycle.Clone
 
 local function coins(money)
 	money = math.floor(tonumber(money) or 0)
