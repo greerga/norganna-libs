@@ -111,7 +111,7 @@ local function recycle(...)
 
 	-- Clean out any values from this table
 	for k,v in pairs(item) do
-		if type(v) == 'table' then
+		if type(v) == 'table' and (not v[0] or type(v[0]) ~= 'userdata') then
 			-- Recycle this table too
 			recycle(item, k)
 		else
@@ -184,6 +184,7 @@ local function clone(source, unsafe  --[[ internal only: ]], depth, history)
 			dest[k] = v
 		end
 	end
+	for k,v in pairs(history) do history[k] = nil end
 	if history then recycle(history) end
 	return dest
 end
