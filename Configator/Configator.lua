@@ -51,7 +51,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 3
+local LIBRARY_VERSION_MINOR = 4
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -114,21 +114,32 @@ local kit = {}
 if not lib.frames then lib.frames = {} end
 if not lib.tmpId then lib.tmpId = 0 end
 
+local LibRecycle = LibStub("LibRecycle")
+local acquire, recycle, clone, scrub = LibRecycle.All()
 
 function lib:CreateAnonName()
 	lib.tmpId = lib.tmpId + 1
 	return "ConfigatorAnon"..lib.tmpId
 end
 
-function lib:Create(setter, getter, w,h)
+function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeight)
 	local id = #(lib.frames) + 1
 	local name = "ConfigatorDialog_"..id
+
+	if not dialogWidth then dialogWidth = 800 end
+	if not dialogHeight then dialogHeight = 450 end
+	if not gapWidth then gapWidth = 0 end
+	if not gapHeight then gapHeight = 0 end
 
 	local gui = CreateFrame("Frame", name, UIParent)
 	table.insert(lib.frames, gui)
 	gui.Done = CreateFrame("Button", nil, gui, "OptionsButtonTemplate")
 	gui.setter = setter
 	gui.getter = getter
+	gui.dialogWidth  = dialogWidth
+	gui.dialogHeight = dialogHeight
+	gui.gapWidth     = gapWidth
+	gui.gapHeight    = gapHeight
 
 	local top = getter("configator.top")
 	local left = getter("configator.left")
@@ -142,15 +153,15 @@ function lib:Create(setter, getter, w,h)
 	gui:SetToplevel(true)
 	gui:SetMovable(true)
 	gui:EnableMouse(true)
-	gui:SetWidth(w or 800)
-	gui:SetHeight(h or 450)
+	gui:SetWidth(dialogWidth)
+	gui:SetHeight(dialogHeight)
 	gui:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-		tile = true, tileSize = 32, edgeSize = 16,
-		insets = { left = 5, right = 5, top = 5, bottom = 5 }
+		bgFile = "Interface/Tooltips/ChatBubble-Background",
+		edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
+		tile = true, tileSize = 32, edgeSize = 32,
+		insets = { left = 32, right = 32, top = 32, bottom = 32 }
 	})
-	gui:SetBackdropColor(0, 0, 0, 0.9)
+	gui:SetBackdropColor(0, 0, 0, 1)
 	table.insert(UISpecialFrames, name) -- make frames Esc Sensitive by default
 
 	gui.Drag = CreateFrame("Button", nil, gui)
@@ -166,10 +177,13 @@ function lib:Create(setter, getter, w,h)
 	gui.Done:SetScript("OnClick", function() gui:Hide() end)
 	gui.Done:SetText(DONE)
 
-	gui.tabs = {
-		pos = 0,
-		count = 0,
+	gui.config = {
+		current = "",
+		order = { "" },
+		tabs = { [""] = {}, },
+		cats = { [""] = {}, },
 	}
+	gui.tabs = {}
 	gui.elements = {}
 
 	for k,v in pairs(kit) do
@@ -235,10 +249,10 @@ if not lib.tooltip then
 		end
 	end)
 	lib.tooltip:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Glues/Common/Glue-Tooltip-Border",
-		tile = false, tileSize = 32, edgeSize = 16,
-		insets = { left = 4, right = 4, top = 4, bottom = 4 }
+		bgFile = "Interface/Tooltips/ChatBubble-Background",
+		edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
+		tile = true, tileSize = 32, edgeSize = 32,
+		insets = { left = 32, right = 32, top = 32, bottom = 32 }
 	})
 	lib.tooltip:SetBackdropColor(0,0,0.3, 1)
 	lib.tooltip:SetClampedToScreen(true)
@@ -388,7 +402,6 @@ end
 
 nConf = lib
 
-
 -- Local function to get the UI object type
 local function isGuiObject(obj)
 	if not obj then return false end
@@ -398,56 +411,181 @@ local function isGuiObject(obj)
 	return obj:GetObjectType()
 end
 
-
-function kit:ZeroFrame()
-	assert(isGuiObject(self), "Must be called on a valid object")
-	local id = 0
-	local frame
-	frame = CreateFrame("Frame", nil, self)
-	frame.id = id
-	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 10, -10)
-	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0, 5)
-	frame:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-		tile = true, tileSize = 32, edgeSize = 16,
-		insets = { left = 4, right = 4, top = 4, bottom = 4 }
-	})
-	frame:SetBackdropColor(0,0,0, 0.5)
-	frame.contentWidth = 740
-	self.tabs[id] = {}
-	self.tabs[id][2] = frame
-	return id
+function kit:ClickButton(pos)
+	local button = self:GetButton(pos)
+	local tabName = button.tabName
+	local catName = button.catName
+	if button.tabName then
+		self:SelectTab(catName, tabName)
+	elseif button.catName then
+		self:SelectCat(catName)
+	end
 end
 
-function kit:AddTab(tabName)
+function kit:SelectTab(catName, tabName)
+	if self.config.tabs[catName] then
+		local id = self.config.tabs[catName][tabName]
+		if id then
+			self:ActivateTab(id)
+		end
+	end
+end
+
+function kit:SelectCat(catName)
+	if self.config.cats[catName] then
+		self.config.cats[catName].isOpen = not self.config.cats[catName].isOpen
+		self:RegenTabs()
+	end
+end
+
+local buttonKit = {}
+function buttonKit:SetText(text, active)
+	self.text:SetText(text)
+	if active then
+		self.text:SetTextColor(1,0.8,0.1)
+	else
+		self.text:SetTextColor(0.9,0.9,0.9)
+	end
+end
+function buttonKit:SetArrowDirection(direction)
+--	self.text:ClearAllPoints()
+	if direction == "RIGHT" then
+		self.text:SetPoint("LEFT", self, "LEFT", 25,0)
+		self.expand:SetTexCoord(1,1, 0,1, 1,0, 0,0)
+		self.expand:Show()
+	elseif direction == "DOWN" then
+		self.text:SetPoint("LEFT", self, "LEFT", 25,0)
+		self.expand:SetTexCoord(0,1, 0,0, 1,1, 1,0)
+		self.expand:Show()
+	else
+		self.text:SetPoint("LEFT", self, "LEFT", 18,0)
+		self.expand:Hide()
+	end
+end
+
+function kit:GetButton(pos)
+	if not self.buttons then
+		self.buttons = {}
+	end
+
+	if self.buttons[pos] then return self.buttons[pos] end
+	
+	-- Create a button for this tab
+	button = CreateFrame("Button", myName, self)
+	button:SetWidth(150)
+	button:SetHeight(13)
+	button:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
+
+	button.text = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	button.text:SetPoint("LEFT", button, "LEFT", 25,0)
+
+	button.expand = button:CreateTexture(nil, "ARTWORK");
+	button.expand:SetTexture("Interface\\Minimap\\ROTATING-MINIMAPGUIDEARROW")
+	button.expand:SetPoint("LEFT", button, "LEFT", 0,0)
+	button.expand:SetWidth(26)
+	button.expand:SetHeight(26)
+	button.expand:Hide()
+
+	for k,v in pairs(buttonKit) do
+		button[k] = v
+	end
+
+	button:SetScript("OnClick", function() self:ClickButton(pos) end)
+	self.buttons[pos] = button
+
+	if pos == 1 then
+		button:SetPoint("TOPLEFT", self, "TOPLEFT", 5, -15)
+	else
+		button:SetPoint("TOPLEFT", self:GetButton(pos-1), "BOTTOMLEFT", 0, 0)
+	end
+	return button
+end
+
+function kit:RenderTabs()
 	assert(isGuiObject(self), "Must be called on a valid object")
-	local button, frame, content, id
+	if (self.config.isZero) then return end
+
+	if not self.render then self:RegenTabs() end
+	
+	local offset = 0
+	local total = #self.render
+	local count = math.floor((self.dialogHeight - 40) / 13)
+	for i=1, count do
+		local pos = i + offset
+		local button = self:GetButton(i)
+
+		if pos <= total then
+			local isCat, catName, tabName = unpack(self.render[pos])
+
+			if isCat then
+				local isOpen = self.config.cats[catName].isOpen
+				if isOpen then
+					button:SetArrowDirection("DOWN")
+				else
+					button:SetArrowDirection("RIGHT")
+				end
+				button:SetText(catName)
+				button.catName = catName
+				button.tabName = nil
+			else
+				button:SetArrowDirection("NONE")
+				if catName == self.config.selectedCat
+				and tabName == self.config.selectedTab then
+					button:SetText(tabName, true)
+				else
+					button:SetText(tabName)
+				end
+				button.catName = catName
+				button.tabName = tabName
+			end
+			button:Show()
+		else
+			button:SetText("")
+			button:SetArrowDirection("NONE")
+			button.catName = nil
+			button.tabName = nil
+			button:Hide()
+		end
+	end
+end
+
+function kit:RegenTabs()
+	if not self.render then self.render = acquire() end
+	local render = self.render
+	scrub(render)
+
+	for pos, catName in ipairs(self.config.order) do
+		if self.config.cats[catName].hasTabs then
+			table.insert(render, acquire(true, catName))
+			if self.config.cats[catName].isOpen then
+				local list = acquire()
+				for tabName in pairs(self.config.tabs[catName]) do
+					table.insert(list, tabName)
+				end
+				table.sort(list)
+				for pos, tabName in ipairs(list) do
+					table.insert(render, acquire(false, catName, tabName))
+				end
+				recycle(list)
+			end
+		end
+	end
+	self:RenderTabs()
+end
+
+function kit:ZeroFrame(gapWidth, gapHeight)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	assert(self.config.isZero == false, "Cannot zero a frame with tabs")
+
+	local id = 0
+	local frame, content
 
 	local myName = lib.CreateAnonName()
-	button = CreateFrame("Button", myName, self, "OptionsButtonTemplate")
 	frame = CreateFrame("Frame", myName.."Frame", self)
 	content = CreateFrame("Frame", myName.."Content", frame)
 
-	table.insert(self.tabs, { button, frame, content })
-	id = table.getn(self.tabs)
-	button.id = id
 	frame.id = id
-	self.tabs.count = id
-	self.tabs.pos = id
-	if (not self.tabs.active) then
-		self.tabs.active = id
-	else
-		frame:Hide()
-	end
-	if (id == 1) then
-		button:SetPoint("TOPLEFT", self, "TOPLEFT", 10, -10)
-	else
-		button:SetPoint("TOPLEFT", self.tabs[id-1][1], "BOTTOMLEFT", 0, 0)
-	end
-	button:SetWidth(120)
-	button:SetScript("OnClick", kit.ActivateTab)
-	frame:SetPoint("TOPLEFT", self.tabs[1][1], "TOPRIGHT", 0, 0)
+	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 10, -10)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0, 5)
 	frame:SetBackdrop({
 		bgFile = "Interface/Tooltips/ChatBubble-Background",
@@ -456,40 +594,122 @@ function kit:AddTab(tabName)
 		insets = { left = 32, right = 32, top = 32, bottom = 32 }
 	})
 	frame:SetBackdropColor(0,0,0, 1)
+
 	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
 	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5,5)
-	button:SetText(tabName)
-	frame.contentWidth = 620
+	content.gapWidth = gapWidth
+	content.gapHeight = gapHeight
+
+	recycle(self.config)
+	self.config = acquire()
+	self.config.current = "zero"
+	self.config.tabs = acquire()
+	self.config.tabs.zero = acquire()
+	self.config.tabs.zero.zero = 0
+	self.config.cats = acquire()
+	self.config.cats.zero = acquire()
+	self.config.isZero = true
+
+	if not gapWidth then gapWidth = self.gapWidth or 0 end
+	if not gapHeight then gapHeight = self.gapHeight or 0 end
+
+	self.tabs[0] = {
+		nil, frame, content, -- For backwards compatability
+		catName = catName,
+		tabName = tabName,
+		gapWidth = gapWidth,
+		gapHeight = gapHeight,
+		frame = frame,
+		content = content,
+		scroll = nil,
+	}
+	self.tabs.active = 0
+	self.config.selectedCat = "zero"
+	self.config.selectedTab = "zero"
+
+	return 0
+end
+
+function kit:AddTab(tabName, catName, gapWidth, gapHeight)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	assert(not self.config.isZero, "Cannot add tabs to a zeroed frame")
+
+	if not catName then catName = self.config.current end
+
+	if not self.config.tabs[catName] then
+		self:AddCat(catName)
+	end
+
+	local frame, content
+	self.config.isZero = false
+
+	local myName = lib.CreateAnonName()
+	frame = CreateFrame("Frame", myName.."Frame", self)
+	content = CreateFrame("Frame", myName.."Content", frame)
+
+	if not gapWidth then gapWidth = self.gapWidth or 0 end
+	if not gapHeight then gapHeight = self.gapHeight or 0 end
+
+	local tab = { 
+		nil, frame, content, -- For backwards compatability
+		catName = catName,
+		tabName = tabName,
+		gapWidth = gapWidth,
+		gapHeight = gapHeight,
+		frame = frame,
+		content = content,
+		scroll = nil,
+	}
+	table.insert(self.tabs, tab)
+	id = table.getn(self.tabs)
+
+	self.config.tabs[catName][tabName] = id
+	tab.id = id
+	frame.id = id
+	content.id = id
+
+	self.config.cats[catName].hasTabs = true
+
+	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 160, -10)
+	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+gapHeight)
+	frame:SetBackdrop({
+		bgFile = "Interface/Tooltips/ChatBubble-Background",
+		edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
+		tile = true, tileSize = 32, edgeSize = 32,
+		insets = { left = 32, right = 32, top = 32, bottom = 32 }
+	})
+	frame:SetBackdropColor(0,0,0, 1)
+
+	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
+	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5,5)
+	content.gapWidth = gapWidth
+	content.gapHeight = gapHeight
+
+	self:RegenTabs()
+
+	if (not self.config.selectedTab) then
+		self:ActivateTab(id)
+	else
+		frame:Hide()
+	end
+
 	return id
 end
 
 function kit:AddCat(catName)
 	assert(isGuiObject(self), "Must be called on a valid object")
-	local button, frame, id
-	button = CreateFrame("Button", nil, self)
-	frame = {}
-	table.insert(self.tabs, { button, frame })
-	id = table.getn(self.tabs)
-	self.tabs.count = id
-	self.tabs.pos = id
-	button.id = id
-	frame.id = id
-	if (id == 1) then
-		button:SetPoint("TOPLEFT", self, "TOPLEFT", 10, -10)
-	else
-		button:SetPoint("TOPLEFT", self.tabs[id-1][1], "BOTTOMLEFT", 0, 0)
-	end
-	button:Disable()
-	button:SetWidth(120)
-	button:SetHeight(22)
-	button.Text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	button.Text:SetJustifyH("LEFT")
-	button.Text:SetJustifyV("BOTTOM")
-	button.Text:SetPoint("TOPLEFT", button, "TOPLEFT", 5,0)
-	button.Text:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT")
-	button.Text:SetText(catName)
-	frame.contentWidth = 0
-	return id
+	assert(not self.config.isZero, "Cannot add categories to a zeroed frame")
+	if self.config.tabs[catName] then return end
+
+	self.config.isZero = false
+
+	table.insert(self.config.order, catName)
+	self.config.tabs[catName] = { }
+	self.config.cats[catName] = { isOpen = false, }
+	self.config.current = catName
+	if not self.config.selectedCat then self.config.selectedCat = catName end
+
+	self:RegenTabs()
 end
 
 local function anchorPoint(frame, el, last, indent, width, height, yofs)
@@ -526,9 +746,9 @@ end
 
 function kit:MakeScrollable(id)
 	assert(isGuiObject(self), "Must be called on a valid object")
-	if (self.tabs[id][4]) then return end
-	local frame = self.tabs[id][2]
-	local content = self.tabs[id][3]
+	if (self.tabs[id].scroll) then return end
+	local frame = self.tabs[id].frame
+	local content = self.tabs[id].content
 	local oldwidth = content:GetWidth()
 	content:ClearAllPoints()
 	content:SetWidth(oldwidth)
@@ -539,6 +759,7 @@ function kit:MakeScrollable(id)
 	scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -25,9)
 	scroll:SetScrollChild(content:GetName())
 	scroll:UpdateScrollChildRect()
+	self.tabs[id].scroll = scroll
 	self.tabs[id][4] = scroll
 	GSC = scroll
 end
@@ -619,10 +840,7 @@ end
 
 function kit:AddControl(id, cType, column, ...)
 	assert(isGuiObject(self), "Must be called on a valid object")
-	local frame = self.tabs[id][2]
-	if (frame.contentWidth == 0) then
-		error("Attempting to add a control to a non-existent frame")
-	end
+	local frame = self.tabs[id].frame
 	if (not frame.ctrls) then
 		frame.ctrls = { pos = 0 }
 	end
@@ -644,7 +862,7 @@ function kit:AddControl(id, cType, column, ...)
 		colwidth = math.min(framewidth-column, (self.scalewidth or 1) * framewidth)
 	end
 
-	local content = self.tabs[id][3]
+	local content = self.tabs[id].content
 
 	local el
 	if (cType == "Header") then
@@ -904,15 +1122,15 @@ end
 
 function kit:GetLast(id)
 	assert(isGuiObject(self), "Must be called on a valid object")
-	if (self.tabs[id] and self.tabs[id][2].ctrls) then
-		return self.tabs[id][2].ctrls.last
+	if (self.tabs[id] and self.tabs[id].frame.ctrls) then
+		return self.tabs[id].frame.ctrls.last
 	end
 end
 
 function kit:SetLast(id, last)
 	assert(isGuiObject(self), "Must be called on a valid object")
-	if (self.tabs[id] and self.tabs[id][2].ctrls) then
-		self.tabs[id][2].ctrls.last = last
+	if (self.tabs[id] and self.tabs[id].frame.ctrls) then
+		self.tabs[id].frame.ctrls.last = last
 	end
 end
 
@@ -927,10 +1145,38 @@ function kit:ActivateTab(id)
 	end
 
 	if (self.tabs.active) then
-		self.tabs[self.tabs.active][2]:Hide()
+		self.tabs[self.tabs.active].frame:Hide()
 	end
+	local tab = self.tabs[id]
+	tab.frame:Show()
 	self.tabs.active = id
-	self.tabs[id][2]:Show()
+	self.config.selectedCat = tab.catName
+	self.config.selectedTab = tab.tabName
+
+	if not self.config.cats[tab.catName].isOpen then
+		self.config.cats[tab.catName].isOpen = true
+		self:RegenTabs()
+	else
+		self:RenderTabs()
+	end
+end
+
+function kit:GetTabByName(tabName, catName)
+	if not catName then
+		catName = self.config.current or ""
+	end
+	if self.config.tabs[catName] then
+		local id = self.config.tabs[catName][tabName]
+		if id then
+			return self.tabs[id]
+		end
+	end
+end
+
+function kit:GetTabById(id)
+	if id then
+		return self.tabs[id]
+	end
 end
 
 function kit:Refresh()
