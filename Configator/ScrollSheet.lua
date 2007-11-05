@@ -289,7 +289,7 @@ function lib:Create(frame, layout)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
 	local id = 1
-	while (getglobal(name..id)) do
+	while (_G[name..id]) do
 		id = id + 1
 	end
 	name = name..id
@@ -408,7 +408,7 @@ function lib:Create(frame, layout)
 	end
 	panel.callback = function() sheet:Render() end
 
-	GSS = sheet
+	_G[name] = sheet
 	return sheet
 end
 
