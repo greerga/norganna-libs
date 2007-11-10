@@ -41,17 +41,18 @@ USAGE:
 	"Header" == text
 	"Subhead" == text
 	"Checkbox" == level, setting, label
-	"Slider" == level, setting, min, max, step, label, fmtfunc
+	"Slider", "TinySlider", "WideSlider", "NumeriSlider", "NumeriTiny", "NumeriWide"
+	   == level, setting, min, max, step, label, fmtfunc
 	"Text" = level, setting, label
-	"NumberBox" == level, setting, minVal, maxVal, label
-	"MoneyFrame" = level, setting, label
-	"MoneyFramePinned" = level, setting, minVal, maxVal, label
+	"NumberBox", "TinyNumber"
+	   == level, setting, minVal, maxVal, label
+	"MoneyFrame", "PinnedMoney" = level, setting, label
 
 	Settings and configuration system.
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 4
+local LIBRARY_VERSION_MINOR = 5
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -120,6 +121,25 @@ local acquire, recycle, clone, scrub = LibRecycle.All()
 function lib:CreateAnonName()
 	lib.tmpId = lib.tmpId + 1
 	return "ConfigatorAnon"..lib.tmpId
+end
+
+function lib:TabLink(frame, el, noHook)
+	if not frame.firstFocus then
+		frame.firstFocus = el
+		frame.lastFocus = el
+		el.previousFocus = el
+		el.nextFocus = el
+	else
+		frame.lastFocus.nextFocus = el
+		el.previousFocus = frame.lastFocus
+		el.nextFocus = frame.firstFocus
+		frame.firstFocus.previousFocus = el
+	end
+	frame.lastFocus = el
+
+	if not noHook then
+		el:SetScript("OnTabPressed", kit.FocusShift)
+	end
 end
 
 function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeight)
@@ -449,16 +469,20 @@ function buttonKit:SetText(text, active)
 end
 function buttonKit:SetArrowDirection(direction)
 --	self.text:ClearAllPoints()
+	local file = self.text:GetFont()
 	if direction == "RIGHT" then
 		self.text:SetPoint("LEFT", self, "LEFT", 25,0)
+		self.text:SetFont(file, 12)
 		self.expand:SetTexCoord(1,1, 0,1, 1,0, 0,0)
 		self.expand:Show()
 	elseif direction == "DOWN" then
 		self.text:SetPoint("LEFT", self, "LEFT", 25,0)
+		self.text:SetFont(file, 12)
 		self.expand:SetTexCoord(0,1, 0,0, 1,1, 1,0)
 		self.expand:Show()
 	else
 		self.text:SetPoint("LEFT", self, "LEFT", 18,0)
+		self.text:SetFont(file, 11)
 		self.expand:Hide()
 	end
 end
@@ -482,8 +506,8 @@ function kit:GetButton(pos)
 	button.expand = button:CreateTexture(nil, "ARTWORK");
 	button.expand:SetTexture("Interface\\Minimap\\ROTATING-MINIMAPGUIDEARROW")
 	button.expand:SetPoint("LEFT", button, "LEFT", 0,0)
-	button.expand:SetWidth(26)
-	button.expand:SetHeight(26)
+	button.expand:SetWidth(32)
+	button.expand:SetHeight(32)
 	button.expand:Hide()
 
 	for k,v in pairs(buttonKit) do
@@ -739,6 +763,25 @@ function kit:Unfocus()
 	self:Show()
 end
 
+function kit:MouseScroll(direction)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	self:SetValue(self:GetValue() - direction)
+end
+
+function kit:FocusShift(...)
+	assert(isGuiObject(self), "Must be called on a valid object")
+
+	if (IsShiftKeyDown()) then
+		direction = "previousFocus"
+	else
+		direction = "nextFocus"
+	end
+	local nextobj = self[direction]
+	if nextobj.SetFocus then
+		nextobj:SetFocus()
+	end
+end
+
 function kit:SetControlWidth(width)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	self.scalewidth = width
@@ -860,6 +903,7 @@ function kit:AddControl(id, cType, column, ...)
 	local colwidth = nil
 	if (self.scalewidth) then
 		colwidth = math.min(framewidth-column, (self.scalewidth or 1) * framewidth)
+		self.scalewidth = nil
 	end
 
 	local content = self.tabs[id].content
@@ -867,6 +911,8 @@ function kit:AddControl(id, cType, column, ...)
 	local el
 	if (cType == "Header") then
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+		local fontFile = el:GetFont()
+		el:SetFont(fontFile, 15)
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last)
 		local text = ...
@@ -874,6 +920,8 @@ function kit:AddControl(id, cType, column, ...)
 		last = el
 	elseif (cType == "Subhead") then
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+		local fontFile = el:GetFont()
+		el:SetFont(fontFile, 13)
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, column+15, colwidth, nil, -10)
@@ -884,6 +932,8 @@ function kit:AddControl(id, cType, column, ...)
 		local level, width, height, text = ...
 		local indent = 10 * (level or 1)
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		local fontFile = el:GetFont()
+		el:SetFont(fontFile, 10)
 		el:SetJustifyH("LEFT")
 		el:SetJustifyV("TOP")
 		kpos = kpos+1 kids[kpos] = el
@@ -932,7 +982,9 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetText(label)
 		last = el
 		-- Editbox
-		el = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
+		el = CreateFrame("EditBox", lib.CreateAnonName(), content, "InputBoxTemplate")
+		lib:TabLink(frame, el)
+		
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 20 + column + indent, colwidth or 160, 32, 4)
 		el.setting = setting
@@ -1016,16 +1068,25 @@ function kit:AddControl(id, cType, column, ...)
 		control:SetHitRectInsets(-2,-textWidth, -2,-2)
 		control.textEl = el
 		last = el
-	elseif (cType == "Slider" or cType == "WideSlider") then
-		local swidth = 140
-		if (cType == "WideSlider") then swidth = 260 end
+	elseif (cType == "Slider" or cType == "WideSlider" or cType == "TinySlider"
+	or cType == "NumeriSlider" or cType == "NumeriWide" or cType == "NumeriTiny") then
+		local swidth = colwidth or 140
+		if (cType == "WideSlider" or cType == "NumeriWide") then swidth = 260 end
+		if (cType == "TinySlider" or cType == "NumeriTiny") then swidth = 80 end
+		local hasNumber = false
+		local nwidth = 0
+		if (cType == "NumeriSlider" or cType == "NumeriWide" or cType == "NumeriTiny") then
+			hasNumber = true
+			nwidth = 40
+		end
+
 		local level, setting, min, max, step, text, fmtfunc = ...
 		local indent = 10 * (level or 1)
 		-- FontString
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, swidth + 20 + column+indent)
+		anchorPoint(content, el, last, swidth+nwidth + 20 + column+indent)
 		el:SetText(text)
 		local textElement = el
 		-- Slider
@@ -1039,18 +1100,61 @@ function kit:AddControl(id, cType, column, ...)
 		el.textFmt = text
 		el.fmtFunc = fmtfunc
 		el.textEl = textElement
-		el.stype = "Slider";
+		el.stype = "Slider"
+		el.step = step
 		el:SetMinMaxValues(min, max)
 		el:SetValueStep(step)
-		self:GetSetting(el)
 		el:SetHitRectInsets(0,0,0,0)
-		el:SetScript("OnValueChanged", function(...) self:ChangeSetting(...) end)
+		local slave
+		el:SetScript("OnValueChanged", function(...)
+			self:ChangeSetting(...)
+			if (slave) then
+				local myVal = el:GetValue()
+				if slave:GetNumber() ~= myVal then
+					slave:SetNumber(myVal)
+				end
+			end
+		end)
+		el:EnableMouseWheel(true)
+		el:SetScript("OnMouseWheel", kit.MouseScroll)
+		if hasNumber then
+			local slaveName = lib.CreateAnonName()
+			slave = CreateFrame("EditBox", slaveName, el, "InputBoxTemplate")
+			lib:TabLink(frame, slave)
+
+			slave:SetPoint("LEFT", el, "RIGHT", 8,0)
+			slave:SetWidth(40)
+			slave:SetHeight(32)
+			slave:SetScale(0.8)
+			slave:SetScript("OnEditFocusLost", function(...)
+				local myMin, myMax = slave.minValue, slave.maxValue
+				local myVal = math.min(myMax, math.max(myMin, tonumber(slave:GetNumber()) or 0))
+				if (el:GetValue() ~= myVal) then
+					el:SetValue(myVal)
+				end
+				slave:SetNumber(el:GetValue())
+			end)
+			slave:SetScript("OnEscapePressed", kit.Unfocus)
+			slave:SetScript("OnEnterPressed", kit.Unfocus)
+			slave:SetAutoFocus(false)
+			slave:SetNumeric(true)
+			slave:Show()
+			slave.minValue = min
+			slave.maxValue = max
+			slave.element = el
+			slave:SetNumber(el:GetValue())
+		end
+		self:GetSetting(el)
 		self.elements[setting] = el
 		control = el
 		last = textElement
-	elseif (cType == "NumberBox") then
+	elseif (cType == "NumberBox" or cType == "TinyNumber") then
 		local level, setting, minVal, maxVal, label = ...
 		local indent = 10 * (level or 1)
+
+		local defWidth = 80
+		if (cType == "TinyNumber") then defWidth = 40 end
+
 		-- FontString
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		el:SetJustifyH("LEFT")
@@ -1059,9 +1163,10 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetText(label)
 		last = el
 		-- Editbox
-		el = CreateFrame("EditBox", "", content, "InputBoxTemplate")
+		el = CreateFrame("EditBox", lib.CreateAnonName(), content, "InputBoxTemplate")
+		lib:TabLink(frame, el)
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 20+column+indent, colwidth or 160, 32, 4)
+		anchorPoint(content, el, last, 20+column+indent, colwidth or defWidth, 32, 4)
 		el.setting = setting
 		el.stype = "EditBox"
 		el:SetAutoFocus(false)
@@ -1077,7 +1182,7 @@ function kit:AddControl(id, cType, column, ...)
 		el.textEl = last
 		control = el
 		last = el
-	elseif (cType == "MoneyFrame" or cType == "MoneyFramePinned") then
+	elseif (cType == "MoneyFrame" or cType == "PinnedMoney" or cType == "MoneyFramePinned") then
 		local level, setting, minVal, maxVal, label  = ...
 		if (cType == "MoneyFrame") then
 			label, minVal, maxVal = minVal, nil, nil
@@ -1095,6 +1200,7 @@ function kit:AddControl(id, cType, column, ...)
 		-- MoneyFrame
 		frameName = lib.CreateAnonName();
 		el = CreateFrame("Frame", frameName, content, "MoneyInputFrameTemplate")
+		lib:TabLink(frame, el, true)
 		local cur = el
 		MoneyInputFrame_SetOnvalueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
@@ -1223,7 +1329,7 @@ function kit:GetSetting(element)
 		element:UpdateValue()
 	elseif (element.stype == "Button") then
 	elseif (element.stype == "Slider") then
-		value = value or 0
+		value = tonumber(value) or 0
 		element:SetValue(value)
 		if (element.fmtFunc) then
 			element.textEl:SetText(string.format(element.textFmt, element.fmtFunc(value)))
