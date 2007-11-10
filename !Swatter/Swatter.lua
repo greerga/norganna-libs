@@ -488,7 +488,7 @@ if LibStub then
 		sideIcon:SetScript("OnClick", toggle)
 		sideIcon.tip = {
 			"Swatter",
-			"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may diable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
+			"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
 			"{{Click}} to open the report.",
 		}
 	end
