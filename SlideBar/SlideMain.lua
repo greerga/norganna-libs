@@ -402,6 +402,72 @@ else
 
 	lib.frame = frame
 end
+
+-- Create a special tooltip just for us
+if not lib.tooltip then
+	lib.tooltip = CreateFrame("GameTooltip", "SlidebarTooltip", UIParent, "GameTooltipTemplate")
+	local function hide_tip()
+		lib.tooltip:Hide()
+	end
+	lib.tooltip.fadeInfo = {}
+	function lib:SetTip(frame, ...)
+		local n = select("#", ...)
+		if n == 1 then
+			-- Allow passing of tip lines as a single table
+			local tip = select(1, ...)
+			if type(tip) == "table" then
+				lib:SetTip(frame, unpack(tip))
+				return
+			end
+		end
+
+		if not frame or n == 0 then
+			lib.tooltip.fadeInfo.finishedFunc = hide_tip
+			local curAlpha = lib.tooltip:GetAlpha()
+			UIFrameFadeOut(lib.tooltip, 0.25, curAlpha, 0)
+			lib.tooltip:SetAlpha(curAlpha)
+			lib.tooltip.schedule = nil
+			return
+		end
+
+		if lib.tooltip:GetAlpha() > 0 then
+			-- Speed up this fade
+			UIFrameFadeOut(lib.tooltip, 0.01, 0, 0)
+			lib.tooltip:SetAlpha(0)
+		end
+
+		lib.tooltip:SetOwner(frame, "ANCHOR_NONE")
+		lib.tooltip:ClearLines()
+
+		local tip
+		for i=1, n do
+			tip = select(i, ...)
+			lib.tooltip:AddLine(tostring(tip) or "", 1,1,0.5, 1)
+		end
+		lib.tooltip:Show()
+		lib.tooltip:SetAlpha(0)
+		lib.tooltip:SetBackdropColor(0,0,0, 1)
+		lib.tooltip:SetPoint("TOP", frame, "BOTTOM", 10, -5)
+		lib.tooltip.schedule = GetTime() + 2
+	end
+	lib.tooltip:SetScript("OnUpdate", function()
+		if lib.tooltip.schedule and GetTime() > lib.tooltip.schedule then
+			local curAlpha = lib.tooltip:GetAlpha()
+			UIFrameFadeIn(lib.tooltip, 0.33, curAlpha, 1)
+			lib.tooltip:SetAlpha(curAlpha) -- Tooltips set alpha when they are shown, and UIFrameFadeIn does a :Show()
+			lib.tooltip.schedule = nil
+		end
+	end)
+	lib.tooltip:SetBackdrop({
+		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+		tile = true, tileSize = 32, edgeSize = 16,
+		insets = { left = 4, right = 4, top = 4, bottom = 4 }
+	})
+	lib.tooltip:SetBackdropColor(0,0,0.3, 1)
+	lib.tooltip:SetClampedToScreen(true)
+end
+
 private.lastConfig = {}
 
 -- Functions to start and stop the sidebar drag
@@ -434,6 +500,9 @@ function private:PopOut(...)
 	self.PopDirection = 1
 	if private.IsButton(button) then -- this is a button
 		button.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+		if (button.tip) then
+			lib:SetTip(button, button.tip)
+		end
 		if button.OnEnter then button:OnEnter(select(2, ...)) end
 	end
 end
@@ -443,6 +512,7 @@ function private:PopBack(...)
 	self.PopTimer = 0.75
 	self.PopDirection = -1
 	if private.IsButton(button) then -- this is a button
+		lib:SetTip()
 		button.icon:SetTexCoord(0.025, 0.975, 0.025, 0.975)
 		if button.OnLeave then button:OnLeave(select(2, ...)) end
 	end
@@ -496,6 +566,7 @@ function private:Popper(...)
 			end
 		end
 	end
+			
 	if private.startCounter then
 		private.startCounter = private.startCounter - 1
 		if private.startCounter == 0 then
@@ -638,12 +709,10 @@ end
 
 -- Function to sort the buttons by priority during the layout phase
 function private.buttonSort(a, b)
-	if (a.priority < b.priority) then
-		return true
-	elseif (a.id < b.id) then
-		return true
+	if (a.priority ~= b.priority) then
+		return a.priority < b.priority
 	end
-	return false
+	return a.id < b.id
 end
 
 -- Function to work out where along the edge of the screen to position the bar
