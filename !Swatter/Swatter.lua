@@ -471,3 +471,26 @@ SlashCmdList["SWATTER"] = function(msg)
 	end
 end
 
+local function toggle()
+	if Swatter.Error:IsVisible() then
+		Swatter.Error:Hide()
+	else
+		Swatter.Error:Show()
+	end
+end
+
+local sideIcon
+if LibStub then
+	local SlideBar = LibStub:GetLibrary("SlideBar", true)
+	if SlideBar then
+		sideIcon = SlideBar.AddButton("Swatter", "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon", 9000)
+		sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
+		sideIcon:SetScript("OnClick", toggle)
+		sideIcon.tip = {
+			"Swatter",
+			"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may diable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
+			"{{Click}} to open the report.",
+		}
+	end
+end
+

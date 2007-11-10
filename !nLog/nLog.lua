@@ -599,3 +599,27 @@ SlashCmdList["NLOG"] = function(msg)
 	end
 end
 
+local function toggle()
+	if nLog.Message:IsVisible() then
+		nLog.Message:Hide()
+	else
+		nLog.Message:Show()
+	end
+end
+
+local sideIcon
+if LibStub then
+	local SlideBar = LibStub:GetLibrary("SlideBar", true)
+	if SlideBar then
+		sideIcon = SlideBar.AddButton("nLog", "Interface\\AddOns\\!nLog\\Textures\\nLogIcon", 10000)
+		sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
+		sideIcon:SetScript("OnClick", toggle)
+		sideIcon.tip = {
+			"Norganna's Log",
+			"nLog is a debugging utility designed for use by AddOn authors or professional testers only.",
+			"If you have inadvertently found yourself with this addon installed, and are a normal end-user, we recommend that you disable it from loading.",
+			"{{Click}} to open the log window.",
+		}
+	end
+end
+

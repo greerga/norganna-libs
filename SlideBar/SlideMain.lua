@@ -442,13 +442,14 @@ if not lib.tooltip then
 		local tip
 		for i=1, n do
 			tip = select(i, ...)
+			tip = tostring(tip):gsub("{{", "|cff1fb3ff"):gsub("}}", "|r")
 			lib.tooltip:AddLine(tostring(tip) or "", 1,1,0.5, 1)
 		end
 		lib.tooltip:Show()
 		lib.tooltip:SetAlpha(0)
 		lib.tooltip:SetBackdropColor(0,0,0, 1)
 		lib.tooltip:SetPoint("TOP", frame, "BOTTOM", 10, -5)
-		lib.tooltip.schedule = GetTime() + 2
+		lib.tooltip.schedule = GetTime() + 1
 	end
 	lib.tooltip:SetScript("OnUpdate", function()
 		if lib.tooltip.schedule and GetTime() > lib.tooltip.schedule then
