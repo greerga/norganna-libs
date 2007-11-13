@@ -52,7 +52,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 5
+local LIBRARY_VERSION_MINOR = 7
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -123,21 +123,37 @@ function lib:CreateAnonName()
 	return "ConfigatorAnon"..lib.tmpId
 end
 
+local function setFocus(focusType, object, focus)
+	if focusType == "NEXT" then
+		object.nextFocus = focus
+		if (object.isMoneyFrame) then
+			MoneyInputFrame_SetNextFocus(object, focus)
+		end
+	elseif focusType == "PREV" then
+		object.previousFocus = focus
+		if (object.isMoneyFrame) then
+			MoneyInputFrame_SetPreviousFocus(object, focus)
+		end
+	end
+end
+
 function lib:TabLink(frame, el, noHook)
 	if not frame.firstFocus then
 		frame.firstFocus = el
-		frame.lastFocus = el
-		el.previousFocus = el
-		el.nextFocus = el
+		setFocus("NEXT", el, el)
+		setFocus("PREV", el, el)
 	else
-		frame.lastFocus.nextFocus = el
-		el.previousFocus = frame.lastFocus
-		el.nextFocus = frame.firstFocus
-		frame.firstFocus.previousFocus = el
+		local curLast = frame.lastFocus
+		local first = frame.firstFocus
+
+		setFocus("NEXT", curLast, el)
+		setFocus("PREV", first, el)
+		setFocus("NEXT", el, first)
+		setFocus("PREV", el, curLast)
 	end
 	frame.lastFocus = el
 
-	if not noHook then
+	if not noHook and not el.isMoneyFrame then
 		el:SetScript("OnTabPressed", kit.FocusShift)
 	end
 end
@@ -664,6 +680,9 @@ function kit:AddTab(tabName, catName, gapWidth, gapHeight)
 		self:AddCat(catName)
 	end
 
+	local exists, id = self:GetTabByName(tabName, catName)
+	if exists then return id end
+
 	local frame, content
 	self.config.isZero = false
 
@@ -766,6 +785,59 @@ end
 function kit:MouseScroll(direction)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	self:SetValue(self:GetValue() - direction)
+end
+
+function kit:CaptureKeys()
+	self:EnableKeyboard(true)
+end
+
+function kit:ReleaseKeys()
+	self:EnableKeyboard(false)
+end
+
+function kit:KeyPress(key, ...)
+	local dir = 0
+	if key == "UP" or key == "RIGHT" then
+		dir = 1
+	elseif key == "DOWN" or key == "LEFT" then
+		dir = -1
+	end
+
+	if dir ~= 0 then
+		local size = 1
+		if IsShiftKeyDown() then
+			if IsControlKeyDown() then
+				size = 25
+			else
+				size = 5
+			end
+		elseif IsControlKeyDown() then
+			size = 10
+		end
+		
+		if self.GetValue then
+			local myVal = self:GetValue()
+			self:SetValue(myVal + size * dir)
+			return
+		elseif self.GetNumber then
+			local myVal = self:GetNumber()
+			self:SetNumber(myVal + size * dir)
+			return
+		elseif self.GetText then
+			local myVal = tonumber(self:GetText())
+			if myVal then
+				self:SetText(myVal + size * dir)
+			end
+			return
+		end
+	end
+
+	if self.slave and self.slave.hasFocus then
+		local script = self.slave:GetScript("OnKeyUp")
+		if script then
+			script(key, ...)
+		end
+	end
 end
 
 function kit:FocusShift(...)
@@ -991,7 +1063,13 @@ function kit:AddControl(id, cType, column, ...)
 		el.stype = "EditBox"
 		el:SetAutoFocus(false)
 		self:GetSetting(el)
-		el:SetScript("OnEditFocusLost", function(...) self:ChangeSetting(...) end)
+		el:SetScript("OnEditFocusGained", function(...)
+			self.curFocus = el
+		end)
+		el:SetScript("OnEditFocusLost", function(...)
+			self.curFocus = nil
+			self:ChangeSetting(...)
+		end)
 		el:SetScript("OnEscapePressed", kit.Unfocus)
 		el:SetScript("OnEnterPressed", kit.Unfocus)
 		self.elements[setting] = el
@@ -1116,7 +1194,11 @@ function kit:AddControl(id, cType, column, ...)
 			end
 		end)
 		el:EnableMouseWheel(true)
+		el:SetScript("OnEnter", kit.CaptureKeys)
+		el:SetScript("OnLeave", kit.ReleaseKeys)
+		el:SetScript("OnKeyUp", kit.KeyPress)
 		el:SetScript("OnMouseWheel", kit.MouseScroll)
+
 		if hasNumber then
 			local slaveName = lib.CreateAnonName()
 			slave = CreateFrame("EditBox", slaveName, el, "InputBoxTemplate")
@@ -1126,6 +1208,10 @@ function kit:AddControl(id, cType, column, ...)
 			slave:SetWidth(40)
 			slave:SetHeight(32)
 			slave:SetScale(0.8)
+			slave:SetScript("OnEditFocusGained", function(...)
+				self.curFocus = slave
+				slave.hasFocus = true
+			end)
 			slave:SetScript("OnEditFocusLost", function(...)
 				local myMin, myMax = slave.minValue, slave.maxValue
 				local myVal = math.min(myMax, math.max(myMin, tonumber(slave:GetNumber()) or 0))
@@ -1133,6 +1219,8 @@ function kit:AddControl(id, cType, column, ...)
 					el:SetValue(myVal)
 				end
 				slave:SetNumber(el:GetValue())
+				slave.hasFocus = false
+				self.curFocus = nil
 			end)
 			slave:SetScript("OnEscapePressed", kit.Unfocus)
 			slave:SetScript("OnEnterPressed", kit.Unfocus)
@@ -1143,6 +1231,7 @@ function kit:AddControl(id, cType, column, ...)
 			slave.maxValue = max
 			slave.element = el
 			slave:SetNumber(el:GetValue())
+			el.slave = slave
 		end
 		self:GetSetting(el)
 		self.elements[setting] = el
@@ -1175,7 +1264,13 @@ function kit:AddControl(id, cType, column, ...)
 		el.maxValue = maxVal;
 		el.Numeric = true;
 		self:GetSetting(el)
-		el:SetScript("OnEditFocusLost", function(...) self:ChangeSetting(...) end)
+		el:SetScript("OnEditFocusGained", function(...)
+			self.curFocus = el
+		end)
+		el:SetScript("OnEditFocusLost", function(...)
+			self.curFocus = nil
+			self:ChangeSetting(...)
+		end)
 		el:SetScript("OnEscapePressed", kit.Unfocus)
 		el:SetScript("OnEnterPressed", kit.Unfocus)
 		self.elements[setting] = el
@@ -1200,7 +1295,8 @@ function kit:AddControl(id, cType, column, ...)
 		-- MoneyFrame
 		frameName = lib.CreateAnonName();
 		el = CreateFrame("Frame", frameName, content, "MoneyInputFrameTemplate")
-		lib:TabLink(frame, el, true)
+		el.isMoneyFrame = true
+		lib:TabLink(frame, el)
 		local cur = el
 		MoneyInputFrame_SetOnvalueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
@@ -1274,7 +1370,7 @@ function kit:GetTabByName(tabName, catName)
 	if self.config.tabs[catName] then
 		local id = self.config.tabs[catName][tabName]
 		if id then
-			return self.tabs[id]
+			return self.tabs[id], id
 		end
 	end
 end
@@ -1296,6 +1392,12 @@ function kit:Resave()
 	assert(isGuiObject(self), "Must be called on a valid object")
 	for name, el in pairs(self.elements) do
 		self:ChangeSetting(el)
+	end
+end
+
+function kit:ClearFocus()
+	if self.curFocus then
+		self.curFocus:ClearFocus()
 	end
 end
 
