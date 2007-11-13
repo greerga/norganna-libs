@@ -362,20 +362,31 @@ function Swatter.ErrorClicked()
 end
 
 -- Create our error message frame
-Swatter.Error = CreateFrame("Frame", "", UIParent)
+Swatter.Error = CreateFrame("Frame", "SwatterErrorFrame", UIParent)
 Swatter.Error:Hide()
 Swatter.Error:SetPoint("CENTER", "UIParent", "CENTER")
 Swatter.Error:SetFrameStrata("TOOLTIP")
 Swatter.Error:SetHeight(280)
 Swatter.Error:SetWidth(500)
 Swatter.Error:SetBackdrop({
-	bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-	edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+	bgFile = "Interface/Tooltips/ChatBubble-Background",
+	edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
 	tile = true, tileSize = 32, edgeSize = 32,
-	insets = { left = 9, right = 9, top = 9, bottom = 9 }
+	insets = { left = 32, right = 32, top = 32, bottom = 32 }
 })
-Swatter.Error:SetBackdropColor(0,0,0, 0.8)
+Swatter.Error:SetBackdropColor(0,0,0, 1)
 Swatter.Error:SetScript("OnShow", Swatter.ErrorShow)
+Swatter.Error:SetMovable(true)
+table.insert(UISpecialFrames, "SwatterErrorFrame")
+
+Swatter.Drag = CreateFrame("Button", nil, Swatter.Error)
+Swatter.Drag:SetPoint("TOPLEFT", Swatter.Error, "TOPLEFT", 10,-5)
+Swatter.Drag:SetPoint("TOPRIGHT", Swatter.Error, "TOPRIGHT", -10,-5)
+Swatter.Drag:SetHeight(8)
+Swatter.Drag:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
+
+Swatter.Drag:SetScript("OnMouseDown", function() Swatter.Error:StartMoving() end)
+Swatter.Drag:SetScript("OnMouseUp", function() Swatter.Error:StopMovingOrSizing() end)
 
 Swatter.Error.Done = CreateFrame("Button", "", Swatter.Error, "OptionsButtonTemplate")
 Swatter.Error.Done:SetText("Close")
