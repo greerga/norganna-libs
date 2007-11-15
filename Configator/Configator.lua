@@ -200,15 +200,25 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	gui:SetBackdropColor(0, 0, 0, 1)
 	table.insert(UISpecialFrames, name) -- make frames Esc Sensitive by default
 
-	gui.Drag = CreateFrame("Button", nil, gui)
-	gui.Drag:SetPoint("TOPLEFT", gui, "TOPLEFT", 10,-5)
-	gui.Drag:SetPoint("TOPRIGHT", gui, "TOPRIGHT", -10,-5)
-	gui.Drag:SetHeight(6)
-	gui.Drag:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
+	gui.DragTop = CreateFrame("Button", nil, gui)
+	gui.DragTop:SetPoint("TOPLEFT", gui, "TOPLEFT", 10,-5)
+	gui.DragTop:SetPoint("TOPRIGHT", gui, "TOPRIGHT", -10,-5)
+	gui.DragTop:SetHeight(6)
+	gui.DragTop:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
 
-	gui.Drag:SetScript("OnMouseDown", function() gui:StartMoving() end)
-	gui.Drag:SetScript("OnMouseUp", function() gui:StopMovingOrSizing() setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
+	gui.DragTop:SetScript("OnMouseDown", function() gui:StartMoving() end)
+	gui.DragTop:SetScript("OnMouseUp", function() gui:StopMovingOrSizing() setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
 
+	gui.DragBottom = CreateFrame("Button", nil, gui)
+	gui.DragBottom:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 10,5)
+	gui.DragBottom:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10,5)
+	gui.DragBottom:SetHeight(6)
+	gui.DragBottom:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
+
+	gui.DragBottom:SetScript("OnMouseDown", function() gui:StartMoving() end)
+	gui.DragBottom:SetScript("OnMouseUp", function() gui:StopMovingOrSizing() setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
+		
+	
 	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
 	gui.Done:SetScript("OnClick", function() gui:Hide() end)
 	gui.Done:SetText(DONE)
