@@ -93,8 +93,8 @@ function lib:SetOrder(order)
 
 	local curOrder = SetCVar("BabylonianOrder", order)
 
-	if self.notifyList then
-		for _, func in lib.notifyList do
+	if lib.notifyList then
+		for _, func in pairs(lib.notifyList) do
 			func()
 		end
 	end
