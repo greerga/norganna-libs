@@ -91,7 +91,15 @@ function lib:SetOrder(order)
 	tinsert(private.order, GetLocale())
 	tinsert(private.order, "enUS")
 
-	return SetCVar("BabylonianOrder", order)
+	local curOrder = SetCVar("BabylonianOrder", order)
+
+	if self.notifyList then
+		for _, func in lib.notifyList do
+			func()
+		end
+	end
+
+	return curOrder
 end
 
 function lib:GetOrder()
@@ -113,6 +121,11 @@ function lib:GetString(stringTable, stringKey, default)
 		end
 	end
 	return default
+end
+
+lib.notifyList = {}
+function lib:AddNotify(func)
+	table.insert(lib.notifyList, func)
 end
 
 local kit = {
