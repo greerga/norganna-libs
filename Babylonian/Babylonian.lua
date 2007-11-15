@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Babylonian"
-local LIBRARY_VERSION_MINOR = 1
+local LIBRARY_VERSION_MINOR = 2
 
 
 --[[-----------------------------------------------------------------
