@@ -80,6 +80,7 @@ local tremove = table.remove
 local tinsert = table.insert
 local recyclebin = lib.recyclebin
 
+local TableofTables = {}
 -- Define a local function so we can do the nested subcalls without lookups.
 local function recycle(...)
 	local tbl, key, item
@@ -108,7 +109,9 @@ local function recycle(...)
 		end
 		return
 	end
-
+	if TableofTables[item] then return end
+	
+	TableofTables[item] = true
 	-- Clean out any values from this table
 	for k,v in pairs(item) do
 		if type(v) == 'table' and (not v[0] or type(v[0]) ~= 'userdata') then
@@ -127,6 +130,8 @@ local function recycle(...)
 		-- Clean out the original table entry too
 		tbl[key] = nil
 	end
+	TableofTables[item] = nil
+
 end
 lib.Recycle = recycle
 
