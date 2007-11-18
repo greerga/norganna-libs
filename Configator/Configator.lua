@@ -1306,7 +1306,15 @@ function kit:AddControl(id, cType, column, ...)
 		frameName = lib.CreateAnonName();
 		el = CreateFrame("Frame", frameName, content, "MoneyInputFrameTemplate")
 		el.isMoneyFrame = true
-		lib:TabLink(frame, el)
+
+-- NOTE - ccox - 2007-11-18
+-- TabLink is not working correctly, causes an error when tabbing out of copper field in money input frame
+--		lib:TabLink(frame, el)
+
+-- for the time being, set to cycle around the fields of the current money frame
+		MoneyInputFrame_SetPreviousFocus(el, getglobal(frameName.."Copper"))
+		MoneyInputFrame_SetNextFocus(el, getglobal(frameName.."Gold"))
+
 		local cur = el
 		MoneyInputFrame_SetOnvalueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
