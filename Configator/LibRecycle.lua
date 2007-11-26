@@ -26,7 +26,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "LibRecycle"
-local LIBRARY_VERSION_MINOR = 1
+local LIBRARY_VERSION_MINOR = 2
 
 --[[-----------------------------------------------------------------
 
@@ -74,15 +74,27 @@ if not lib then return end
 
 -- Create the recylebin (if it doesn't exist)
 if not lib.recyclebin then lib.recyclebin = {} end
+if not lib.recursion then lib.recursion = {} end
+if not lib.safety then
+	local function safety()
+		assert(not lib.safety.__metatable, "LibRecycle: An AddOn tried to use a recycled table!")
+	end
+	lib.safety = {
+		__index = safety,
+		__newindex = safety,
+		__metatable = "safety"
+	}
+end
 
 -- Store the following variables/functions locally to save on lookups.
 local tremove = table.remove
 local tinsert = table.insert
 local recyclebin = lib.recyclebin
+local recursion = lib.recursion
+local safety = lib.safety
 
-local TableofTables = {}
 -- Define a local function so we can do the nested subcalls without lookups.
-local function recycle(...)
+local function recycler(level, ...)
 	local tbl, key, item
 	-- Get the passed parameter/s
 	local n = select("#", ...)
@@ -97,7 +109,7 @@ local function recycle(...)
 	else
 		for i=2, n do
 			key = select(i, ...)
-			recycle(tbl, key)
+			recycler(level+1, tbl, key)
 		end
 		return
 	end
@@ -109,29 +121,48 @@ local function recycle(...)
 		end
 		return
 	end
-	if TableofTables[item] then return end
+
+	-- If this is the first level, clear out the recursion list
+	if level == 1 then
+		for k,v in pairs(recursion) do
+			recursion[k] = nil
+		end
+	end
 	
-	TableofTables[item] = true
+	-- Detect if we have already recursed down this table before
+	if recursion[item] then return end
+
+	-- Flag this item as being processed
+	recursion[item] = true
+
 	-- Clean out any values from this table
 	for k,v in pairs(item) do
 		if type(v) == 'table' and (not v[0] or type(v[0]) ~= 'userdata') then
 			-- Recycle this table too
-			recycle(item, k)
+			recycler(level+1, item, k)
 		else
 			item[k] = nil
 		end
 	end
 
+	-- Place the husk of a table in the recycle bin
+	local mt = getmetatable(item)
+	assert(not mt or mt ~= "safety", "LibRecycle: Attempt to rerecycle a recycled table")
+	setmetatable(item, safety)
+	tinsert(recyclebin, item)
+
 	-- If we are to clean the input value
 	if tbl and key then
-		-- Place the husk of a table in the recycle bin
-		tinsert(recyclebin, item)
-
 		-- Clean out the original table entry too
 		tbl[key] = nil
 	end
-	TableofTables[item] = nil
 
+	-- Unflag this item as being processed
+	recursion[item] = nil
+end
+
+local function recycle(...)
+	recycler(1, ...)
 end
 lib.Recycle = recycle
 
@@ -141,6 +172,12 @@ local function acquire(...)
 	-- Get a recycled table or create a new one.
 	if #recyclebin > 0 then
 		item = tremove(recyclebin)
+		safety.__metatable = nil
+		setmetatable(item, nil)
+		safety.__metatable = "safety"
+		for k,v in pairs(item) do
+			assert(not(k or v), "LibRecycle: Attempted to issue a non-empty table")
+		end
 	end
 	if not item then
 		item = {}
