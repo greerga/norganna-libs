@@ -953,7 +953,24 @@ end
 --    [boolean]     => true/false
 --    [other]       => TYPE_OF_OTHER??
 -------------------------------------------------------------------------------
+
+-- complex tables will cause dump() to overflow the stack
+-- so we limit recursion
+private.dumpRecursionDepth = 0
+private.dumpRecursionLimit = 20
+
+-- and sometimes, the output string gets so large that it crashes WoW
+-- so we need to stop the string before it gets too large
+private.dumpStringLimit = 4*1024*1024
+
+-- and limit the length of tables dumped to prevent WoW from spinning it's wheels for 10 minutes or more
+private.dumpTableLengthLimit = 100
+
 function private.dump(...)
+	if (private.dumpRecursionDepth >= private.dumpRecursionLimit) then
+		return "recursion limit reached"
+	end
+	private.dumpRecursionDepth = private.dumpRecursionDepth + 1
 	local out = ""
 	local numVarArgs = select("#", ...)
 	for i = 1, numVarArgs do
@@ -961,15 +978,24 @@ function private.dump(...)
 		local t = type(d)
 		if (t == "table") then
 			out = out .. "{"
-			local first = true
+			local tableEntryCount = 0
 			if (d) then
 				for k, v in pairs(d) do
-					if (not first) then out = out .. ", " end
-					first = false
-					out = out .. private.dump(k)
-					out = out .. " = "
-					out = out .. private.dump(v)
+					if (tableEntryCount <= private.dumpTableLengthLimit) then
+						if (tableEntryCount > 0) then out = out .. ", " end
+						out = out .. private.dump(k)
+						out = out .. " = "
+						out = out .. private.dump(v)
+						if (string.len(out) > private.dumpStringLimit) then
+							out = out .. "..."
+							break
+						end
+					end
+					tableEntryCount = tableEntryCount + 1
 				end
+			end
+			if (tableEntryCount > private.dumpTableLengthLimit) then
+				out = out .. "table was " .. tableEntryCount .. " entries long. "
 			end
 			out = out .. "}"
 		elseif (t == "nil") then
@@ -987,9 +1013,15 @@ function private.dump(...)
 		else
 			out = out .. t:upper() .. "??"
 		end
-
+		if (string.len(out) > private.dumpStringLimit) then
+			out = out .. "..."
+			break
+		end
 		if (i < numVarArgs) then out = out .. ", " end
 	end
+	
+	-- make sure returns come though here, or we won't balance the depth increase above
+	private.dumpRecursionDepth = private.dumpRecursionDepth - 1
 	return out
 end
 function lib.Dump(...)
