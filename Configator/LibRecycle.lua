@@ -130,7 +130,14 @@ local function recycler(level, ...)
 	end
 	
 	-- Detect if we have already recursed down this table before
-	if recursion[item] then return end
+	if recursion[item] then
+		-- We may be recursing, but no need to leave a mess
+		if tbl and key then
+			-- Clean out the caller's entry
+			tbl[key] = nil
+		end
+		return
+	end
 
 	-- Flag this item as being processed
 	recursion[item] = true
@@ -145,10 +152,21 @@ local function recycler(level, ...)
 		end
 	end
 
-	-- Place the husk of a table in the recycle bin
+	-- Check to see if this table is already flagged as recycled
 	local mt = getmetatable(item)
 	assert(not mt or mt ~= "safety", "LibRecycle: Attempt to rerecycle a recycled table")
 	setmetatable(item, safety)
+
+	-- Check to make sure this table is empty on the ground floor
+	local unclean = 0
+	for k,v in pairs(item) do
+		-- Just nuke it and let the GC take care of it.
+		unclean = unclean + 1
+		item[k] = nil
+	end
+	assert(unclean==0, "LibRecycle: Unable to recycle given table adequately ("..unclean.."  items remain)")
+
+	-- Place the husk of a table in the recycle bin
 	tinsert(recyclebin, item)
 
 	-- If we are to clean the input value
