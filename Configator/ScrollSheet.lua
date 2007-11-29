@@ -271,8 +271,10 @@ function kit:Render()
 
 				if settings["textColor"] then
 					red, green, blue = unpack(settings['textColor'])
+				elseif settings["date"] then
+					text = date(settings["date"], text)
 				end
-
+					
 				cell:SetTextColor(red,green,blue)
 				cell:SetText(text)
 				cell:Show()
