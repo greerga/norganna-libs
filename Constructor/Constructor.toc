@@ -1,0 +1,11 @@
+## Title: Constructor
+## Notes: Easily build frames in Lua using a table-based definition.
+##
+## Interface: 20300
+## LoadOnDemand: 0
+##
+## Version: <%version%> (<%codename%>)
+## Revision: $Id$
+## URL: http://auctioneeraddon.com/dl/
+##
+Load.xml
