@@ -56,9 +56,12 @@ assert(LibStub and LibStub.NewLibrary, "Constructor requires LibStub")
 local Constructor = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if (not Constructor) then return end --We don't need to create or update our lib
 
---Our main table. Redirect any lookups to this table first, then to the global namespace. Also make calls to Constructor default to generating frames.
-setmetatable(Constructor, { __index = _G, __call = function (self, ...) return GenerateFrames(...) end })
+--Our main table. Redirect any lookups to this table first, then to the global namespace.
+setmetatable(Constructor, { __index = _G })
 setfenv(1, Constructor)
+
+--Make any calls to the Constructor table default to generating frames.
+getmetatable(Constructor).__call = function (self, ...) return GenerateFrames(...) end
 
 --A local counter to use in identifying unnamed objects
 local nextObjectNumber = 1
