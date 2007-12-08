@@ -319,7 +319,14 @@ function lib:Create(frame, layout)
 			button:SetPoint("TOPLEFT", labels[i-1].button, "TOPRIGHT", 3,0)
 			totalWidth = totalWidth + 3
 		end
-		local colWidth = layout[i][3]
+		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
+		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		label:SetText(layout[i][1])
+		local colWidth = layout[i][3] or 0
+			if label:GetStringWidth() + 20 > colWidth then 
+				colWidth = floor(label:GetStringWidth() + 20)
+			end
+					
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(16)
@@ -341,12 +348,10 @@ function lib:Create(frame, layout)
 		background:SetPoint("BOTTOM", content, "BOTTOM", 0,0)
 		background:SetAlpha(0.2)
 
-		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
 		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
 		label:SetJustifyH("CENTER")
 		label:SetJustifyV("TOP")
-		label:SetText(layout[i][1])
 		label:SetTextColor(0.8,0.8,0.8)
 
 		label.button = button
