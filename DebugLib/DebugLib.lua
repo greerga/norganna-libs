@@ -221,6 +221,22 @@ end
 
 lib.Level = private.levelList
 
+
+-- these variables are to limit the dump() function to prevent crashes, hour long waits, etc.
+
+-- Complex tables will cause dump() to overflow the stack, and trigger a Lua error
+-- so we limit recursion
+private.dumpCurrentRecursionDepth = 0
+private.dumpRecursionLimit = 20
+
+-- Sometimes, the output string gets so large that it crashes WoW
+-- so we need to stop the string before it gets too large
+private.dumpStringLimit = 4*1024*1024
+
+-- And we need to limit the length of tables dumped to prevent WoW from spinning it's wheels
+private.dumpTableLengthLimit = 100
+
+
 -------------------------------------------------------------------------------
 -- Function definitions
 -------------------------------------------------------------------------------
@@ -442,7 +458,7 @@ lib.Level = private.levelList
 --
 --    >>>ERROR HANDLING<<<
 --    If any error occurs, the error will be written to nLog, if nLog is
---    enabled. Despite of wether or not nLog is installed, processing the debug
+--    enabled. Whether or not nLog is installed, processing the debug
 --    message will continue.
 --    To continue processing, invalid parameters will be ignored and in cases
 --    of invalid ambiguous function calls, a decision is made about which value
@@ -562,7 +578,7 @@ end
 --
 -- remarks:
 --    This is a helper function for lib.DebugPrint and manages its complex
---    syntaxes by correctly ordering and handling the specified parameters.
+--    syntax by correctly ordering and handling the specified parameters.
 --    Refer to the documentation about lib.DebugPrint() to read in detail how
 --    the parameter list is handled.
 -------------------------------------------------------------------------------
@@ -844,7 +860,7 @@ end
 --
 --    >>>ERROR HANDLING<<<
 --    If any error occurs, the error will be written to nLog, if nLog is
---    enabled. Despite of wether or not nLog is installed, processing the debug
+--    enabled. Whether or not nLog is installed, processing the debug
 --    message will continue.
 --    To continue processing, missing parameters will get default values. The
 --    generated error message in nLog will explain, what was wrong.
@@ -928,7 +944,8 @@ end
 
 -------------------------------------------------------------------------------
 -- Creates a comma-separated string by transforming all parameters into string
--- representations and concatenating these.
+-- representations and concatenating these.  Recursion and length limits have
+-- been added to prevent crashes and hour long waits for output.
 --
 -- syntax:
 --    concatString = dump(...)
@@ -938,11 +955,6 @@ end
 --
 -- returns:
 --    concatString - (string) The concatenated string.
---
--- remark:
---    Be aware that there is no safety measurement in place to handle recursions
---    inside of tables. If a recursion occures, this function causes a stack
---    overflow.
 --
 --    Variables are concatenated the following way:
 --    variable type => resulting string
@@ -954,23 +966,11 @@ end
 --    [other]       => TYPE_OF_OTHER??
 -------------------------------------------------------------------------------
 
--- complex tables will cause dump() to overflow the stack
--- so we limit recursion
-private.dumpRecursionDepth = 0
-private.dumpRecursionLimit = 20
-
--- and sometimes, the output string gets so large that it crashes WoW
--- so we need to stop the string before it gets too large
-private.dumpStringLimit = 4*1024*1024
-
--- and limit the length of tables dumped to prevent WoW from spinning it's wheels for 10 minutes or more
-private.dumpTableLengthLimit = 100
-
 function private.dump(...)
-	if (private.dumpRecursionDepth >= private.dumpRecursionLimit) then
+	if (private.dumpCurrentRecursionDepth >= private.dumpRecursionLimit) then
 		return "recursion limit reached"
 	end
-	private.dumpRecursionDepth = private.dumpRecursionDepth + 1
+	private.dumpCurrentRecursionDepth = private.dumpCurrentRecursionDepth + 1
 	local out = ""
 	local numVarArgs = select("#", ...)
 	for i = 1, numVarArgs do
@@ -995,7 +995,7 @@ function private.dump(...)
 				end
 			end
 			if (tableEntryCount > private.dumpTableLengthLimit) then
-				out = out .. "table was " .. tableEntryCount .. " entries long. "
+				out = out .. " table was " .. tableEntryCount .. " entries long. "
 			end
 			out = out .. "}"
 		elseif (t == "nil") then
@@ -1021,7 +1021,7 @@ function private.dump(...)
 	end
 	
 	-- make sure returns come though here, or we won't balance the depth increase above
-	private.dumpRecursionDepth = private.dumpRecursionDepth - 1
+	private.dumpCurrentRecursionDepth = private.dumpCurrentRecursionDepth - 1
 	return out
 end
 function lib.Dump(...)
@@ -1048,8 +1048,6 @@ end
 --    format("str1", " str2") = str1 str2
 --    dump("str1", " str2")   = "str1", " str2"
 --
---    Since this function uses dump() for the table output, it suffers from the
---    same possible stack overflow as the dump() function.
 -------------------------------------------------------------------------------
 function private.format(...)
 	local n = select("#", ...)
