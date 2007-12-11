@@ -118,6 +118,8 @@ local kit = {}
 		cellValue = value or { value, styleKey=styleData, ... }
 		styleKey = (string) The style type that affects the cell in question.
 		styleData = (any type) The data that is to be used by the renderer for this cell.
+		
+		input and instyle should be cloned, not copied, so they can be recycled by the caller
 
 	Note:
 		There are many ways to represent the style for a given cell.
@@ -161,12 +163,12 @@ function kit:SetData(input, instyle)
 			pos = (i-1)*nCols+j
 
 			if input[i] and input[i][j] then
-				content = input[i][j]
+				content = input[i][j]				-- temporary, no need to clone here
 			else
 				content = nil
 			end
 			if type(content) == "table" then
-				data[pos] = content[1]
+				data[pos] = clone(content[1])		-- just in case, clone it
 				for k,v in pairs(content) do
 					if type(k) == "string" then
 						if not style[pos] then style[pos] = acquire() end
@@ -174,7 +176,7 @@ function kit:SetData(input, instyle)
 					end
 				end
 			else
-				data[pos] = content or "NIL"
+				data[pos] = content or "NIL"		-- non-table, no need to clone
 			end
 
 			if instyle and instyle[i] and instyle[i][j] and type(instyle[i][j]) == "table" then
