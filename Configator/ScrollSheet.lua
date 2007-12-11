@@ -289,7 +289,7 @@ end
 
 local PanelScroller = LibStub:GetLibrary("PanelScroller")
 
-function lib:Create(frame, layout)
+function lib:Create(frame, layout, externalEnter, externalLeave)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
 	local id = 1
@@ -324,10 +324,11 @@ function lib:Create(frame, layout)
 		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetText(layout[i][1])
+		
 		local colWidth = layout[i][3] or 0
-			if label:GetStringWidth() + 20 > colWidth then 
-				colWidth = floor(label:GetStringWidth() + 20)
-			end
+		if label:GetStringWidth() + 20 > colWidth then 
+			colWidth = floor(label:GetStringWidth() + 20)
+		end
 					
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
@@ -372,16 +373,43 @@ function lib:Create(frame, layout)
 		local row = {}
 		for i = 1, #layout do
 			local cell = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			local button = CreateFrame("Button", nil, content)
 			if rowNum == 1 then
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
+				
+				if (layout[i][2] == "TOOLTIP") then
+					local width = layout[i][3] or 10
+					local row, index = rowNum, i
+					
+					button:SetHeight(16)
+					button:SetWidth(width) 
+					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+					button:SetScript("OnEnter", function() externalEnter(button, row, index) end)
+					button:SetScript("OnLeave", function() externalLeave(button, row, index) end)
+				end
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
+				
+				if (layout[i][2] == "TOOLTIP") then
+					local width = layout[i][3] or 0
+					local row, index = rowNum, i
+					
+					button:SetHeight(16)
+					button:SetWidth(width)
+					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+					button:SetScript("OnEnter", function() externalEnter(button, row, index) end)
+					button:SetScript("OnLeave", function() externalLeave(button, row, index) end)
+				end
 			end
 			cell:SetHeight(14)
 			cell:SetJustifyV("CENTER")
 			if (layout[i][2] == "TEXT") then
+				cell:SetJustifyH("LEFT")
+			elseif (layout[i][2] == "TOOLTIP") then
 				cell:SetJustifyH("LEFT")
 			elseif (layout[i][2] == "INT") then
 				cell:SetJustifyH("RIGHT")
