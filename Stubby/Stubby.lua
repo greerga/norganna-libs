@@ -347,7 +347,11 @@ function hookCall(funcName, ...)
 				-- there are blizard functions which return tables containing
 				-- holes, which are not processed as required by table.remove().
 				if (not tableRemoveNilSafe(retVal, 1)) then
-					Stubby.ErrorHandler(2, "Error: Original call failed while running hooks: ", tostring(funcName), "\n", retVal)
+					local ErrorString = "Error: Original call failed while running hooks: "..tostring(funcName)
+					for key, value in pairs(retVal) do
+						ErrorString = ErrorString.."\n"..tostring(key).." : "..tostring(value)
+					end
+					Stubby.ErrorHandler(2, ErrorString)
 				end
 				orig = nil
 			end
