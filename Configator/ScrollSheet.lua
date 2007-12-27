@@ -237,6 +237,14 @@ function kit:PerformSort()
 		self.curSort = 1
 		self.curDir = 1
 	end
+	for i=1, #self.labels do -- Removes the previous Columns arrows before we create the new arrows
+		self.labels[i].texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+	end
+	if self.curDir == 1 then
+		self.labels[self.curSort].texture:SetTexture("Interface\\AddOns\\Configator\\Textures\\up.tga")
+	else
+		self.labels[self.curSort].texture:SetTexture("Interface\\AddOns\\Configator\\Textures\\down.tga")
+	end
 
 	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
 	self.panel:Update()
