@@ -239,11 +239,17 @@ function kit:PerformSort()
 	end
 	for i=1, #self.labels do -- Removes the previous Columns arrows before we create the new arrows
 		self.labels[i].texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+		self.labels[i].sortTexture:Hide()
 	end
+
 	if self.curDir == 1 then
-		self.labels[self.curSort].texture:SetTexture("Interface\\AddOns\\Configator\\Textures\\up.tga")
-	else
-		self.labels[self.curSort].texture:SetTexture("Interface\\AddOns\\Configator\\Textures\\down.tga")
+		self.labels[self.curSort].sortTexture:SetTexCoord(0,0.55,0.9,0.2)
+		self.labels[self.curSort].sortTexture:SetVertexColor(1,0.2,0)
+		self.labels[self.curSort].sortTexture:Show()
+	elseif self.curDir == -1 then
+		self.labels[self.curSort].sortTexture:SetTexCoord(0,0.55,0.2,0.9)
+		self.labels[self.curSort].sortTexture:SetVertexColor(0.2,1,0)
+		self.labels[self.curSort].sortTexture:Show()
 	end
 
 	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
@@ -351,6 +357,14 @@ function lib:Create(frame, layout, externalEnter, externalLeave)
 		texture:SetAllPoints(button)
 		button.texture = texture
 
+		local sortTexture = content:CreateTexture(nil, "ARTWORK")
+		sortTexture:SetTexture("Interface\\Buttons\\UI-SortArrow")
+		sortTexture:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0,0)
+		sortTexture:SetPoint("BOTTOM", button, "BOTTOM", 0,0)
+		sortTexture:SetWidth(12)
+		sortTexture:Hide()
+		button.sortTexture = sortTexture
+
 		local background = content:CreateTexture(nil, "ARTWORK")
 		background:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 		background:SetTexCoord(0.2, 0.9, 0, 0.9)
@@ -367,6 +381,7 @@ function lib:Create(frame, layout, externalEnter, externalLeave)
 
 		label.button = button
 		label.texture = texture
+		label.sortTexture = sortTexture
 		label.background = background
 		label.sort = layout[i][4]
 		labels[i] = label
