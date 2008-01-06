@@ -794,7 +794,11 @@ end
 
 function kit:MouseScroll(direction)
 	assert(isGuiObject(self), "Must be called on a valid object")
-	self:SetValue(self:GetValue() - direction)
+	local step = 1
+	if self:GetObjectType() == "Slider" then
+		step = self:GetValueStep()
+	end
+	self:SetValue(self:GetValue() - direction*step)
 end
 
 function kit:CaptureKeys()
@@ -1189,17 +1193,17 @@ function kit:AddControl(id, cType, column, ...)
 		el.fmtFunc = fmtfunc
 		el.textEl = textElement
 		el.stype = "Slider"
-		el.step = step
-		el:SetMinMaxValues(min, max)
-		el:SetValueStep(step)
+		el.step = step * 100
+		el:SetMinMaxValues(min * 100, max * 100)
+		el:SetValueStep(step*100)
 		el:SetHitRectInsets(0,0,0,0)
 		local slave
 		el:SetScript("OnValueChanged", function(...)
 			self:ChangeSetting(...)
 			if (slave) then
 				local myVal = el:GetValue()
-				if slave:GetNumber() ~= myVal then
-					slave:SetNumber(myVal)
+				if slave:GetNumber() ~= myVal/100 then
+					slave:SetNumber(myVal/100)
 				end
 			end
 		end)
@@ -1225,22 +1229,21 @@ function kit:AddControl(id, cType, column, ...)
 			slave:SetScript("OnEditFocusLost", function(...)
 				local myMin, myMax = slave.minValue, slave.maxValue
 				local myVal = math.min(myMax, math.max(myMin, tonumber(slave:GetNumber()) or 0))
-				if (el:GetValue() ~= myVal) then
-					el:SetValue(myVal)
+				if (el:GetValue() ~= myVal*100) then
+					el:SetValue(myVal*100)
 				end
-				slave:SetNumber(el:GetValue())
+				slave:SetNumber((el:GetValue())/100)
 				slave.hasFocus = false
 				self.curFocus = nil
 			end)
 			slave:SetScript("OnEscapePressed", kit.Unfocus)
 			slave:SetScript("OnEnterPressed", kit.Unfocus)
 			slave:SetAutoFocus(false)
-			slave:SetNumeric(true)
 			slave:Show()
 			slave.minValue = min
 			slave.maxValue = max
 			slave.element = el
-			slave:SetNumber(el:GetValue())
+			slave:SetNumber((el:GetValue())/100)
 			el.slave = slave
 		end
 		self:GetSetting(el)
@@ -1450,7 +1453,7 @@ function kit:GetSetting(element)
 	elseif (element.stype == "Button") then
 	elseif (element.stype == "Slider") then
 		value = tonumber(value) or 0
-		element:SetValue(value)
+		element:SetValue(value*100)
 		if (element.fmtFunc) then
 			element.textEl:SetText(string.format(element.textFmt, element.fmtFunc(value)))
 		else
@@ -1510,7 +1513,7 @@ function kit:ChangeSetting(element, ...)
 	elseif (element.stype == "Button") then
 		value = true
 	elseif (element.stype == "Slider") then
-		value = element:GetValue() or 0
+		value = (element:GetValue())/100 or 0
 		if (element.fmtFunc) then
 			element.textEl:SetText(string.format(element.textFmt, element.fmtFunc(value)))
 		else
