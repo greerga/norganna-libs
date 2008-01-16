@@ -52,7 +52,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 7
+local LIBRARY_VERSION_MINOR = 8
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -217,7 +217,9 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 
 	gui.DragBottom:SetScript("OnMouseDown", function() gui:StartMoving() end)
 	gui.DragBottom:SetScript("OnMouseUp", function() gui:StopMovingOrSizing() setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
-		
+	
+	gui:RegisterEvent("PLAYER_LOGOUT")
+	gui:SetScript("OnEvent", function() gui:SetClampedToScreen(1) setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
 	
 	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
 	gui.Done:SetScript("OnClick", function() gui:Hide() end)
@@ -1578,4 +1580,14 @@ function kit:SetEscSensitive(setting)
 	end
 end
 
+SlashCmdList["LIB_CONFIGATOR"] = function( msg )
+	msg = msg:trim():lower()
+	if ( msg == "reset" ) then
+		for _, dialog in pairs(lib.frames) do
+			dialog:ClearAllPoints()
+			dialog:SetPoint("CENTER", "UIParent", "CENTER")
+		end
+	end
+end
 
+SLASH_LIB_CONFIGATOR1 = "/configator";
