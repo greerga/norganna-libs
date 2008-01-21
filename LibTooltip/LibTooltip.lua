@@ -486,9 +486,6 @@ do -- EnhTT "class" definition
 
 end
 
-
-
-
 lib:Activate()
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -496,18 +493,18 @@ lib:Activate()
 --- Test Code
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
-local EnhTooltip = LibStub("LibTooltip-1.0")
+--~ local EnhTooltip = LibStub("LibTooltip-1.0")
 
-EnhTooltip:RegisterTooltip(GameTooltip)
-EnhTooltip:RegisterTooltip(ItemRefTooltip)
+--~ EnhTooltip:RegisterTooltip(GameTooltip)
+--~ EnhTooltip:RegisterTooltip(ItemRefTooltip)
 
-EnhTooltip:AddCallback(function(tip,item,quantity,name,link,quality,ilvl) EnhTooltip:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1) end,0)
+--~ EnhTooltip:AddCallback(function(tip,item,quantity,name,link,quality,ilvl) EnhTooltip:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1) end,0)
 
-EnhTooltip:AddCallback(function(tip,item,quantity)
-	quantity = quantity or 1
-	local price = GetSellValue(item)
-	if price then
-		price = price * quantity
-		EnhTooltip:AddMoneyLine(tip,"Sell to vendor"..(quantity and quantity > 1 and "("..quantity..")" or "") .. ":",price)
-	end
-end)
+--~ EnhTooltip:AddCallback(function(tip,item,quantity)
+--~ 	quantity = quantity or 1
+--~ 	local price = GetSellValue(item)
+--~ 	if price then
+--~ 		price = price * quantity
+--~ 		EnhTooltip:AddMoneyLine(tip,"Sell to vendor"..(quantity and quantity > 1 and "("..quantity..")" or "") .. ":",price)
+--~ 	end
+--~ end)
