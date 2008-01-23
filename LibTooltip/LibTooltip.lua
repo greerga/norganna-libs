@@ -1,10 +1,9 @@
-local MAJOR,MINOR = "LibTooltip-1.0", 1
+local MAJOR,MINOR = "LibTooltip-1.0", 2
 local LIBSTRING = MAJOR.."-"..MINOR -- a string unique to this version to prevent frame name conflicts between revisions
 local lib = LibStub:NewLibrary(MAJOR,MINOR)
 if not lib then return end 
 
 -- housekeeping upgrade stuff...
-lib.embedMode = lib.embedMode or false
 if lib.Deactivate then lib:Deactivate() end -- calls the OLD version of this function.  NOT the one defined in this file's scope
 
 -- Forward definition of a few locals that get defined at the bottom of the file
@@ -21,19 +20,17 @@ local function OnTooltipSetItem(tooltip)
 		if item then 
 			local name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture = GetItemInfo(item)
 			if name then        
-				if self.embedMode == false then
-					local enhTT = self:GetFreeEnhTTObject()
-					reg.enhTT = enhTT
-					enhTT:Attach(tooltip)
-					enhTT:AddLine(ITEM_QUALITY_COLORS[quality].hex .. name)
-				end
-				
+				local enhTT = self:GetFreeEnhTTObject()
+				reg.enhTT = enhTT
+				enhTT:Attach(tooltip)
+				enhTT:AddLine(ITEM_QUALITY_COLORS[quality].hex .. name)
+								
 				local quantity = reg.quantity
 				for i,callback in ipairs(self.sortedCallbacks) do
 					callback(tooltip,item,quantity,name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture)
 				end
 				tooltip:Show()
-				if reg.enhTT then reg.enhTT:Show() end
+				if reg.enhTTUsed then reg.enhTT:Show() end
 			end
 		end
 	end
@@ -48,6 +45,7 @@ local function OnTooltipCleared(tooltip)
 		reg.enhTT:Release()
 		reg.enhTT = nil
 	end
+	reg.enhTTUsed = nil
 	reg.minWidth = 0
 	reg.quantity = nil
 end
@@ -164,29 +162,44 @@ function lib:RemoveCallback(callback)
 	end
 end
 
+function lib:SetEmbedMode(flag)
+	self.embedMode = flag and true or false
+end
+
 function lib:AddLine(tooltip,text,r,g,b,embed)
-	if self.embedMode == false and not embed then
+	if r and not g then embed = r r = nil end
+	embed = embed ~= nil and embed or self.embedMode
+	if not embed then
 		self.tooltipRegistry[tooltip].enhTT:AddLine(text,r,g,b)
+		self.tooltipRegistry[tooltip].enhTTUsed = true
 	else
 		tooltip:AddLine(text,r,g,b)
 	end
 end
 
 function lib:AddDoubleLine(tooltip,textLeft,textRight,lr,lg,lb,rr,rg,rb,embed)
-	if self.embedMode == false and not embed then
+	if lr and not lg and not rr then embed = lr lr = nil end
+	if lr and lg and rr and not rg then embed = rr rr = nil end
+	embed = embed ~= nil and embed or self.embedMode
+	if not embed then
 		self.tooltipRegistry[tooltip].enhTT:AddDoubleLine(textLeft,textRight,lr,lg,lb,rr,rg,rb)
+		self.tooltipRegistry[tooltip].enhTTUsed = true
 	else
 		tooltip:AddDoubleLine(textLeft,textRight,lr,lg,lb,rr,rg,rb)
 	end
 end
 
 function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
+	if r and not g then embed = r r = nil end
+	embed = embed ~= nil and embed or self.embedMode
+	
 	local scale,width = .9
 	local reg = self.tooltipRegistry[tooltip]
 	local t = tooltip
-	if self.embedMode == false and not embed then
+	if not embed then
 		t = reg.enhTT
 		scale = 0.7
+		reg.enhTTUsed = true
 	end
 	local moneyFrame = self:GetFreeMoneyFrame(t,scale)
 	
@@ -486,6 +499,8 @@ do -- EnhTT "class" definition
 
 end
 
+-- More housekeeping upgrade stuff
+lib:SetEmbedMode(lib.embedMode)
 lib:Activate()
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -493,18 +508,22 @@ lib:Activate()
 --- Test Code
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
---~ local EnhTooltip = LibStub("LibTooltip-1.0")
+local LT = LibStub("LibTooltip-1.0")
 
---~ EnhTooltip:RegisterTooltip(GameTooltip)
---~ EnhTooltip:RegisterTooltip(ItemRefTooltip)
+LT:RegisterTooltip(GameTooltip)
+LT:RegisterTooltip(ItemRefTooltip)
 
---~ EnhTooltip:AddCallback(function(tip,item,quantity,name,link,quality,ilvl) EnhTooltip:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1) end,0)
+LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl) 
+	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0) 
+	LT:AddDoubleLine(tip,"Item Level:",ilvl,1,1,1,0)
+	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
+end,0)
 
---~ EnhTooltip:AddCallback(function(tip,item,quantity)
+--~ LT:AddCallback(function(tip,item,quantity)
 --~ 	quantity = quantity or 1
 --~ 	local price = GetSellValue(item)
 --~ 	if price then
 --~ 		price = price * quantity
---~ 		EnhTooltip:AddMoneyLine(tip,"Sell to vendor"..(quantity and quantity > 1 and "("..quantity..")" or "") .. ":",price)
+--~ 		LT:AddMoneyLine(tip,"Sell to vendor"..(quantity and quantity > 1 and "("..quantity..")" or "") .. ":",price)
 --~ 	end
 --~ end)
