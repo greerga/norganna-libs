@@ -1,4 +1,4 @@
-local MAJOR,MINOR = "LibTooltip-1.0", 2
+local MAJOR,MINOR = "LibTooltip-Beta1", 1
 local LIBSTRING = MAJOR.."-"..MINOR -- a string unique to this version to prevent frame name conflicts between revisions
 local lib = LibStub:NewLibrary(MAJOR,MINOR)
 if not lib then return end 
@@ -508,7 +508,7 @@ lib:Activate()
 --- Test Code
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
-local LT = LibStub("LibTooltip-1.0")
+local LT = LibStub("LibTooltip-Beta1")
 
 LT:RegisterTooltip(GameTooltip)
 LT:RegisterTooltip(ItemRefTooltip)
