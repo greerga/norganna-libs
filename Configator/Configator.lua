@@ -52,7 +52,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 9
+local LIBRARY_VERSION_MINOR = 10
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -230,7 +230,6 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 		order = { "" },
 		tabs = { [""] = {}, },
 		cats = { [""] = {}, },
-		catNames = {},
 	}
 	gui.tabs = {}
 	gui.elements = {}
@@ -577,7 +576,7 @@ function kit:RenderTabs()
 				else
 					button:SetArrowDirection("RIGHT")
 				end
-				button:SetText(self.config.catNames[catId] or catId)
+				button:SetText(self.config.cats[catId].name or catId)
 				button.catId = catId
 				button.tabName = nil
 			else
@@ -615,7 +614,16 @@ function kit:RegenTabs()
 				for tabName in pairs(self.config.tabs[catId]) do
 					table.insert(list, tabName)
 				end
-				table.sort(list)
+				local sortFunction = nil
+				if not ( self.config.cats[catId].isSorted ) then
+					local tabs = self.config.tabs[catId]
+					sortFunction = function(a, b)
+						if ( tabs[a] < tabs[b] ) then
+							return true
+						end
+					end
+				end
+				table.sort(list, sortFunction)
 				for pos, tabName in ipairs(list) do
 					table.insert(render, acquire(false, catId, tabName))
 				end
@@ -752,17 +760,22 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 	return id
 end
 
-function kit:AddCat(catId, catName)
+function kit:AddCat(catId, catName, sortedTabs, isOpen)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	assert(not self.config.isZero, "Cannot add categories to a zeroed frame")
 	if self.config.tabs[catId] then return end
 
+	if sortedTabs == nil then sortedTabs = true end
+
 	self.config.isZero = false
 
 	table.insert(self.config.order, catId)
-	self.config.catNames[catId] = catName
 	self.config.tabs[catId] = { }
-	self.config.cats[catId] = { isOpen = false, }
+	self.config.cats[catId] = { 
+		name = catName,
+		isOpen = isOpen, 
+		isSorted = sortedTabs, 
+	}
 	self.config.current = catId
 	if not self.config.selectedCat then self.config.selectedCat = catId end
 
