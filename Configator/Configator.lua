@@ -52,7 +52,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 8
+local LIBRARY_VERSION_MINOR = 9
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -230,6 +230,7 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 		order = { "" },
 		tabs = { [""] = {}, },
 		cats = { [""] = {}, },
+		catNames = {},
 	}
 	gui.tabs = {}
 	gui.elements = {}
@@ -462,26 +463,26 @@ end
 function kit:ClickButton(pos)
 	local button = self:GetButton(pos)
 	local tabName = button.tabName
-	local catName = button.catName
+	local catId = button.catId
 	if button.tabName then
-		self:SelectTab(catName, tabName)
-	elseif button.catName then
-		self:SelectCat(catName)
+		self:SelectTab(catId, tabName)
+	elseif button.catId then
+		self:SelectCat(catId)
 	end
 end
 
-function kit:SelectTab(catName, tabName)
-	if self.config.tabs[catName] then
-		local id = self.config.tabs[catName][tabName]
+function kit:SelectTab(catId, tabName)
+	if self.config.tabs[catId] then
+		local id = self.config.tabs[catId][tabName]
 		if id then
 			self:ActivateTab(id)
 		end
 	end
 end
 
-function kit:SelectCat(catName)
-	if self.config.cats[catName] then
-		self.config.cats[catName].isOpen = not self.config.cats[catName].isOpen
+function kit:SelectCat(catId)
+	if self.config.cats[catId] then
+		self.config.cats[catId].isOpen = not self.config.cats[catId].isOpen
 		self:RegenTabs()
 	end
 end
@@ -567,34 +568,34 @@ function kit:RenderTabs()
 		local button = self:GetButton(i)
 
 		if pos <= total then
-			local isCat, catName, tabName = unpack(self.render[pos])
+			local isCat, catId, tabName = unpack(self.render[pos])
 
 			if isCat then
-				local isOpen = self.config.cats[catName].isOpen
+				local isOpen = self.config.cats[catId].isOpen
 				if isOpen then
 					button:SetArrowDirection("DOWN")
 				else
 					button:SetArrowDirection("RIGHT")
 				end
-				button:SetText(catName)
-				button.catName = catName
+				button:SetText(self.config.catNames[catId] or catId)
+				button.catId = catId
 				button.tabName = nil
 			else
 				button:SetArrowDirection("NONE")
-				if catName == self.config.selectedCat
+				if catId == self.config.selectedCat
 				and tabName == self.config.selectedTab then
 					button:SetText(tabName, true)
 				else
 					button:SetText(tabName)
 				end
-				button.catName = catName
+				button.catId = catId
 				button.tabName = tabName
 			end
 			button:Show()
 		else
 			button:SetText("")
 			button:SetArrowDirection("NONE")
-			button.catName = nil
+			button.catId = nil
 			button.tabName = nil
 			button:Hide()
 		end
@@ -606,17 +607,17 @@ function kit:RegenTabs()
 	local render = self.render
 	scrub(render)
 
-	for pos, catName in ipairs(self.config.order) do
-		if self.config.cats[catName].hasTabs then
-			table.insert(render, acquire(true, catName))
-			if self.config.cats[catName].isOpen then
+	for pos, catId in ipairs(self.config.order) do
+		if self.config.cats[catId].hasTabs then
+			table.insert(render, acquire(true, catId))
+			if self.config.cats[catId].isOpen then
 				local list = acquire()
-				for tabName in pairs(self.config.tabs[catName]) do
+				for tabName in pairs(self.config.tabs[catId]) do
 					table.insert(list, tabName)
 				end
 				table.sort(list)
 				for pos, tabName in ipairs(list) do
-					table.insert(render, acquire(false, catName, tabName))
+					table.insert(render, acquire(false, catId, tabName))
 				end
 				recycle(list)
 			end
@@ -667,7 +668,7 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 
 	self.tabs[0] = {
 		nil, frame, content, -- For backwards compatability
-		catName = catName,
+		catId = catId,
 		tabName = tabName,
 		gapWidth = gapWidth,
 		gapHeight = gapHeight,
@@ -682,17 +683,17 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 	return 0
 end
 
-function kit:AddTab(tabName, catName, gapWidth, gapHeight)
+function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	assert(not self.config.isZero, "Cannot add tabs to a zeroed frame")
 
-	if not catName then catName = self.config.current end
+	if not catId then catId = self.config.current end
 
-	if not self.config.tabs[catName] then
-		self:AddCat(catName)
+	if not self.config.tabs[catId] then
+		self:AddCat(catId)
 	end
 
-	local exists, id = self:GetTabByName(tabName, catName)
+	local exists, id = self:GetTabByName(tabName, catId)
 	if exists then return id end
 
 	local frame, content
@@ -707,7 +708,7 @@ function kit:AddTab(tabName, catName, gapWidth, gapHeight)
 
 	local tab = { 
 		nil, frame, content, -- For backwards compatability
-		catName = catName,
+		catId = catId,
 		tabName = tabName,
 		gapWidth = gapWidth,
 		gapHeight = gapHeight,
@@ -718,12 +719,12 @@ function kit:AddTab(tabName, catName, gapWidth, gapHeight)
 	table.insert(self.tabs, tab)
 	id = table.getn(self.tabs)
 
-	self.config.tabs[catName][tabName] = id
+	self.config.tabs[catId][tabName] = id
 	tab.id = id
 	frame.id = id
 	content.id = id
 
-	self.config.cats[catName].hasTabs = true
+	self.config.cats[catId].hasTabs = true
 
 	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 160, -10)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+gapHeight)
@@ -751,18 +752,19 @@ function kit:AddTab(tabName, catName, gapWidth, gapHeight)
 	return id
 end
 
-function kit:AddCat(catName)
+function kit:AddCat(catId, catName)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	assert(not self.config.isZero, "Cannot add categories to a zeroed frame")
-	if self.config.tabs[catName] then return end
+	if self.config.tabs[catId] then return end
 
 	self.config.isZero = false
 
-	table.insert(self.config.order, catName)
-	self.config.tabs[catName] = { }
-	self.config.cats[catName] = { isOpen = false, }
-	self.config.current = catName
-	if not self.config.selectedCat then self.config.selectedCat = catName end
+	table.insert(self.config.order, catId)
+	self.config.catNames[catId] = catName
+	self.config.tabs[catId] = { }
+	self.config.cats[catId] = { isOpen = false, }
+	self.config.current = catId
+	if not self.config.selectedCat then self.config.selectedCat = catId end
 
 	self:RegenTabs()
 end
@@ -966,6 +968,15 @@ function kit:AddHelp(id, qid, question, answer)
 			end
 		end
 		table.insert(content.HelpButton.qlist, qid)
+	end
+end
+
+function kit:GetControl( tabId, controlId )
+	if ( controlId ) then
+		return self.tabs[tabId].frame.ctrls[controlId]
+	else
+		local ctrls = self.tabs[tabId].frame.ctrls
+		return ctrls.last, ctrls.pos
 	end
 end
 
@@ -1375,23 +1386,23 @@ function kit:ActivateTab(id)
 	local tab = self.tabs[id]
 	tab.frame:Show()
 	self.tabs.active = id
-	self.config.selectedCat = tab.catName
+	self.config.selectedCat = tab.catId
 	self.config.selectedTab = tab.tabName
 
-	if not self.config.cats[tab.catName].isOpen then
-		self.config.cats[tab.catName].isOpen = true
+	if not self.config.cats[tab.catId].isOpen then
+		self.config.cats[tab.catId].isOpen = true
 		self:RegenTabs()
 	else
 		self:RenderTabs()
 	end
 end
 
-function kit:GetTabByName(tabName, catName)
-	if not catName then
-		catName = self.config.current or ""
+function kit:GetTabByName(tabName, catId)
+	if not catId then
+		catId = self.config.current or ""
 	end
-	if self.config.tabs[catName] then
-		local id = self.config.tabs[catName][tabName]
+	if self.config.tabs[catId] then
+		local id = self.config.tabs[catId][tabName]
 		if id then
 			return self.tabs[id], id
 		end
