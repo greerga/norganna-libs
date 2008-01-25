@@ -52,7 +52,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 10
+local LIBRARY_VERSION_MINOR = 11
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -1224,15 +1224,6 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetValueStep(step*100)
 		el:SetHitRectInsets(0,0,0,0)
 		local slave
-		el:SetScript("OnValueChanged", function(...)
-			self:ChangeSetting(...)
-			if (slave) then
-				local myVal = el:GetValue()
-				if slave:GetNumber() ~= myVal/100 then
-					slave:SetNumber(myVal/100)
-				end
-			end
-		end)
 		el:EnableMouseWheel(true)
 		el:SetScript("OnEnter", kit.CaptureKeys)
 		el:SetScript("OnLeave", kit.ReleaseKeys)
@@ -1273,6 +1264,15 @@ function kit:AddControl(id, cType, column, ...)
 			el.slave = slave
 		end
 		self:GetSetting(el)
+		el:SetScript("OnValueChanged", function(...)
+			self:ChangeSetting(...)
+			if (slave) then
+				local myVal = el:GetValue()
+				if slave:GetNumber() ~= myVal/100 then
+					slave:SetNumber(myVal/100)
+				end
+			end
+		end)
 		self.elements[setting] = el
 		control = el
 		last = textElement
