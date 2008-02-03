@@ -47,12 +47,14 @@ USAGE:
 	"NumberBox", "TinyNumber"
 	   == level, setting, minVal, maxVal, label
 	"MoneyFrame", "PinnedMoney" = level, setting, label
+	"ColorSelect", "ColorSelectAlpha" == level, setting, label
+
 
 	Settings and configuration system.
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 11
+local LIBRARY_VERSION_MINOR = 12
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -1359,6 +1361,56 @@ function kit:AddControl(id, cType, column, ...)
 		el.textEl = last
 		control = el
 		last = el
+	elseif (cType == "ColorSelect" or cType == "ColorSelectAlpha") then
+		local level, setting, text = ...
+		local indent = 10 * (level or 1)
+		-- ColorSelect
+		el = CreateFrame("Button", nil, content)
+		kpos = kpos+1 kids[kpos] = el
+		anchorPoint(content, el, last, 10 + column + indent, 26, 22, -2)
+		el.setting = setting
+		el.stype = cType
+		el:SetWidth(24)
+		el:SetHeight(16)
+		el.r, el.g, el.b, el.a = 0,0,0,1
+		el.bg = el:CreateTexture(nil, "BORDER");
+		el.bg:SetAllPoints(el)
+		el.bg:SetTexture("Interface\\TargetingFrame\\BarFill2")
+		el.bg:SetAlpha(0.7)
+		el.tex = el:CreateTexture(nil, "ARTWORK");
+		el.tex:SetAllPoints(el)
+		el.tex:SetTexture(r,g,b,a)
+		self:GetSetting(el)
+		el:SetScript("OnClick", function(obj, ...)
+			local f = ColorPickerFrame
+			f:SetColorRGB(obj.r, obj.g, obj.b);
+			if obj.stype == "ColorSelectAlpha" then
+				f.hasOpacity = true
+				f.opacity = obj.a
+			else
+				f.hasOpacity = false
+			end
+			f.func = function()
+				self:ChangeSetting(obj)
+			end
+			f.opacityFunc = f.func
+			f:SetFrameStrata("TOOLTIP")
+			f:SetToplevel("TRUE")
+			f:Show()
+		end)
+		self.elements[setting] = el
+		control = el
+		-- FontString
+		el = control:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		el:SetJustifyH("LEFT")
+		kpos = kpos+1 kids[kpos] = el
+		if (colwidth) then colwidth = colwidth - 15 end
+		anchorPoint(content, el, last, 35+column+indent, maxLabelLength, 16, -2)
+		el:SetText(text)
+		local textWidth = el:GetStringWidth()+25
+		control:SetHitRectInsets(-2,-textWidth, -2,-2)
+		control.textEl = el
+		last = el
 	end
 
 	if last ~= control then
@@ -1503,6 +1555,15 @@ function kit:GetSetting(element)
 		if (oldvalue ~= value) then
 			self.setter(setting, value);
 		end
+	elseif (element.stype == "ColorSelect" or element.stype == "ColorSelectAlpha") then
+		local r, g, b, a = strsplit(",", tostring(value) or "0,0,0,1")
+		element.r = tonumber(r) or 0
+		element.g = tonumber(g) or 0
+		element.b = tonumber(b) or 0
+		element.a = tonumber(a) or 1
+		if element.tex then
+			element.tex:SetTexture(element.r,element.g,element.b,element.a)
+		end
 	else
 		value = element:GetValue()
 	end
@@ -1559,6 +1620,22 @@ function kit:ChangeSetting(element, ...)
 		-- update with pinned value
 		if (oldvalue ~= value) then
 			MoneyInputFrame_SetCopper( element, value );
+		end
+	elseif (element.stype == "ColorSelect" or element.stype == "ColorSelectAlpha") then
+		if (ColorPickerFrame:IsVisible()) then
+			local r,g,b = ColorPickerFrame:GetColorRGB()
+			local a = 1
+			if element.stype == "ColorSelectAlpha" then
+				a = OpacitySliderFrame:GetValue()
+			end
+			element.r = tonumber(r) or 0
+			element.g = tonumber(g) or 0
+			element.b = tonumber(b) or 0
+			element.a = tonumber(a) or 1
+		end
+		value = ("%0.3f,%0.3f,%0.3f,%0.3f"):format(element.r,element.g,element.b,element.a)
+		if element.tex then
+			element.tex:SetTexture(element.r,element.g,element.b,element.a)
 		end
 	elseif element.GetValue then
 		value = element:GetValue()
