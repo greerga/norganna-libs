@@ -303,7 +303,7 @@ end
 
 local PanelScroller = LibStub:GetLibrary("PanelScroller")
 
-function lib:Create(frame, layout, externalEnter, externalLeave)
+function lib:Create(frame, layout, onEnter, onLeave, onClick)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
 	local id = 1
@@ -409,8 +409,10 @@ function lib:Create(frame, layout, externalEnter, externalLeave)
 					button:SetWidth(width) 
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
-					button:SetScript("OnEnter", function() externalEnter(button, row, index) end)
-					button:SetScript("OnLeave", function() externalLeave(button, row, index) end)
+					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
+					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+					
+					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				end
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
@@ -424,8 +426,10 @@ function lib:Create(frame, layout, externalEnter, externalLeave)
 					button:SetWidth(width)
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
-					button:SetScript("OnEnter", function() externalEnter(button, row, index) end)
-					button:SetScript("OnLeave", function() externalLeave(button, row, index) end)
+					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
+					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+					
+					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				end
 			end
 			cell:SetHeight(14)
