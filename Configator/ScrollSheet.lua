@@ -413,6 +413,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
 					
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
+					cell.button = button --store in cell so we can refrence the button 
 				end
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
@@ -430,6 +431,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
 					
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
+					cell.button = button
 				end
 			end
 			cell:SetHeight(14)
@@ -476,4 +478,178 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 	return sheet
 end
 
+function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
+	local sheet
+	local name = frame.sheet.name
+	local content = frame.sheet.content
+	local panel = frame.sheet.panel
 
+	local totalWidth = 0;
+
+	local labels = {}
+	for i = 1, #layout do
+		local button = frame.sheet.labels[i].button
+		if i == 1 then
+			button:SetPoint("TOPLEFT", content, "TOPLEFT", 5,0)
+			totalWidth = totalWidth + 5
+		else
+			button:SetPoint("TOPLEFT", labels[i-1].button, "TOPRIGHT", 3,0)
+			totalWidth = totalWidth + 3
+		end
+		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
+		local label = frame.sheet.labels[i]
+		label:SetText(layout[i][1])
+		
+		local colWidth = layout[i][3] or 0
+		if label:GetStringWidth() + 20 > colWidth then 
+			colWidth = floor(label:GetStringWidth() + 20)
+		end
+					
+		totalWidth = totalWidth + colWidth
+		button:SetWidth(colWidth)
+		button:SetHeight(16)
+		button:SetID(i)
+
+		button:SetScript("OnClick", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
+		
+
+		local texture = frame.sheet.labels[i].texture
+		--texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+		texture:SetTexCoord(0.1, 0.8, 0, 1)
+		texture:SetAllPoints(button)
+		button.texture = texture
+
+		local sortTexture = frame.sheet.labels[i].sortTexture
+		--sortTexture:SetTexture("Interface\\Buttons\\UI-SortArrow")
+		sortTexture:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0,0)
+		sortTexture:SetPoint("BOTTOM", button, "BOTTOM", 0,0)
+		sortTexture:SetWidth(12)
+		sortTexture:Hide()
+		button.sortTexture = sortTexture
+
+		local background = frame.sheet.labels[i].background
+		--background:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+		background:SetTexCoord(0.2, 0.9, 0, 0.9)
+		background:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0,0)
+		background:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 0,0)
+		background:SetPoint("BOTTOM", content, "BOTTOM", 0,0)
+		background:SetAlpha(0.2)
+
+		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
+		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
+		label:SetJustifyH("CENTER")
+		label:SetJustifyV("TOP")
+		label:SetTextColor(0.8,0.8,0.8)
+
+		label.button = button 
+		label.texture = texture
+		label.sortTexture = sortTexture
+		label.background = background
+		label.sort = layout[i][4]
+		labels[i] = label
+	end
+	totalWidth = totalWidth + 5
+
+ 	local rows = {}
+	local rowNum = 1
+ 	local maxHeight = content:GetHeight()
+ 	local totalHeight = 16
+	
+	--Store all the "buttons" that are currently used on "Tooltip" style frames for reuse
+	local buttonTable = {}
+	for rowNum, v in pairs (frame.sheet.rows) do
+		for column, data in pairs(v) do
+			if frame.sheet.rows[rowNum][column].button then
+				table.insert(buttonTable, frame.sheet.rows[rowNum][column].button)
+			end
+		end
+	end
+	while (totalHeight + 14 < maxHeight) do
+		local row = {}
+						
+		for i = 1, #layout do
+			
+			local cell = frame.sheet.rows[rowNum][i]
+			local button = buttonTable[1] --or CreateFrame("Button", nil, content)
+			if rowNum == 1 then
+				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+ 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
+ 				
+ 				if (layout[i][2] == "TOOLTIP") then
+					local width = layout[i][3] or 10
+ 					local row, index = rowNum, i
+					
+					button:SetHeight(16)
+					button:SetWidth(width) 
+					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
+					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+					
+					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
+					
+					if buttonTable[1] then table.remove(buttonTable, 1) end
+				end
+			else
+				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
+				
+				if (layout[i][2] == "TOOLTIP") then
+					local width = layout[i][3] or 0
+					local row, index = rowNum, i
+					
+					button:SetHeight(16)
+					button:SetWidth(width)
+					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
+					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+					
+					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
+
+					if buttonTable[1] then table.remove(buttonTable, 1) end
+				end
+			end
+			cell:SetHeight(14)
+			cell:SetJustifyV("CENTER")
+			if (layout[i][2] == "TEXT") then
+				cell:SetJustifyH("LEFT")
+			elseif (layout[i][2] == "TOOLTIP") then
+				cell:SetJustifyH("LEFT")
+			elseif (layout[i][2] == "INT") then
+				cell:SetJustifyH("RIGHT")
+			elseif (layout[i][2] == "COIN") then
+				cell:SetJustifyH("RIGHT")
+			end
+			cell.layout = layout[i][2]
+			--cell:SetTextColor(0.9, 0.9, 0.9)
+			row[i] = cell
+		end
+		rows[rowNum] = row
+		rowNum = rowNum + 1
+		totalHeight = totalHeight + 14
+	end
+
+	content:SetWidth(totalWidth)
+	panel:UpdateScrollChildRect()
+	panel:Update()
+
+	sheet = {
+		name = name,
+		content = content,
+		panel = panel,
+		labels = labels,
+		rows = rows,
+		hSize = #labels,
+		data = frame.sheet.data,
+		style = frame.sheet.style,
+		sort = frame.sheet.sort,
+	}
+	for k,v in pairs(kit) do
+		sheet[k] = v
+	end
+	panel.callback = function() sheet:Render() end
+
+	_G[name] = sheet
+	return sheet
+end
