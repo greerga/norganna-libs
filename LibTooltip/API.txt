@@ -1,39 +1,39 @@
 LibTooltip-1.0 API:
 	:RegisterTooltip(tooltip)
 		Adds the provided tooltip to the list of tooltips to monitor for items
-	
+
 	:AddCallback(callback[, priority])
 		Adds a callback to be called when one of the registered tooltips has an item.
 		* callback - function
 		* priority - number.  Lower priority gets called first.  Default is 200
-		
+
 		Callbacks are passed tooltip,item,quantity,name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture
 			* tooltip - the tooltip object being shown (this is the actual gametooltip object, not the attached tooltip.)
 			* item - the item being shown in the same format as the second return of GetItemInfo
 			* quantity - quantity of the item being shown in the context.  This may be nil when the quantity is unavailable.
 			* name-texture are what is returned by GetItemInfo for the item.  They are provided as additional information to avoid
 				unnecessary calling of GetItemInfo by the callbacks.
-	
+
 	:RemoveCallback(callback)
 		Removes the given callback from the list of callbacks.  Fails silently if the callback isn't found.
-	
+
 	:SetEmbedMode(flag)
 		Sets the embed mode of the library.  By default, the embed mode is false.  A false embedMode causes AddLine,
 		AddDoubleLine and AddMoneyLine to add lines to the attached tooltip rather than embed added lines directly in the
 		item tooltip.  This will be the setting used when the optional embed argument is left off of Add*Line calls.
 		It is important to note that LibTooltip cannot store this variable between sessions because of its embedded nature.
 		This should be set each session by the dev.
-	
+
 	:AddLine(tooltip, text[, r, g ,b][, embed])
 		Adds a line to the tooltip.
-		* tootlip - this should be the tooltip passed to the callback.  
+		* tootlip - this should be the tooltip passed to the callback.
 		* text - The text to add
 		* r, g, b - same as the r,g,b args to GameTooltip:AddLine
 		* embed - Used to override the lib's embedMode setting.  Its values fall into 3 categories:
 			1. nil - The lib's default embedMode is used
 			2. false - The line is forced into the attached tooltip.
 			3. Every other value - The line is forced into the base tooltip.
-	
+
 	:AddDoubleLine(tooltip, textLeft, textRight[, lr, lg, lb, rr, rg, rb][, embed])
 		Adds a two-columned line to the tooltip.
 		* tooltip - same as in AddLine.
@@ -42,10 +42,9 @@ LibTooltip-1.0 API:
 		* lr, lg, lb - the color for textLeft
 		* rr, rg, rb - the color for textRight
 		* embed - same as in AddLine
-		
+
 	:AddMoneyLine(tooltip, text, money, r, g, b, embed)
-		Adds a line with text in the left column and a money frame in the right.  
+		Adds a line with text in the left column and a money frame in the right.
 		* tooltip, text, r, g, b and embed behave the same as in :AddLine
 		* money - an integer amount denoting the money value to be displayed.
 			This is given in copper (i.e. 1g 27s 5c would be 12705)
-		

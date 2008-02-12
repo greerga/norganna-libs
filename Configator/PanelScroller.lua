@@ -261,4 +261,3 @@ function lib:Create(name, parent)
 	end
 	return scroller
 end
-

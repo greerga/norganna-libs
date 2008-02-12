@@ -504,4 +504,3 @@ if LibStub then
 		}
 	end
 end
-

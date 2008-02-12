@@ -219,10 +219,10 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 
 	gui.DragBottom:SetScript("OnMouseDown", function() gui:StartMoving() end)
 	gui.DragBottom:SetScript("OnMouseUp", function() gui:StopMovingOrSizing() setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
-	
+
 	gui:RegisterEvent("PLAYER_LOGOUT")
 	gui:SetScript("OnEvent", function() gui:SetClampedToScreen(1) setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
-	
+
 	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
 	gui.Done:SetScript("OnClick", function() gui:Hide() end)
 	gui.Done:SetText(DONE)
@@ -523,7 +523,7 @@ function kit:GetButton(pos)
 	end
 
 	if self.buttons[pos] then return self.buttons[pos] end
-	
+
 	-- Create a button for this tab
 	button = CreateFrame("Button", myName, self)
 	button:SetWidth(150)
@@ -560,7 +560,7 @@ function kit:RenderTabs()
 	if (self.config.isZero) then return end
 
 	if not self.render then self:RegenTabs() end
-	
+
 	local offset = 0
 	local total = #self.render
 	local count = math.floor((self.dialogHeight - 40) / 13)
@@ -716,7 +716,7 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 	if not gapWidth then gapWidth = self.gapWidth or 0 end
 	if not gapHeight then gapHeight = self.gapHeight or 0 end
 
-	local tab = { 
+	local tab = {
 		nil, frame, content, -- For backwards compatability
 		catId = catId,
 		tabName = tabName,
@@ -773,10 +773,10 @@ function kit:AddCat(catId, catName, sortedTabs, isOpen)
 
 	table.insert(self.config.order, catId)
 	self.config.tabs[catId] = { }
-	self.config.cats[catId] = { 
+	self.config.cats[catId] = {
 		name = catName,
-		isOpen = isOpen, 
-		isSorted = sortedTabs, 
+		isOpen = isOpen,
+		isSorted = sortedTabs,
 	}
 	self.config.current = catId
 	if not self.config.selectedCat then self.config.selectedCat = catId end
@@ -847,7 +847,7 @@ function kit:KeyPress(key, ...)
 		elseif IsControlKeyDown() then
 			size = 10
 		end
-		
+
 		if self.GetValue then
 			local myVal = self:GetValue()
 			self:SetValue(myVal + size * dir)
@@ -1098,7 +1098,7 @@ function kit:AddControl(id, cType, column, ...)
 		-- Editbox
 		el = CreateFrame("EditBox", lib.CreateAnonName(), content, "InputBoxTemplate")
 		lib:TabLink(frame, el)
-		
+
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 20 + column + indent, colwidth or 160, 32, 4)
 		el.setting = setting

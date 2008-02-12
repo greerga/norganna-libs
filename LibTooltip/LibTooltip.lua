@@ -1,7 +1,7 @@
 local MAJOR,MINOR = "LibTooltip-Beta1", 1
 local LIBSTRING = MAJOR.."-"..MINOR -- a string unique to this version to prevent frame name conflicts between revisions
 local lib = LibStub:NewLibrary(MAJOR,MINOR)
-if not lib then return end 
+if not lib then return end
 
 -- housekeeping upgrade stuff...
 if lib.Deactivate then lib:Deactivate() end -- calls the OLD version of this function.  NOT the one defined in this file's scope
@@ -13,18 +13,18 @@ local EnhTTClass
 local function OnTooltipSetItem(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
-	
+
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
 		local _,item = tooltip:GetItem()
-		if item then 
+		if item then
 			local name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture = GetItemInfo(item)
-			if name then        
+			if name then
 				local enhTT = self:GetFreeEnhTTObject()
 				reg.enhTT = enhTT
 				enhTT:Attach(tooltip)
 				enhTT:AddLine(ITEM_QUALITY_COLORS[quality].hex .. name)
-								
+
 				local quantity = reg.quantity
 				for i,callback in ipairs(self.sortedCallbacks) do
 					callback(tooltip,item,quantity,name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture)
@@ -113,8 +113,8 @@ end
 function lib:RegisterTooltip(tooltip)
 	if not tooltip or type(tooltip) ~= "table" or type(tooltip.GetObjectType) ~= "function" or tooltip:GetObjectType() ~= "GameTooltip" then return end
 
-	if not self.tooltipRegistry then 
-		self.tooltipRegistry = {} 
+	if not self.tooltipRegistry then
+		self.tooltipRegistry = {}
 		self:GenerateTooltipMethodTable()
 	end
 
@@ -134,7 +134,7 @@ function lib:RegisterTooltip(tooltip)
 end
 
 local sortFunc
-function lib:AddCallback(callback,priority) -- Lower priority gets called before higher priority.  Default is 200.  
+function lib:AddCallback(callback,priority) -- Lower priority gets called before higher priority.  Default is 200.
 	if not callback or type(callback) ~= "function" then return end
 
 	if not self.callbacks then
@@ -192,7 +192,7 @@ end
 function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 	if r and not g then embed = r r = nil end
 	embed = embed ~= nil and embed or self.embedMode
-	
+
 	local scale,width = .9
 	local reg = self.tooltipRegistry[tooltip]
 	local t = tooltip
@@ -202,7 +202,7 @@ function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 		reg.enhTTUsed = true
 	end
 	local moneyFrame = self:GetFreeMoneyFrame(t,scale)
-	
+
 	t:AddLine(text,r,g,b)
 	local n = t:NumLines()
 	local left = getglobal(t:GetName().."TextLeft"..n)
@@ -211,7 +211,7 @@ function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 	MoneyFrame_Update(moneyFrame:GetName(),money)
 	width = left:GetWidth() + moneyFrame:GetWidth() * moneyFrame:GetEffectiveScale() / t:GetEffectiveScale()
 
-	if t == tooltip and width > reg.minWidth then 
+	if t == tooltip and width > reg.minWidth then
 		reg.minWidth = width
 		t:SetMinimumWidth(width)
 	elseif t.minWidth and width > t.minWidth then
@@ -238,15 +238,15 @@ local function createMoney()
 	m:SetScript("OnHide",moneyFrameOnHide)
 	m:SetFrameStrata("TOOLTIP")
 	m.info = MoneyTypeInfo["STATIC"]
-	
+
 	m.gold = getglobal(name .. "GoldButton")
 	m.silver = getglobal(name .. "SilverButton")
 	m.copper = getglobal(name .. "CopperButton")
-	
+
 	m.gold:EnableMouse(false)
 	m.silver:EnableMouse(false)
 	m.copper:EnableMouse(false)
-	
+
 	return m
 end
 
@@ -260,12 +260,12 @@ function lib:GetFreeMoneyFrame(parent,scale)
 	m:SetParent(parent)
 	m:Show()
 	self.moneyPool[m] = nil
-	
+
 	local level = parent:GetFrameLevel() + 1
 	m.gold:SetFrameLevel(level)
 	m.silver:SetFrameLevel(level)
 	m.copper:SetFrameLevel(level)
-	
+
 	return m
 end
 
@@ -298,31 +298,31 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 		SetBagItem = function(self,bag,slot)
 			local _,q = GetContainerItemInfo(bag,slot) reg[self].quantity = q
 		end,
-		
+
 		SetAuctionItem = function(self,type,index)
 			local _,_,q = GetAuctionItemInfo(type,index) reg[self].quantity = q
 		end,
-		
+
 		SetInboxItem = function(self,index)
 			local _,_,q = GetInboxItem(index) reg[self].quantity = q
 		end,
-		
+
 		SetLootItem = function(self,index)
 			local _,_,q = GetLootSlotInfo(index) reg[self].quantity = q
 		end,
-		
+
 		SetMerchantItem = function(self,index)
 			local _,_,_,q = GetMerchantItemInfo(index) reg[self].quantity = q
 		end,
-		
+
 		SetQuestLogItem = function(self,type,index)
 			local _,_,q = GetQuestLogChoiceInfo(type,index) reg[self].quantity = q
 		end,
-		
+
 		SetQuestItem = function(self,type,index)
 			local _,_,q = GetQuestItemInfo(type,index) reg[self].quantity = q
 		end,
-		
+
 		SetTradeSkillItem = function(self,index,reagentIndex)
 			if reagentIndex then
 				local _,_,q = GetTradeSkillReagentInfo(index,reagentIndex) reg[self].quantity = q
@@ -330,7 +330,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 				reg[self].quantity = GetTradeSkillNumMade(index)
 			end
 		end,
-		
+
 		SetCraftItem = function(self,index,reagentIndex)
 			local _
 			if reagentIndex then
@@ -358,7 +358,7 @@ do -- EnhTT "class" definition
 			return v
 		end
 	}
-	
+
 	function class:new()
 		local n = numTips + 1
 		numTips = n
@@ -367,11 +367,11 @@ do -- EnhTT "class" definition
 		for _,method in pairs(methods) do
 			o[method] = self[method]
 		end
-		
+
 		for _,script in pairs(scripts) do
 			o:SetScript(script,self[script])
 		end
-		
+
 		o.left = setmetatable({name = o:GetName().."TextLeft"},line_mt)
 		o.right = setmetatable({name = o:GetName().."TextRight"},line_mt)
 		return o
@@ -440,9 +440,9 @@ do -- EnhTT "class" definition
 		if not p then return end
 		local l,r,t,b = p:GetClampRectInsets()
 		p:SetClampRectInsets(l,r,t,-h) -- should that be b-h?  Is playing nice even needed? Anyone who needs to mess with the bottom clamping inset will probably interfere with us anyway, right?
-		self:NeedsRefresh(true)	
+		self:NeedsRefresh(true)
 	end
-	
+
 	-- The right-side text is statically positioned to the right of the left-side text.
 	-- As a result, manually changing the width of the tooltip causes the right-side text to not be in the right place.
 	local function fixRight(tooltip,lefts,rights)
@@ -513,8 +513,8 @@ local LT = LibStub("LibTooltip-Beta1")
 LT:RegisterTooltip(GameTooltip)
 LT:RegisterTooltip(ItemRefTooltip)
 
-LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl) 
-	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0) 
+LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
+	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,1,1,1,0)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
 end,0)

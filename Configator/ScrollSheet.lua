@@ -45,24 +45,24 @@ do
 		LibStub = LibStub or {libs = {}, minors = {} }
 		_G[LIBSTUB_MAJOR] = LibStub
 		LibStub.minor = LIBSTUB_MINOR
-		
+
 		function LibStub:NewLibrary(major, minor)
 			assert(type(major) == "string", "Bad argument #2 to `NewLibrary' (string expected)")
 			minor = assert(tonumber(strmatch(minor, "%d+")), "Minor version must either be a number or contain a number.")
-			
+
 			local oldminor = self.minors[major]
 			if oldminor and oldminor >= minor then return nil end
 			self.minors[major], self.libs[major] = minor, self.libs[major] or {}
 			return self.libs[major], oldminor
 		end
-		
+
 		function LibStub:GetLibrary(major, silent)
 			if not self.libs[major] and not silent then
 				error(("Cannot find a library instance of %q."):format(tostring(major)), 2)
 			end
 			return self.libs[major], self.minors[major]
 		end
-		
+
 		function LibStub:IterateLibraries() return pairs(self.libs) end
 		setmetatable(LibStub, { __call = LibStub.GetLibrary })
 	end
@@ -118,7 +118,7 @@ local kit = {}
 		cellValue = value or { value, styleKey=styleData, ... }
 		styleKey = (string) The style type that affects the cell in question.
 		styleData = (any type) The data that is to be used by the renderer for this cell.
-		
+
 		input and instyle should be cloned, not copied, so they can be recycled by the caller
 
 	Note:
@@ -134,7 +134,7 @@ function kit:SetData(input, instyle)
 
 	local nRows = #input
 	local nCols = self.hSize
-	
+
 	local data = self.data
 	local style = self.style
 	local n = #data
@@ -144,7 +144,7 @@ function kit:SetData(input, instyle)
 		data[i] = nil
 		recycle(style, i)
 	end
-	
+
 
 	-- Clone/Copy the data portion of the input table into the data table,
 	-- and the style portion into the style table.
@@ -290,7 +290,7 @@ function kit:Render()
 				elseif settings["date"] then
 					text = date(settings["date"], text)
 				end
-					
+
 				cell:SetTextColor(red,green,blue)
 				cell:SetText(text)
 				cell:Show()
@@ -338,19 +338,19 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetText(layout[i][1])
-		
+
 		local colWidth = layout[i][3] or 0
-		if label:GetStringWidth() + 20 > colWidth then 
+		if label:GetStringWidth() + 20 > colWidth then
 			colWidth = floor(label:GetStringWidth() + 20)
 		end
-					
+
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(16)
 		button:SetID(i)
 		button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 		button:SetScript("OnClick", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
-		
+
 		local texture = content:CreateTexture(nil, "ARTWORK")
 		texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 		texture:SetTexCoord(0.1, 0.8, 0, 1)
@@ -400,36 +400,36 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 			if rowNum == 1 then
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
-				
+
 				if (layout[i][2] == "TOOLTIP") then
 					local width = layout[i][3] or 10
 					local row, index = rowNum, i
-					
+
 					button:SetHeight(16)
-					button:SetWidth(width) 
+					button:SetWidth(width)
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-					
+
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-					cell.button = button --store in cell so we can refrence the button 
+					cell.button = button --store in cell so we can refrence the button
 				end
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
-				
+
 				if (layout[i][2] == "TOOLTIP") then
 					local width = layout[i][3] or 0
 					local row, index = rowNum, i
-					
+
 					button:SetHeight(16)
 					button:SetWidth(width)
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-					
+
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 					cell.button = button
 				end
@@ -499,19 +499,19 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
 		local label = frame.sheet.labels[i]
 		label:SetText(layout[i][1])
-		
+
 		local colWidth = layout[i][3] or 0
-		if label:GetStringWidth() + 20 > colWidth then 
+		if label:GetStringWidth() + 20 > colWidth then
 			colWidth = floor(label:GetStringWidth() + 20)
 		end
-					
+
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(16)
 		button:SetID(i)
 
 		button:SetScript("OnClick", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
-		
+
 
 		local texture = frame.sheet.labels[i].texture
 		--texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -541,7 +541,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 		label:SetJustifyV("TOP")
 		label:SetTextColor(0.8,0.8,0.8)
 
-		label.button = button 
+		label.button = button
 		label.texture = texture
 		label.sortTexture = sortTexture
 		label.background = background
@@ -554,7 +554,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 	local rowNum = 1
  	local maxHeight = content:GetHeight()
  	local totalHeight = 16
-	
+
 	--Store all the "buttons" that are currently used on "Tooltip" style frames for reuse
 	local buttonTable = {}
 	for rowNum, v in pairs (frame.sheet.rows) do
@@ -566,45 +566,45 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 	end
 	while (totalHeight + 14 < maxHeight) do
 		local row = {}
-						
+
 		for i = 1, #layout do
-			
+
 			local cell = frame.sheet.rows[rowNum][i]
 			local button = buttonTable[1] --or CreateFrame("Button", nil, content)
 			if rowNum == 1 then
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
  				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
- 				
+
  				if (layout[i][2] == "TOOLTIP") then
 					local width = layout[i][3] or 10
  					local row, index = rowNum, i
-					
+
 					button:SetHeight(16)
-					button:SetWidth(width) 
+					button:SetWidth(width)
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-					
+
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-					
+
 					if buttonTable[1] then table.remove(buttonTable, 1) end
 				end
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
-				
+
 				if (layout[i][2] == "TOOLTIP") then
 					local width = layout[i][3] or 0
 					local row, index = rowNum, i
-					
+
 					button:SetHeight(16)
 					button:SetWidth(width)
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-					
+
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 
 					if buttonTable[1] then table.remove(buttonTable, 1) end

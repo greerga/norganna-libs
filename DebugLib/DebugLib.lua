@@ -1019,7 +1019,7 @@ function private.dump(...)
 		end
 		if (i < numVarArgs) then out = out .. ", " end
 	end
-	
+
 	-- make sure returns come though here, or we won't balance the depth increase above
 	private.dumpCurrentRecursionDepth = private.dumpCurrentRecursionDepth - 1
 	return out
@@ -1106,4 +1106,3 @@ setmetatable(lib, { __call = lib.New })
 
 -- Set our local debug function
 debug = lib:New("DebugLib")
-

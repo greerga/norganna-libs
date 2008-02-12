@@ -1,4 +1,3 @@
-nice
 --[[
 	Slidebar AddOn for World of Warcraft (tm)
 	Version: <%version%> (<%codename%>)
@@ -48,24 +47,24 @@ do
 		LibStub = LibStub or {libs = {}, minors = {} }
 		_G[LIBSTUB_MAJOR] = LibStub
 		LibStub.minor = LIBSTUB_MINOR
-		
+
 		function LibStub:NewLibrary(major, minor)
 			assert(type(major) == "string", "Bad argument #2 to `NewLibrary' (string expected)")
 			minor = assert(tonumber(strmatch(minor, "%d+")), "Minor version must either be a number or contain a number.")
-			
+
 			local oldminor = self.minors[major]
 			if oldminor and oldminor >= minor then return nil end
 			self.minors[major], self.libs[major] = minor, self.libs[major] or {}
 			return self.libs[major], oldminor
 		end
-		
+
 		function LibStub:GetLibrary(major, silent)
 			if not self.libs[major] and not silent then
 				error(("Cannot find a library instance of %q."):format(tostring(major)), 2)
 			end
 			return self.libs[major], self.minors[major]
 		end
-		
+
 		function LibStub:IterateLibraries() return pairs(self.libs) end
 		setmetatable(LibStub, { __call = LibStub.GetLibrary })
 	end
@@ -569,7 +568,7 @@ function private:Popper(...)
 			end
 		end
 	end
-			
+
 	if private.startCounter then
 		private.startCounter = private.startCounter - 1
 		if private.startCounter == 0 then
@@ -658,7 +657,7 @@ function private.CommandHandler(msg)
 		private.config = {}
 		save = true
 	end
-	
+
 	if (a == "top")
 	or (a == "left")
 	or (a == "bottom")
@@ -727,7 +726,7 @@ function private.boxMover()
 	curX, curY = curX / uiScale, curY / uiScale
 
 	local anchor = private.config.anchor or "right"
-	
+
 	if anchor == "top" and curY < uiHeight - SWITCH_TEXELS
 	or anchor == "bottom" and curY > SWITCH_TEXELS then
 		if curX < SWITCH_TEXELS then
@@ -743,7 +742,7 @@ function private.boxMover()
 			anchor = "top"
 		end
 	end
-	
+
 	local pos
 	if anchor == "top" or anchor == "bottom" then
 		pos = curX
@@ -753,4 +752,3 @@ function private.boxMover()
 
 	return anchor, pos - 16
 end
-
