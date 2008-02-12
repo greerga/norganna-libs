@@ -1,3 +1,4 @@
+nice
 --[[
 	Slidebar AddOn for World of Warcraft (tm)
 	Version: <%version%> (<%codename%>)
@@ -28,7 +29,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 4
+local LIBRARY_VERSION_MINOR = 5
 
 --[[-----------------------------------------------------------------
 
@@ -368,6 +369,7 @@ if lib.frame then
 else
 	frame = CreateFrame("Frame", "", UIParent)
 	frame:SetToplevel(true)
+	frame:SetClampedToScreen(true)
 	frame:SetFrameStrata("TOOLTIP")
 	frame:SetHitRectInsets(-3, -3, -3, -3)
 	frame:SetBackdrop({
