@@ -192,6 +192,8 @@ function kit:SetData(input, instyle)
 end
 
 function kit:ButtonClick(column, mouseButton)
+	if mouseButton == "RightButton" then lib.moveColumn(self, column, mouseButton) return end
+	
 	if (self.curSort == column) then
 		self.curDir = self.curDir * -1
 	else
@@ -303,9 +305,10 @@ end
 
 local PanelScroller = LibStub:GetLibrary("PanelScroller")
 
-function lib:Create(frame, layout, onEnter, onLeave, onClick)
+function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
+	
 	local id = 1
 	while (_G[name..id]) do
 		id = id + 1
@@ -349,7 +352,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 		button:SetHeight(16)
 		button:SetID(i)
 		button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-		button:SetScript("OnClick", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
+		button:SetScript("OnMouseDown", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
 
 		local texture = content:CreateTexture(nil, "ARTWORK")
 		texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -465,6 +468,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 		labels = labels,
 		rows = rows,
 		hSize = #labels,
+		resize = onResize,
 		data = {},
 		style = {},
 		sort = {},
@@ -478,12 +482,11 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick)
 	return sheet
 end
 
-function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
+function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize)
 	local sheet
 	local name = frame.sheet.name
 	local content = frame.sheet.content
 	local panel = frame.sheet.panel
-
 	local totalWidth = 0;
 
 	local labels = {}
@@ -510,7 +513,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 		button:SetHeight(16)
 		button:SetID(i)
 
-		button:SetScript("OnClick", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
+		button:SetScript("OnMouseDown", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
 
 
 		local texture = frame.sheet.labels[i].texture
@@ -641,6 +644,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 		labels = labels,
 		rows = rows,
 		hSize = #labels,
+		resize = onResize,
 		data = frame.sheet.data,
 		style = frame.sheet.style,
 		sort = frame.sheet.sort,
@@ -652,4 +656,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick)
 
 	_G[name] = sheet
 	return sheet
+end
+function  lib.moveColumn(self, column)
+	if self.resize then self.resize(column, self.name, self, mouseButton) end
 end
