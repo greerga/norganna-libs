@@ -368,7 +368,7 @@ if lib.frame then
 else
 	frame = CreateFrame("Frame", "", UIParent)
 	frame:SetToplevel(true)
-	frame:SetClampedToScreen(true)
+	--frame:SetClampedToScreen(true)
 	frame:SetFrameStrata("TOOLTIP")
 	frame:SetHitRectInsets(-3, -3, -3, -3)
 	frame:SetBackdrop({
@@ -467,7 +467,7 @@ if not lib.tooltip then
 		insets = { left = 4, right = 4, top = 4, bottom = 4 }
 	})
 	lib.tooltip:SetBackdropColor(0,0,0.3, 1)
-	lib.tooltip:SetClampedToScreen(true)
+	--lib.tooltip:SetClampedToScreen(true)
 end
 
 private.lastConfig = {}
