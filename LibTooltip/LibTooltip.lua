@@ -508,16 +508,16 @@ lib:Activate()
 --- Test Code
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
-local LT = LibStub("LibTooltip-Beta1")
+--local LT = LibStub("LibTooltip-Beta1")
 
-LT:RegisterTooltip(GameTooltip)
-LT:RegisterTooltip(ItemRefTooltip)
+--LT:RegisterTooltip(GameTooltip)
+--LT:RegisterTooltip(ItemRefTooltip)
 
-LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
-	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0)
-	LT:AddDoubleLine(tip,"Item Level:",ilvl,1,1,1,0)
-	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
-end,0)
+--LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
+--	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0)
+--	LT:AddDoubleLine(tip,"Item Level:",ilvl,1,1,1,0)
+--	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
+--end,0)
 
 --~ LT:AddCallback(function(tip,item,quantity)
 --~ 	quantity = quantity or 1
