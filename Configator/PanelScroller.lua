@@ -137,9 +137,18 @@ function kit:ScrollByPercent(axis, percent)
 	elseif axis == "VERTICAL" then
 		scrollbar = self.vScroll
 		scrollrange = self.vSize
+		winsize = self.vWin
 		curpos = self.vPos
-		--vertical is 1 page of data varies by # of  data rows in that scrollframe
-		if percent > 0 then percent = #self:GetParent().sheet.rows else percent = -#self:GetParent().sheet.rows end
+		--vertical is 1 page of data varies by # of  data rows in that scrollframe or (winsize*percent)
+		if self:GetParent().sheet and self:GetParent().sheet.rows then
+			if percent > 0 then
+				percent = #self:GetParent().sheet.rows 
+			else 
+				percent = -#self:GetParent().sheet.rows 
+			end
+		else
+			percent = (winsize*percent)
+		end
 	else
 		return error("Unkown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
 	end
