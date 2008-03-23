@@ -21,6 +21,19 @@
 		recycle( table, key, key, ...); Recycles given keys in the table. Also clears their entries.
 		clone( item, [unsafe] ); Returns a safe-cloned copy of the table (unless unsafe is true.)
 		scrub( item ); Cleans the given table, recycling if necessary. Returns an empty table.
+	
+	
+	unit test for reuse of table
+		local foobarTable = {}
+		foobarTable.test1 = "test1"
+		recycle(foobarTable)
+		foobarTable.test2 = "test2"
+
+	unit test for recycling a table twice
+		local foobarTable = {}
+		foobarTable.test1 = "test1"
+		recycle(foobarTable)
+		recycle(foobarTable)
 
 ]]
 
@@ -71,12 +84,26 @@ end
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
+
+-- Global to the library so we can change the value at runtime
+-- NOTE - turning this option on will slow things down (maybe quite a bit)
+--        but it can help identify who recycled a table incorrectly
+-- NOTE - ccox - this is off by default
+lib.SaveStackCrawlDebugInfo = false;
+
+
 -- Create the recylebin (if it doesn't exist)
 if not lib.recyclebin then lib.recyclebin = {} end
 if not lib.recursion then lib.recursion = {} end
 if not lib.safety then
-	local function safety()
-		assert(not lib.safety.__metatable, "LibRecycle: An AddOn tried to use a recycled table!")
+	-- index and newindex both have the table as the first argument
+	local function safety(t)
+		-- here we can access the table without error, because we're in the meta handler
+		if (lib.safety.__metatable and lib.SaveStackCrawlDebugInfo and t.RecycleStackCrawl) then
+			assert(not lib.safety.__metatable, "LibRecycle: An AddOn tried to use a recycled table!\nOriginally recycled by:\n"..t.RecycleStackCrawl.."Just now used by (see next stacktrace):")
+		else
+			assert(not lib.safety.__metatable, "LibRecycle: An AddOn tried to use a recycled table!")
+		end
 	end
 	lib.safety = {
 		__index = safety,
@@ -155,8 +182,8 @@ local function recycler(level, ...)
 	-- Check to see if this table is already flagged as recycled
 	local mt = getmetatable(item)
 	assert(not mt or mt ~= "safety", "LibRecycle: Attempt to rerecycle a recycled table")
-	setmetatable(item, safety)
-
+	-- NOTE - ccox - I'd love to get a stack crawl here as well, but it won't work
+	
 	-- Check to make sure this table is empty on the ground floor
 	local unclean = 0
 	for k,v in pairs(item) do
@@ -165,6 +192,14 @@ local function recycler(level, ...)
 		item[k] = nil
 	end
 	assert(unclean==0, "LibRecycle: Unable to recycle given table adequately ("..unclean.."  items remain)")
+	
+	-- if we are debugging, grab a stack crawl for error reporting
+	if (lib.SaveStackCrawlDebugInfo) then
+		item.RecycleStackCrawl = debugstack(3, 20, 20)
+	end
+	
+	-- set the metatable after we set a stack crawl and check for items still in the table
+	setmetatable(item, safety)
 
 	-- Place the husk of a table in the recycle bin
 	tinsert(recyclebin, item)
@@ -193,6 +228,7 @@ local function acquire(...)
 		safety.__metatable = nil
 		setmetatable(item, nil)
 		safety.__metatable = "safety"
+		item.RecycleStackCrawl = nil
 		for k,v in pairs(item) do
 			assert(not(k or v), "LibRecycle: Attempted to issue a non-empty table")
 		end
