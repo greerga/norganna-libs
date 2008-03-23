@@ -106,6 +106,7 @@ local function recycler(level, ...)
 		tbl, key = ...
 		item = tbl[key]
 	else
+		tbl = ...
 		for i=2, n do
 			key = select(i, ...)
 			recycler(level+1, tbl, key)
