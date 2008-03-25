@@ -1,7 +1,7 @@
 ## Title: DebugLib
 ## Notes: A embeddable debugging library that transparently supports the nLog logging system, if present.
 ##
-## Interface: 20300
+## Interface: 20400
 ## LoadOnDemand: 0
 ## OptionalDependencies: !nLog
 ##
