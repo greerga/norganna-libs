@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 12
+local LIBRARY_VERSION_MINOR = 13
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -187,7 +187,7 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 		gui:SetPoint("CENTER", "UIParent", "CENTER")
 	end
 	gui:Hide()
-	gui:SetFrameStrata("DIALOG")
+	gui:SetFrameStrata("HIGH")
 	gui:SetToplevel(true)
 	gui:SetMovable(true)
 	gui:EnableMouse(true)
