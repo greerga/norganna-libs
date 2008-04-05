@@ -362,7 +362,7 @@ end
 
 local PanelScroller = LibStub:GetLibrary("PanelScroller")
 
-function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize)
+function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
 	
@@ -468,7 +468,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize)
 				button:SetWidth(width)
 				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) onSelect() end)
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
@@ -488,7 +488,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize)
 				button:SetWidth(width)
 				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) onSelect() end)
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
@@ -654,7 +654,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize)
 				button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) onSelect() end)
  				if (layout[i][2] == "TOOLTIP") then
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
@@ -675,7 +675,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize)
 				button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) onSelect() end)
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
