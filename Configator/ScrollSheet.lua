@@ -145,7 +145,6 @@ function kit:SetData(input, instyle)
 		recycle(style, i)
 	end
 
-
 	-- Clone/Copy the data portion of the input table into the data table,
 	-- and the style portion into the style table.
 	local pos, content
@@ -189,6 +188,62 @@ function kit:SetData(input, instyle)
 	end
 	self.panel.vSize = nRows
 	self:PerformSort()
+end
+
+--This function only enables the display of the selected row.  The row still gets selected, and kit:GetSelection() will still work
+function kit:EnableSelect(enable)
+	if enable then
+		self.enableselect = true
+	else
+		self.enableselect = false
+	end
+end
+
+function kit:GetSelection()
+	local selection = {}
+	if self.selected then
+		for i = 1, self.hSize do
+			local pos = i + ((self.selected-1)*self.hSize)
+			selection[i] = self.data[pos]
+		end
+	end
+	return selection
+end
+
+function kit:RowSelect(row, mouseButton)
+	if mouseButton == "RightButton" then
+		return
+	end
+	local selected
+	if row then
+		selected = row + math.floor(self.panel.vPos)
+		if self.selected ~= self.sort[selected] then
+			self.selected = self.sort[selected]
+		else
+			self.selected = nil
+		end
+	end
+	
+	for i = 1, #self.rows do
+		for j = 1, #self.rows[i] do
+			self.rows[i][j]["highlight"]:SetAlpha(0)
+		end
+	end
+	if self.enableselect and self.selected then
+		if not row then
+			for i = 1, #self.sort do
+				if self.sort[i] == self.selected then
+					selected = i
+				end
+			end
+			row = selected - math.floor(self.panel.vPos)
+		end
+		if row and (row > 0) and (row <= #self.rows) then
+			for j = 1, #self.rows[row] do
+				self.rows[row][j]["highlight"]:SetAlpha(0.2)
+			end
+		end
+	end
 end
 
 function kit:ButtonClick(column, mouseButton)
@@ -255,6 +310,7 @@ function kit:PerformSort()
 	end
 
 	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
+	
 	self.panel:Update()
 end
 
@@ -301,6 +357,7 @@ function kit:Render()
 			end
 		end
 	end
+	self:RowSelect()
 end
 
 local PanelScroller = LibStub:GetLibrary("PanelScroller")
@@ -404,39 +461,50 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize)
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
 
-				if (layout[i][2] == "TOOLTIP") then
-					local width = layout[i][3] or 10
-					local row, index = rowNum, i
+				local width = layout[i][3] or 10
+				local row, index = rowNum, i
 
-					button:SetHeight(16)
-					button:SetWidth(width)
+				button:SetHeight(16)
+				button:SetWidth(width)
+				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+				button:SetID(rowNum)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
 
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-					cell.button = button --store in cell so we can refrence the button
 				end
+				cell.button = button --store in cell so we can refrence the button
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
 
-				if (layout[i][2] == "TOOLTIP") then
-					local width = layout[i][3] or 0
-					local row, index = rowNum, i
+				local width = layout[i][3] or 0
+				local row, index = rowNum, i
 
-					button:SetHeight(16)
-					button:SetWidth(width)
+				button:SetHeight(16)
+				button:SetWidth(width)
+				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+				button:SetID(rowNum)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
 
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-					cell.button = button
 				end
+				cell.button = button
 			end
+			local highlight = cell.button:CreateTexture(nil, "ARTWORK")
+			highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+			highlight:SetTexCoord(0.2, 0.9, 0, 0.9)
+			highlight:SetPoint("TOPLEFT", cell.button, "TOPLEFT", 0, 0)
+			highlight:SetPoint("BOTTOMRIGHT", cell.button, "BOTTOMRIGHT", 0, 0)
+			highlight:SetAlpha(0)
+			cell.highlight = highlight
 			cell:SetHeight(14)
 			cell:SetJustifyV("CENTER")
 			if (layout[i][2] == "TEXT") then
@@ -578,41 +646,52 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize)
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
  				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
 
- 				if (layout[i][2] == "TOOLTIP") then
-					local width = layout[i][3] or 10
- 					local row, index = rowNum, i
+				local width = layout[i][3] or 10
+				local row, index = rowNum, i
 
-					button:SetHeight(16)
-					button:SetWidth(width)
-					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-					button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+				button:SetHeight(16)
+				button:SetWidth(width)
+				button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+				button:SetID(rowNum)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+ 				if (layout[i][2] == "TOOLTIP") then
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
 
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 
-					if buttonTable[1] then table.remove(buttonTable, 1) end
 				end
+				if buttonTable[1] then table.remove(buttonTable, 1) end
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
 
-				if (layout[i][2] == "TOOLTIP") then
-					local width = layout[i][3] or 0
-					local row, index = rowNum, i
+				local width = layout[i][3] or 0
+				local row, index = rowNum, i
 
-					button:SetHeight(16)
-					button:SetWidth(width)
-					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-					button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+				button:SetHeight(16)
+				button:SetWidth(width)
+				button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+				button:SetID(rowNum)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) end)
+				if (layout[i][2] == "TOOLTIP") then
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
 
 					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 
-					if buttonTable[1] then table.remove(buttonTable, 1) end
 				end
+				if buttonTable[1] then table.remove(buttonTable, 1) end
 			end
+			local highlight = cell.button:CreateTexture(nil, "ARTWORK")
+			highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+			highlight:SetTexCoord(0.2, 0.9, 0, 0.9)
+			highlight:SetPoint("TOPLEFT", cell.button, "TOPLEFT", 0, 0)
+			highlight:SetPoint("BOTTOMRIGHT", cell.button, "BOTTOMRIGHT", 0, 0)
+			highlight:SetAlpha(0)
+			cell.highlight = highlight
 			cell:SetHeight(14)
 			cell:SetJustifyV("CENTER")
 			if (layout[i][2] == "TEXT") then
