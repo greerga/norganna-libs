@@ -236,7 +236,9 @@ function kit:RowSelect(row, mouseButton)
 					selected = i
 				end
 			end
-			row = selected - math.floor(self.panel.vPos)
+			if selected then
+				row = selected - math.floor(self.panel.vPos)
+			end
 		end
 		if row and (row > 0) and (row <= #self.rows) then
 			for j = 1, #self.rows[row] do
