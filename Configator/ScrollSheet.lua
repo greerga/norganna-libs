@@ -397,15 +397,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			button:SetPoint("TOPLEFT", labels[i-1].button, "TOPRIGHT", 3,0)
 			totalWidth = totalWidth + 3
 		end
-		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
+		
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetText(layout[i][1])
 
 		local colWidth = layout[i][3] or 0
-		if label:GetStringWidth() + 20 > colWidth then
-			colWidth = floor(label:GetStringWidth() + 20)
-		end
-
+		
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(16)
@@ -739,5 +736,30 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize, onSele
 	return sheet
 end
 function  lib.moveColumn(self, column)
-	if self.resize then self.resize(column, self.name, self, mouseButton) end
+	if self.resize then 
+		if IsControlKeyDown() then --reset column to default
+			self.resize(self, column, nil) --sends nil as width, this will reset column to defaults
+		else
+			local originalScript = self.labels[column].button:GetScript("OnMouseDown") --store the original Sort onclick script will reset it when we are done resizing
+			
+			local point, relativeTo, relativePoint, xOfs, yOfs = self.labels[column].button:GetPoint() --Store the anchor point since its niled when resized
+			--limit the size we will allow buttons to get
+			local height = self.labels[column].button:GetHeight()
+			self.labels[column].button:SetResizable(true)
+			self.labels[column].button:SetMaxResize(400, height)
+			self.labels[column].button:SetMinResize(13, height) --Makes the nice ... elipsies line up
+			--set the resize script	
+			self.labels[column].button:SetScript("OnMouseDown", function() self.labels[column].button:StartSizing(self.labels[column].button) end)
+			--resets the original onclick as well as setting new anchor points for our buttons
+			self.labels[column].button:SetScript("OnMouseUp", function() 
+										self.labels[column].button:StopMovingOrSizing() 
+										self.labels[column].button:SetScript("OnMouseDown", originalScript) 
+										self.labels[column].button:ClearAllPoints()
+										self.labels[column].button:SetPoint(point, relativeTo, relativePoint, xOfs,yOfs)
+										self.resize(self, column, self.labels[column].button:GetWidth()) --sends new width info to the module
+						end)
+			--start resizing self			
+			self.labels[column].button:StartSizing(self.labels[column].button)
+		end
+	end
 end
