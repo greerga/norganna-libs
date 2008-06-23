@@ -2,14 +2,18 @@
 	LibRecycle.lua
 	A table recycling embeddable library.
 	Released into the Public Domain without warranty. Use at your own peril!
-	Credits: Norganna, MentalPower, Esamynn.
+	Credits: Norganna, MentalPower, Esamynn, Mikk
+	
+	LibRecycle no longer recycles tables as it actually uses more CPU than to let the GC handle them.
+	Its sole purpose now is to watch for callers still using it and check for re-use of supposedly recycled tables.
 
 
 	Usage:
 		local LibRecycle = LibStub("LibRecycle")
 		-- then:
 		local acquire, recycle, clone, scrub = LibRecycle.All()
-		-- or:
+
+		-- DO NOT:  (it's not upgradable!)
 		local acquire = LibRecycle.Acquire
 		local recycle = LibRecycle.Recycle
 		local clone = LibRecycle.Clone
@@ -38,7 +42,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "LibRecycle"
-local LIBRARY_VERSION_MINOR = 2
+local LIBRARY_VERSION_MINOR = 3
 
 --[[-----------------------------------------------------------------
 
@@ -81,161 +85,85 @@ do
 end
 --[End of LibStub]---------------------------------------------------
 
+local oldlib,oldver = LibStub(LIBRARY_VERSION_MAJOR, true)
+if oldlib and oldver<3 then
+	-- Unfortunately, people take local copies of our methods, so we can't upgrade versions before 3
+	ChatFrame1:AddMessage("LibRecycle: Could not upgrade - a pre-version 3 is already loaded.")
+	return
+end
+
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
 
--- Global to the library so we can change the value at runtime
--- NOTE - turning this option on will slow things down (maybe quite a bit)
---        but it can help identify who recycled a table incorrectly
--- NOTE - ccox - this is off by default
-lib.SaveStackCrawlDebugInfo = false;
+-- Create a trashcan where tables go to die (weak-keyed to allow GC)
+lib.trashcan = setmetatable({}, {__mode="k"})
 
+lib.DEBUG = false
 
--- Create the recylebin (if it doesn't exist)
-if not lib.recyclebin then lib.recyclebin = {} end
-if not lib.recursion then lib.recursion = {} end
-if not lib.safety then
-	-- index and newindex both have the table as the first argument
-	local function safety(t)
-		-- here we can access the table without error, because we're in the meta handler
-		if (lib.safety.__metatable and lib.SaveStackCrawlDebugInfo and t.RecycleStackCrawl) then
-			assert(not lib.safety.__metatable, "LibRecycle: An AddOn tried to use a recycled table!\nOriginally recycled by:\n"..t.RecycleStackCrawl.."Just now used by (see next stacktrace):")
-		else
-			assert(not lib.safety.__metatable, "LibRecycle: An AddOn tried to use a recycled table!")
-		end
-	end
-	lib.safety = {
-		__index = safety,
-		__newindex = safety,
-		__metatable = "safety"
-	}
-end
-
--- Store the following variables/functions locally to save on lookups.
-local tremove = table.remove
-local tinsert = table.insert
-local recyclebin = lib.recyclebin
-local recursion = lib.recursion
-local safety = lib.safety
-
--- Define a local function so we can do the nested subcalls without lookups.
-local function recycler(level, ...)
-	local tbl, key, item
-	-- Get the passed parameter/s
-	local n = select("#", ...)
-	if n <= 0 then
-		return
-	elseif n == 1 then
-		item = ...
-		tbl, key = nil, nil
-	elseif n == 2 then
-		tbl, key = ...
-		item = tbl[key]
+local function onreuse(tbl)
+	if lib.trashcan[tbl]==true then
+		geterrorhandler()("LibRecycle: An AddOn tried to use a recycled table!")
 	else
-		tbl = ...
-		for i=2, n do
-			key = select(i, ...)
-			recycler(level+1, tbl, key)
-		end
-		return
+		geterrorhandler()("LibRecycle: An AddOn tried to use a recycled table!\n- Recycled by: "..
+			gsub(lib.trashcan[tbl] or "???", "[\r\n]+", " -- "))
 	end
+end
+lib.recycledmeta = {
+	__index = onreuse,
+	__newindex = onreuse,
+}
 
-	-- We can only clean tables
-	if type(item) ~= 'table' then
-		if tbl and key then
-			tbl[key] = nil
+
+local function recycleone(tbl, depth)
+	depth=depth or 0
+	if type(tbl)=="table" then
+		if lib.trashcan[tbl] then
+			geterrorhandler()("LibRecycle: An AddOn tried to recycle the same table twice!")
+			return
 		end
-		return
-	end
-
-	-- If this is the first level, clear out the recursion list
-	if level == 1 then
-		for k,v in pairs(recursion) do
-			recursion[k] = nil
-		end
-	end
-
-	-- Detect if we have already recursed down this table before
-	if recursion[item] then
-		-- We may be recursing, but no need to leave a mess
-		if tbl and key then
-			-- Clean out the caller's entry
-			tbl[key] = nil
-		end
-		return
-	end
-
-	-- Flag this item as being processed
-	recursion[item] = true
-
-	-- Clean out any values from this table
-	for k,v in pairs(item) do
-		if type(v) == 'table' and (not v[0] or type(v[0]) ~= 'userdata') then
-			-- Recycle this table too
-			recycler(level+1, item, k)
+		if lib.DEBUG then
+			lib.trashcan[tbl]=debugstack(3+depth,1,0)
 		else
-			item[k] = nil
+			lib.trashcan[tbl]=true
+		end
+		for k,v in pairs(tbl) do
+			if type(v)=="table" then
+				if getmetatable(v) then
+					geterrorhandler()("LibRecycle: Warning: An AddOn tried to recycle a (sub-)table with a metatable set (maybe a frame?). Not touching it!")
+				else
+					recycleone(v, depth+1)
+				end
+			end
+			tbl[k]=nil
+		end
+		setmetatable(tbl, lib.recycledmeta)
+	elseif tbl==nil then
+		-- ohwell
+	else
+		geterrorhandler()("LibRecycle: Someone tried to recycle a " .. type(tbl) .."?")
+		return
+	end
+end
+
+function lib.Recycle(...)
+	local n = select("#", ...)
+	if n==1 then
+		recycleone(..., 0)
+	elseif n>=2 then
+		local tbl=...
+		for i=2,n do
+			local k=select(i,...)
+			recycleone(tbl[k])
+			tbl[k]=nil
 		end
 	end
-
-	-- Check to see if this table is already flagged as recycled
-	local mt = getmetatable(item)
-	assert(not mt or mt ~= "safety", "LibRecycle: Attempt to rerecycle a recycled table")
-	-- NOTE - ccox - I'd love to get a stack crawl here as well, but it won't work
-	
-	-- Check to make sure this table is empty on the ground floor
-	local unclean = 0
-	for k,v in pairs(item) do
-		-- Just nuke it and let the GC take care of it.
-		unclean = unclean + 1
-		item[k] = nil
-	end
-	assert(unclean==0, "LibRecycle: Unable to recycle given table adequately ("..unclean.."  items remain)")
-	
-	-- if we are debugging, grab a stack crawl for error reporting
-	if (lib.SaveStackCrawlDebugInfo) then
-		item.RecycleStackCrawl = debugstack(3, 20, 20)
-	end
-	
-	-- set the metatable after we set a stack crawl and check for items still in the table
-	setmetatable(item, safety)
-
-	-- Place the husk of a table in the recycle bin
-	tinsert(recyclebin, item)
-
-	-- If we are to clean the input value
-	if tbl and key then
-		-- Clean out the original table entry too
-		tbl[key] = nil
-	end
-
-	-- Unflag this item as being processed
-	recursion[item] = nil
 end
 
-local function recycle(...)
-	recycler(1, ...)
-end
-lib.Recycle = recycle
-
-local function acquire(...)
+function lib.Acquire(...)
 	local item, v
 
-	-- Get a recycled table or create a new one.
-	if #recyclebin > 0 then
-		item = tremove(recyclebin)
-		safety.__metatable = nil
-		setmetatable(item, nil)
-		safety.__metatable = "safety"
-		item.RecycleStackCrawl = nil
-		for k,v in pairs(item) do
-			assert(not(k or v), "LibRecycle: Attempted to issue a non-empty table")
-		end
-	end
-	if not item then
-		item = {}
-	end
+	item = {}
 
 	-- And populate it if there's any args
 	n = select("#", ...)
@@ -245,7 +173,6 @@ local function acquire(...)
 	end
 	return item
 end
-lib.Acquire = acquire
 
 local function clone(source, unsafe  --[[ internal only: ]], depth, history)
 	if type(source) ~= "table" then
@@ -254,11 +181,11 @@ local function clone(source, unsafe  --[[ internal only: ]], depth, history)
 
 	if not depth then depth = 0 end
 	if depth == 0 and not unsafe then
-		history = acquire()
+		history = {}
 	end
 
 	-- For all the values herein, perform a deep copy
-	local dest = acquire()
+	local dest = {}
 	if history then history[source] = dest end
 	for k, v in pairs(source) do
 		if type(v) == "table" then
@@ -281,12 +208,11 @@ local function clone(source, unsafe  --[[ internal only: ]], depth, history)
 		end
 	end
 	for k,v in pairs(history) do history[k] = nil end
-	if history then recycle(history) end
 	return dest
 end
 lib.Clone = clone
 
-local function scrub(item)
+function lib.Scrub(item)
 	-- We can only clean tables
 	if type(item) ~= 'table' then return end
 
@@ -294,14 +220,72 @@ local function scrub(item)
 	for k,v in pairs(item) do
 		if type(v) == 'table' then
 			-- Recycle this table
-			recycle(item, k)
+			recycleone(v)
+			item[k] = nil
 		else
 			item[k] = nil
 		end
 	end
 end
-lib.Scrub = scrub
+
+
+
+
+
+-----------------------------------------------------------------------
+-- DEBUG STUFF
+
+function lib.CollectGarbage()
+	local n1=0
+	for k,v in pairs(lib.trashcan) do
+		n1=n1+1
+	end
+	collectgarbage("collect")
+	local n2=0
+	for k,v in pairs(lib.trashcan) do
+		n2=n2+1
+	end
+	ChatFrame1:AddMessage("LibRecycle: " .. n2 .. " tables remaining in trash after garbage collection. (Had "..n1.." before)")
+	-- if there's anything remaining, someone's holding on to a ref after recycling!
+end
+
+function lib.Debug(onoff)
+	if onoff~=nil then
+		lib.DEBUG=onoff
+	end
+	ChatFrame1:AddMessage("LibRecycle: Debugging is " .. (lib.DEBUG and "ON" or "OFF"))
+end
+
+function lib.Stats()
+	local report={}
+	for k,v in pairs(lib.trashcan) do
+		report[v] = (report[v] or 0)+1
+	end
+	
+	ChatFrame1:AddMessage("LibRecycle: Current trashcan contents")
+	for k,v in pairs(report) do
+		if k==true then
+			ChatFrame1:AddMessage(
+				format("  %5u from untracked source", v))
+		else
+			ChatFrame1:AddMessage(
+				format("  %5u from: %s", v, gsub(k, "[\r\n]+", " -- ")))
+		end
+	end
+end
+
+
+-----------------------------------------------------------------------
+-- local acquire, recycle, clone, scrub = lib.All()
+
+-- make wrappers so that we can actually upgrade older versions!
+local function _acquire(...) return lib.Acquire(...) end
+local function _recycle(...) return lib.Recycle(...) end
+local function _clone(...) return lib.Clone(...) end
+local function _scrub(...) return lib.Scrub(...) end
 
 function lib.All()
-	return acquire, recycle, clone, scrub
+	return _acquire, _recycle, _clone, _scrub
 end
+
+
