@@ -377,7 +377,35 @@ Swatter.Error:SetBackdrop({
 Swatter.Error:SetBackdropColor(0,0,0, 1)
 Swatter.Error:SetScript("OnShow", Swatter.ErrorShow)
 Swatter.Error:SetMovable(true)
-table.insert(UISpecialFrames, "SwatterErrorFrame")
+
+Swatter.ProxyFrame = CreateFrame("Frame", "SwatterProxyFrame")
+Swatter.ProxyFrame:SetParent(Swatter.Error)
+Swatter.ProxyFrame.IsShown = function() return Swatter.Error:IsShown() end
+Swatter.ProxyFrame.escCount = 0
+Swatter.ProxyFrame.timer = 0
+Swatter.ProxyFrame.Hide = (
+	function( self )
+		local numEscapes = SwatterData.numEscapes or 1
+		self.escCount = self.escCount + 1
+		if ( self.escCount >= numEscapes ) then
+			self:GetParent():Hide()
+			self.escCount = 0
+		end
+		if ( self.escCount == 1 ) then
+			self.timer = 0
+		end
+	end
+)
+Swatter.ProxyFrame:SetScript("OnUpdate",
+	function( self, elapsed )
+		local timer = self.timer + elapsed
+		if ( timer >= 1 ) then
+			self.escCount = 0
+		end
+		self.timer = timer
+	end
+)
+table.insert(UISpecialFrames, "SwatterProxyFrame")
 
 Swatter.Drag = CreateFrame("Button", nil, Swatter.Error)
 Swatter.Drag:SetPoint("TOPLEFT", Swatter.Error, "TOPLEFT", 10,-5)
