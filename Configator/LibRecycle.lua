@@ -207,7 +207,9 @@ local function clone(source, unsafe  --[[ internal only: ]], depth, history)
 			dest[k] = v
 		end
 	end
-	for k,v in pairs(history) do history[k] = nil end
+	if history then
+		for k,v in pairs(history) do history[k] = nil end
+	end
 	return dest
 end
 lib.Clone = clone
