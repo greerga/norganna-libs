@@ -745,7 +745,27 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 		insets = { left = 32, right = 32, top = 32, bottom = 32 }
 	})
 	frame:SetBackdropColor(0,0,0, 1)
-
+	frame:SetFrameLevel(10)
+	
+	if gapHeight > 0 then
+		frame.fullsize = CreateFrame("Button", nil, frame, "OptionsButtonTemplate")
+		frame.fullsize:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 5, 5)
+		frame.fullsize:SetWidth(15)
+		frame.fullsize:SetHeight(15)
+		frame.fullsize:SetText("v")
+		frame.fullsize:SetScript("OnClick", function()
+				local height = 0
+				if frame.fullsize:GetText() == "v" then
+					frame.fullsize:SetText("^")
+				else
+					frame.fullsize:SetText("v")
+					height = gapHeight
+				end
+				frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+height)
+				
+			end)
+	end
+	
 	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
 	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5,5)
 	content.gapWidth = gapWidth
