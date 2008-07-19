@@ -645,6 +645,9 @@ end
 --[[
 	This function registers a given function to be called when a given addon is loaded, or immediatly if it is already loaded (this can be
 	used to setup a hooking function to execute when an addon is loaded but not before)
+	In certain cenarios IsAddOnLoaded returns 1 even though addon is not fully loaded yet. See http://jira.norganna.org/browse/STUB-8 
+	for details. In these cases the hook function will be called twice. It should check by querting a global variable form the addon 
+	if the addon was actually loaded, before accessing its functionality
  ]]
 function registerAddOnHook(triggerAddOn, ownerAddOn, hookFunction, ...)
 	if (IsAddOnLoaded(triggerAddOn)) then
@@ -653,21 +656,20 @@ function registerAddOnHook(triggerAddOn, ownerAddOn, hookFunction, ...)
 		else
 			hookFunction({...})
 		end
-	else
-		local addon = triggerAddOn:lower()
-		if (not config.loads[addon]) then config.loads[addon] = {} end
-		config.loads[addon][ownerAddOn] = nil
-		if (hookFunction) then
-			if (select("#", ...) == 0) then
-				config.loads[addon][ownerAddOn] = {
-					f = hookFunction,
-				}
-			else
-				config.loads[addon][ownerAddOn] = {
-					f = hookFunction,
-					a = {...},
-				}
-			end
+	end
+	local addon = triggerAddOn:lower()
+	if (not config.loads[addon]) then config.loads[addon] = {} end
+	config.loads[addon][ownerAddOn] = nil
+	if (hookFunction) then
+		if (select("#", ...) == 0) then
+			config.loads[addon][ownerAddOn] = {
+				f = hookFunction,
+			}
+		else
+			config.loads[addon][ownerAddOn] = {
+				f = hookFunction,
+				a = {...},
+			}
 		end
 	end
 end
