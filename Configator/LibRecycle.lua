@@ -42,7 +42,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "LibRecycle"
-local LIBRARY_VERSION_MINOR = 3
+local LIBRARY_VERSION_MINOR = 4
 
 --[[-----------------------------------------------------------------
 
