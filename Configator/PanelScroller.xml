@@ -76,7 +76,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						this:GetParent():GetParent():ScrollByPercent("HORIZONTAL", -0.25)
+						self:GetParent():GetParent():ScrollByPercent("HORIZONTAL", -0.25)
 						PlaySound("UChatScrollButton");
 					</OnClick>
 				</Scripts>
@@ -87,7 +87,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						this:GetParent():GetParent():ScrollByPercent("HORIZONTAL", 0.25)
+						self:GetParent():GetParent():ScrollByPercent("HORIZONTAL", 0.25)
 						PlaySound("UChatScrollButton");
 					</OnClick>
 				</Scripts>
@@ -95,11 +95,11 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
-				this.incrButton = getglobal(this:GetName().."ScrollRightButton")
-				this.decrButton = getglobal(this:GetName().."ScrollLeftButton")
+				self.incrButton = getglobal(self:GetName().."ScrollRightButton")
+				self.decrButton = getglobal(self:GetName().."ScrollLeftButton")
 			</OnLoad>
 			<OnValueChanged>
-				this:GetParent():ScrollToCoords(arg1, nil);
+				self:GetParent():ScrollToCoords(arg1, nil);
 			</OnValueChanged>
 		</Scripts>
 		<ThumbTexture name="$parentThumbTexture" inherits="PanelScrollerScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob">
@@ -119,7 +119,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						this:GetParent():GetParent():ScrollByPercent("VERTICAL", -0.25)
+						self:GetParent():GetParent():ScrollByPercent("VERTICAL", -0.25)
 						PlaySound("UChatScrollButton");
 					</OnClick>
 				</Scripts>
@@ -130,7 +130,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						this:GetParent():GetParent():ScrollByPercent("VERTICAL", 0.25)
+						self:GetParent():GetParent():ScrollByPercent("VERTICAL", 0.25)
 						PlaySound("UChatScrollButton");
 					</OnClick>
 				</Scripts>
@@ -138,11 +138,11 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
-				this.incrButton = getglobal(this:GetName().."ScrollUpButton")
-				this.decrButton = getglobal(this:GetName().."ScrollDownButton")
+				self.incrButton = getglobal(self:GetName().."ScrollUpButton")
+				self.decrButton = getglobal(self:GetName().."ScrollDownButton")
 			</OnLoad>
 			<OnValueChanged>
-				this:GetParent():ScrollToCoords(nil, arg1);
+				self:GetParent():ScrollToCoords(nil, arg1);
 			</OnValueChanged>
 		</Scripts>
 		<ThumbTexture name="$parentThumbTexture" inherits="PanelScrollerScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob">
@@ -184,13 +184,13 @@
 		</Frames>
 		<Scripts>
 			<OnScrollRangeChanged>
-				this:Update()
+				self:Update()
 			</OnScrollRangeChanged>
 			<OnVerticalScroll>
-				this:Update()
+				self:Update()
 			</OnVerticalScroll>
 			<OnMouseWheel>
-				this:MouseScroll(arg1);
+				self:MouseScroll(arg1);
 			</OnMouseWheel>
 		</Scripts>
 	</ScrollFrame>

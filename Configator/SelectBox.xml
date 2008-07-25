@@ -93,7 +93,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						this:Open()
+						self:Open()
 					</OnClick>
 				</Scripts>
 				<NormalTexture name="$parentNormalTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
@@ -132,7 +132,7 @@
 		</Frames>
 		<Scripts>
 			<OnHide>
-				this:OnClose()
+				self:OnClose()
 			</OnHide>
 		</Scripts>
 	</Frame>
