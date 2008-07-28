@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 2
+local LIBRARY_VERSION_MINOR = 3
 
 --[[-----------------------------------------------------------------
 
@@ -83,7 +83,7 @@ local GSC_1 = "|cff%s%d|r"
 -- Table management functions:
 local function replicate(source, depth, history)
 	if type(source) ~= "table" then return source end
-	assert(tonumber(depth), "Unknown depth: " .. tostring(depth))
+	assert(depth==nil or tonumber(depth), "Unknown depth: " .. tostring(depth))
 	if not depth then depth = 0 history = {} end
 	assert(history, "Have depth but without history")
 	assert(depth < 100, "Structure is too deep")
