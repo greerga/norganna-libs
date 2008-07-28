@@ -80,10 +80,33 @@ local GSC_3 = "|cff%s%d|cff000000.|cff%s%02d|cff000000.|cff%s%02d|r"
 local GSC_2 = "|cff%s%d|cff000000.|cff%s%02d|r"
 local GSC_1 = "|cff%s%d|r"
 
-local LibRecycle = LibStub("LibRecycle")
-local recycle = LibRecycle.Recycle
-local acquire = LibRecycle.Acquire
-local clone = LibRecycle.Clone
+-- Table management functions:
+local function replicate(source, depth, history)
+	if type(source) ~= "table" then return source end
+	assert(tonumber(depth), "Unknown depth: " .. tostring(depth))
+	if not depth then depth = 0 history = {} end
+	assert(history, "Have depth but without history")
+	assert(depth < 100, "Structure is too deep")
+	local dest = {} history[source] = dest
+	for k, v in pairs(source) do
+		if type(v) == "table" then
+			if history[v] then dest[k] = history[v]
+			else dest[k] = replicate(v, depth+1, history) end
+		else dest[k] = v end
+	end
+	return dest
+end
+local function empty(item)
+	if type(item) ~= 'table' then return end
+	for k,v in pairs(item) do item[k] = nil end
+end
+local function fill(item, ...)
+	if type(item) ~= 'table' then return end
+	if (#item > 0) then empty(item) end
+	local n = select('#', ...)
+	for i = 1,n do item[i] = select(i, ...) end
+end
+-- End table management functions
 
 local function coins(money)
 	money = math.floor(tonumber(money) or 0)
@@ -119,8 +142,6 @@ local kit = {}
 		styleKey = (string) The style type that affects the cell in question.
 		styleData = (any type) The data that is to be used by the renderer for this cell.
 
-		input and instyle should be cloned, not copied, so they can be recycled by the caller
-
 	Note:
 		There are many ways to represent the style for a given cell.
 ]]
@@ -142,10 +163,10 @@ function kit:SetData(input, instyle)
 	-- Clean up existing data cells
 	for i = n, 1, -1 do
 		data[i] = nil
-		recycle(style, i)
+		style[i] = nil
 	end
 
-	-- Clone/Copy the data portion of the input table into the data table,
+	-- Copy the data portion of the input table into the data table,
 	-- and the style portion into the style table.
 	local pos, content
 	for i = 1, nRows do
@@ -154,7 +175,7 @@ function kit:SetData(input, instyle)
 		if input[i] then
 			for k,v in pairs(input[i]) do
 				if type(k) == "string" and type(v) == "table" and #v > 0 then
-					style[pos][k] = clone(v)
+					style[pos][k] = replicate(v)
 				end
 			end
 		end
@@ -162,26 +183,26 @@ function kit:SetData(input, instyle)
 			pos = (i-1)*nCols+j
 
 			if input[i] and input[i][j] then
-				content = input[i][j]				-- temporary, no need to clone here
+				content = input[i][j]				-- temporary, no need to replicate here
 			else
 				content = nil
 			end
 			if type(content) == "table" then
-				data[pos] = clone(content[1])		-- just in case, clone it
+				data[pos] = replicate(content[1])		-- just in case, replicate it
 				for k,v in pairs(content) do
 					if type(k) == "string" then
-						if not style[pos] then style[pos] = acquire() end
-						style[pos][k] = clone(v)
+						if not style[pos] then style[pos] = {} end
+						style[pos][k] = replicate(v)
 					end
 				end
 			else
-				data[pos] = content or "NIL"		-- non-table, no need to clone
+				data[pos] = content or "NIL"		-- non-table, no need to replicate
 			end
 
 			if instyle and instyle[i] and instyle[i][j] and type(instyle[i][j]) == "table" then
 				for k,v in pairs(instyle[i][j]) do
-					if not style[pos] then style[pos] = acquire() end
-					style[pos][k] = clone(v)
+					if not style[pos] then style[pos] = {} end
+					style[pos][k] = replicate(v)
 				end
 			end
 		end

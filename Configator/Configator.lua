@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 15
+local LIBRARY_VERSION_MINOR = 16
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -117,8 +117,33 @@ local kit = {}
 if not lib.frames then lib.frames = {} end
 if not lib.tmpId then lib.tmpId = 0 end
 
-local LibRecycle = LibStub("LibRecycle")
-local acquire, recycle, clone, scrub = LibRecycle.All()
+-- Table management functions:
+local function replicate(source, depth, history)
+	if type(source) ~= "table" then return source end
+	assert(tonumber(depth), "Unknown depth: " .. tostring(depth))
+	if not depth then depth = 0 history = {} end
+	assert(history, "Have depth but without history")
+	assert(depth < 100, "Structure is too deep")
+	local dest = {} history[source] = dest
+	for k, v in pairs(source) do
+		if type(v) == "table" then
+			if history[v] then dest[k] = history[v]
+			else dest[k] = replicate(v, depth+1, history) end
+		else dest[k] = v end
+	end
+	return dest
+end
+local function empty(item)
+	if type(item) ~= 'table' then return end
+	for k,v in pairs(item) do item[k] = nil end
+end
+local function fill(item, ...)
+	if type(item) ~= 'table' then return end
+	if (#item > 0) then empty(item) end
+	local n = select('#', ...)
+	for i = 1,n do item[i] = select(i, ...) end
+end
+-- End table management functions
 
 function lib:CreateAnonName()
 	lib.tmpId = lib.tmpId + 1
@@ -604,15 +629,15 @@ function kit:RenderTabs()
 end
 
 function kit:RegenTabs()
-	if not self.render then self.render = acquire() end
+	if not self.render then self.render = {} end
 	local render = self.render
-	scrub(render)
+	empty(render)
 
 	for pos, catId in ipairs(self.config.order) do
 		if self.config.cats[catId].hasTabs then
-			table.insert(render, acquire(true, catId))
+			table.insert(render, {true, catId})
 			if self.config.cats[catId].isOpen then
-				local list = acquire()
+				local list = {}
 				for tabName in pairs(self.config.tabs[catId]) do
 					table.insert(list, tabName)
 				end
@@ -627,9 +652,8 @@ function kit:RegenTabs()
 				end
 				table.sort(list, sortFunction)
 				for pos, tabName in ipairs(list) do
-					table.insert(render, acquire(false, catId, tabName))
+					table.insert(render, {false, catId, tabName})
 				end
-				recycle(list)
 			end
 		end
 	end
@@ -663,14 +687,13 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 	content.gapWidth = gapWidth
 	content.gapHeight = gapHeight
 
-	recycle(self.config)
-	self.config = acquire()
+	self.config = {}
 	self.config.current = "zero"
-	self.config.tabs = acquire()
-	self.config.tabs.zero = acquire()
+	self.config.tabs = {}
+	self.config.tabs.zero = {}
 	self.config.tabs.zero.zero = 0
-	self.config.cats = acquire()
-	self.config.cats.zero = acquire()
+	self.config.cats = {}
+	self.config.cats.zero = {}
 	self.config.isZero = true
 
 	if not gapWidth then gapWidth = self.gapWidth or 0 end
