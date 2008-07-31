@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "PanelScroller"
-local LIBRARY_VERSION_MINOR = 1
+local LIBRARY_VERSION_MINOR = 2
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -150,7 +150,7 @@ function kit:ScrollByPercent(axis, percent)
 			percent = (winsize*percent)
 		end
 	else
-		return error("Unkown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
+		return error("Unknown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
 	end
 	scrollbar:SetValue(math.max(0, math.min(curpos + (percent), scrollrange)))
 	self:ScrollSync()
@@ -168,7 +168,7 @@ function kit:ScrollByPixels(axis, pixels)
 		scrollrange = self.vSize
 		curpos = self.vPos
 	else
-		return error("Unkown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
+		return error("Unknown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
 	end
 	scrollbar:SetValue(math.max(0, math.min(curpos + pixels, scrollrange)))
 	self:ScrollSync()
