@@ -620,7 +620,7 @@ end
 -- Command processor
 function private.CommandHandler(msg)
 	local vis = private.config.visibility or "fade"
-	local wide = private.config.maxWidth or "10"
+	local wide = private.config.maxWidth or "12"
 	local side = private.config.anchor or "right"
 	local position = private.config.position or "180"
 	local active = private.config.enabled or "1"
