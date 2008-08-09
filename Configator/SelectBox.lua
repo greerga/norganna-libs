@@ -334,7 +334,7 @@ if not lib.menu then
 			l:SetPoint("TOPLEFT", lib.menu.buttons[i-1], "BOTTOMLEFT", 0,0)
 		end
 		l:SetPoint("RIGHT", lib.menu.back, "RIGHT", 0,0)
-		l:SetTextFontObject(GameFontHighlightSmall)
+		l:SetNormalFontObject(GameFontHighlightSmall)
 		l:SetHighlightFontObject(GameFontNormalSmall)
 		l:SetHeight(12)
 		l:SetText("Line "..i)
