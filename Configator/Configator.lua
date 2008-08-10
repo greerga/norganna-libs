@@ -360,7 +360,7 @@ if not lib.help then
 	lib.help.title:SetPoint("TOPLEFT", lib.help, "TOPLEFT", 3,-3)
 	lib.help.title:SetPoint("BOTTOMRIGHT", lib.help, "TOPRIGHT", -28,-20)
 	lib.help.title:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
-	lib.help.title:SetNormalFontObject("GameFontNormal")
+	lib.help.title:SetTextFontObject("GameFontNormal")
 	lib.help.title:SetText("Help Window")
 
 	lib.help.close = CreateFrame("Button", nil, lib.help, "UIPanelCloseButton")
@@ -1390,7 +1390,7 @@ function kit:AddControl(id, cType, column, ...)
 		MoneyInputFrame_SetNextFocus(el, getglobal(frameName.."Gold"))
 
 		local cur = el
-		MoneyInputFrame_SetOnValueChangedFunc(el, function() self:ChangeSetting(cur) end);
+		MoneyInputFrame_SetOnvalueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 20+column+indent, colwidth or 160, 32, 4)
 		el.frameName = frameName;
