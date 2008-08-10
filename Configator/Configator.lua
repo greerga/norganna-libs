@@ -1390,7 +1390,7 @@ function kit:AddControl(id, cType, column, ...)
 		MoneyInputFrame_SetNextFocus(el, getglobal(frameName.."Gold"))
 
 		local cur = el
-		MoneyInputFrame_SetOnvalueChangedFunc(el, function() self:ChangeSetting(cur) end);
+		MoneyInputFrame_SetOnValueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 20+column+indent, colwidth or 160, 32, 4)
 		el.frameName = frameName;
