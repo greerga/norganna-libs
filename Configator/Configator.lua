@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 17
+local LIBRARY_VERSION_MINOR = 18
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -1274,7 +1274,7 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetScript("OnLeave", kit.ReleaseKeys)
 		el:SetScript("OnKeyUp", kit.KeyPress)
 		el:SetScript("OnMouseWheel", kit.MouseScroll)
-
+		self:GetSetting(el) -- We need to have set or the hasNumber part will always start at 0
 		if hasNumber then
 			local slaveName = lib.CreateAnonName()
 			slave = CreateFrame("EditBox", slaveName, el, "InputBoxTemplate")
@@ -1308,7 +1308,6 @@ function kit:AddControl(id, cType, column, ...)
 			slave:SetNumber((el:GetValue())/100)
 			el.slave = slave
 		end
-		self:GetSetting(el)
 		el:SetScript("OnValueChanged", function(...)
 			self:ChangeSetting(...)
 			if (slave) then
