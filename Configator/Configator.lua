@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 19
+local LIBRARY_VERSION_MINOR = 20
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -1390,7 +1390,8 @@ function kit:AddControl(id, cType, column, ...)
 		MoneyInputFrame_SetNextFocus(el, getglobal(frameName.."Gold"))
 
 		local cur = el
-		MoneyInputFrame_SetOnvalueChangedFunc(el, function() self:ChangeSetting(cur) end);
+		local MoneyInputFrame_SetOnValueChangedFunc = MoneyInputFrame_SetOnvalueChangedFunc or MoneyInputFrame_SetOnValueChangedFunc -- WotLK Hack
+		MoneyInputFrame_SetOnValueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 20+column+indent, colwidth or 160, 32, 4)
 		el.frameName = frameName;
