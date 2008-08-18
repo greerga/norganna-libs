@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 18
+local LIBRARY_VERSION_MINOR = 19
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -360,7 +360,8 @@ if not lib.help then
 	lib.help.title:SetPoint("TOPLEFT", lib.help, "TOPLEFT", 3,-3)
 	lib.help.title:SetPoint("BOTTOMRIGHT", lib.help, "TOPRIGHT", -28,-20)
 	lib.help.title:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
-	lib.help.title:SetTextFontObject("GameFontNormal")
+	if ( lib.help.title.SetTextFontObject ) then lib.help.title.SetNormalFontObject = lib.help.title.SetTextFontObject end -- WotLK Hack
+	lib.help.title:SetNormalFontObject("GameFontNormal")
 	lib.help.title:SetText("Help Window")
 
 	lib.help.close = CreateFrame("Button", nil, lib.help, "UIPanelCloseButton")

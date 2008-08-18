@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "SelectBox"
-local LIBRARY_VERSION_MINOR = 2
+local LIBRARY_VERSION_MINOR = 3
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -334,7 +334,8 @@ if not lib.menu then
 			l:SetPoint("TOPLEFT", lib.menu.buttons[i-1], "BOTTOMLEFT", 0,0)
 		end
 		l:SetPoint("RIGHT", lib.menu.back, "RIGHT", 0,0)
-		l:SetTextFontObject(GameFontHighlightSmall)
+		if ( l.SetTextFontObject ) then l.SetNormalFontObject = l.SetTextFontObject end -- WotLK Hack
+		l:SetNormalFontObject (GameFontHighlightSmall)
 		l:SetHighlightFontObject(GameFontNormalSmall)
 		l:SetHeight(12)
 		l:SetText("Line "..i)
