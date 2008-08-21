@@ -377,6 +377,7 @@ Swatter.Error:SetBackdrop({
 Swatter.Error:SetBackdropColor(0,0,0, 1)
 Swatter.Error:SetScript("OnShow", Swatter.ErrorShow)
 Swatter.Error:SetMovable(true)
+Swatter.Error:SetClampedToScreen(true)
 
 Swatter.ProxyFrame = CreateFrame("Frame", "SwatterProxyFrame")
 Swatter.ProxyFrame:SetParent(Swatter.Error)
