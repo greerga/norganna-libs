@@ -502,7 +502,12 @@ nLog.Message.MsgScroll = CreateFrame("ScrollFrame", "nLogMessageScroll", nLog.Me
 nLog.Message.MsgScroll:SetPoint("TOPLEFT", nLog.Message, "TOPLEFT", 20, -20)
 nLog.Message.MsgScroll:SetPoint("RIGHT", nLog.Message, "RIGHT", -40, 0)
 nLog.Message.MsgScroll:SetHeight(200)
-nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function () FauxScrollFrame_OnVerticalScroll(LOG_LINES, nLog.UpdateDisplay) end)
+if select(4, GetBuildInfo() ) >= 30000 then
+	-- ccox - WoW 3.0 changed the FauxScrollFrame_OnVerticalScroll function
+	nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function (args, offset) FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, offset, LOG_LINES, nLog.UpdateDisplay) end)
+else
+	nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function () FauxScrollFrame_OnVerticalScroll(LOG_LINES, nLog.UpdateDisplay) end)
+end
 nLog.Message.MsgScroll:SetScript("OnShow", function() nLog.UpdateDisplay() end)
 
 -- box frame for the message text and scroller
