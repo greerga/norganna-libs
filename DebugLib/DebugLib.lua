@@ -498,6 +498,29 @@ function lib.DebugPrint(addon, message, category, title, errorCode, level, ...)
 end
 
 
+
+-------------------------------------------------------------------------------
+-- Prints the specified message to nLog.
+-- This is the version used for lib.DebugPrintQuick, if nLog is installed and
+-- enabled.
+--
+-- syntax:
+--    errorCode, message = lib.DebugPrintQuick(...)
+--
+-- parameters:
+--    ...       - (any) data which will be appended to the error
+--                      message in nLog
+--
+-- returns:
+--    nothing
+--
+-------------------------------------------------------------------------------
+function lib.DebugPrintQuick(...)
+	if not nLog then return end
+	nLog.AddSimpleMessage(...)
+end
+
+
 -------------------------------------------------------------------------------
 -- The function does not do anything but processing the parameters and returning
 -- the errorCode and message.
@@ -538,6 +561,26 @@ function lib.SimpleDebugPrint(addon, message, category, title, errorCode, level,
 	_, message, _, _, errorCode = private.normalizeParameters(addon, message, category, title, errorCode, level)
 
 	return errorCode, message
+end
+
+
+-------------------------------------------------------------------------------
+-- The function does not do anything.
+-- This is the version used for lib.DebugPrintQuick, if nLog is not installed or
+-- disabled.
+--
+-- syntax:
+--    errorCode, message = lib.SimpleDebugPrintQuick(...)
+--
+-- parameters:
+--    ...       - (any) data which will be appended to the error
+--                      message in nLog
+--
+-- returns:
+--    nothing
+--
+-------------------------------------------------------------------------------
+function lib.SimpleDebugPrintQuick(...)
 end
 
 
@@ -1079,6 +1122,9 @@ if (nLog) then
 	function kit:Assert(...)
 		return lib.Assert(self.name, ...)
 	end
+	function kit:DebugQuick(...)
+		return lib.DebugPrintQuick(...)
+	end
 else
 	function kit:Debug(...)
 		return lib.SimpleDebugPrint(self.name, ...)
@@ -1086,21 +1132,27 @@ else
 	function kit:Assert(...)
 		return lib.SimpleAssert(self.name, ...)
 	end
+	function kit:DebugQuick(...)
+		return lib.SimpleDebugPrintQuick(...)
+	end
 end
 
 function kit:Dump(...)
 	return private.dump(...)
 end
+
 function lib:New(addonName)
 	assert(addonName, "Usage: DebugLib(addonName)")
-	local debugObj, assertObj = {name=addonName}, {name=addonName}
+	local debugObj, assertObj, debugQuickObj = {name=addonName}, {name=addonName}, {name=addonName}
 	for k,v in pairs(kit) do
 		debugObj[k] = v
 		assertObj[k] = v
+		debugQuickObj[k] = v
 	end
 	setmetatable(debugObj, { __call = kit.Debug })
 	setmetatable(assertObj, { __call = kit.Assert })
-	return debugObj, assertObj
+	setmetatable(debugQuickObj, { __call = kit.DebugQuick })
+	return debugObj, assertObj, debugQuickObj
 end
 setmetatable(lib, { __call = lib.New })
 
