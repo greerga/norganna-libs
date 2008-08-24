@@ -183,7 +183,7 @@ end
 
 -- ccox - for those days when you don't want to think too hard about what you're trying to log
 function nLog.AddSimpleMessage(...)
-	nLog.AddMessage("SimpleMessage", "SimpleMessage", N_DEBUG, "SimpleMessage", ...)
+	nLog.AddMessage("SimpleMessage", "", N_DEBUG, "", ...)
 end
 
 function nLog.OnEvent(frame, event, ...)
