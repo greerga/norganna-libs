@@ -142,6 +142,13 @@ function nLog.AddMessage(mAddon, mType, mLevel, mTitle, ...)
 	local ts = date("%b %d %H:%M:%S");
 	pid = pid + 1
 	local msg = format(...)
+	
+	-- safety
+	if (type(mLevel) ~= "number") then mLevel = tonumber(mLevel) end
+
+	-- sanity
+	if (mLevel < N_CRITICAL) then mLevel = N_CRITICAL end
+	if (mLevel > N_DEBUG) then mLevel = N_DEBUG end
 
 	-- Once we fill up to 64k entries, treat the table like a loop buffer
 	if (#nLog.messages >= 65535) then
@@ -172,6 +179,11 @@ function nLog.AddMessage(mAddon, mType, mLevel, mTitle, ...)
 	if (mLevel == N_DEBUG) and nLogData.chatPrint then
 		chat(msg)
 	end
+end
+
+-- ccox - for those days when you don't want to think too hard about what you're trying to log
+function nLog.AddSimpleMessage(...)
+	nLog.AddMessage("SimpleMessage", "SimpleMessage", N_DEBUG, "SimpleMessage", ...)
 end
 
 function nLog.OnEvent(frame, event, ...)
