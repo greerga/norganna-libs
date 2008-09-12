@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 3
+local LIBRARY_VERSION_MINOR = 4
 
 --[[-----------------------------------------------------------------
 
@@ -489,12 +489,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
+				
+				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-
-					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				end
 				cell.button = button --store in cell so we can refrence the button
 			else
@@ -509,12 +509,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
+				
+				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-
-					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				end
 				cell.button = button
 			end
