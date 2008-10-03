@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 4
+local LIBRARY_VERSION_MINOR = 5
 
 --[[-----------------------------------------------------------------
 
@@ -354,6 +354,7 @@ function kit:Render()
 		if rowNum then rowPos = (rowNum-1)*hSize end
 
 		local cells = rows[i]
+		local direction, rowR, rowG, rowB, rowA1, rowA2 = "Horizontal", 1, 1, 1, 0, 0 --row level coloring used for gradiants
 		for j = 1, hSize do
 			local cell = cells[j]
 			if rowPos then
@@ -370,6 +371,8 @@ function kit:Render()
 					red, green, blue = unpack(settings['textColor'])
 				elseif settings["date"] then
 					text = date(settings["date"], text)
+				elseif settings["rowColor"] then
+					rowR, rowG, rowB, rowA1, rowA2, direction = unpack(settings['rowColor'])
 				end
 
 				cell:SetTextColor(red,green,blue)
@@ -379,6 +382,7 @@ function kit:Render()
 				cell:Hide()
 			end
 		end
+		rows[i].colorTex:SetGradientAlpha(direction, rowR, rowG, rowB, rowA1, rowR, rowG, rowB, rowA2)--row color to apply
 	end
 	self:RowSelect()
 end
@@ -540,6 +544,13 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			cell:SetTextColor(0.9, 0.9, 0.9)
 			row[i] = cell
 		end
+		local colorTex = content:CreateTexture()
+		colorTex:SetPoint("TOPLEFT", row[1], "TOPLEFT", 0,0)
+		colorTex:SetPoint("BOTTOMRIGHT", row[#layout], "BOTTOMRIGHT", 0, 1)
+		colorTex:Show()
+		colorTex:SetTexture(1 ,1 , 1)
+		row.colorTex = colorTex
+		
 		rows[rowNum] = row
 		rowNum = rowNum + 1
 		totalHeight = totalHeight + 14
