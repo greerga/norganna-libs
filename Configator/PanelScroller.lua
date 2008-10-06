@@ -152,7 +152,10 @@ function kit:ScrollByPercent(axis, percent)
 	else
 		return error("Unknown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
 	end
-	scrollbar:SetValue(math.max(0, math.min(curpos + (percent), scrollrange)))
+	local dest = math.max(0, math.min(curpos + (percent), scrollrange))
+	if (abs(dest - curpos) > 0.01) then
+		scrollbar:SetValue(dest)
+	end
 	self:ScrollSync()
 end
 
@@ -170,16 +173,25 @@ function kit:ScrollByPixels(axis, pixels)
 	else
 		return error("Unknown axis for scrolling, must be one of HORIZONTAL or VERTICAL")
 	end
-	scrollbar:SetValue(math.max(0, math.min(curpos + pixels, scrollrange)))
+	local dest = math.max(0, math.min(curpos + pixels, scrollrange))
+	if (abs(dest - curpos) > 0.01) then
+		scrollbar:SetValue(dest)
+	end
 	self:ScrollSync()
 end
 
 function kit:ScrollToCoords(x, y)
 	if x then
-		self.hScroll:SetValue(math.max(0, math.min(x, self.hSize)))
+		local dest = math.max(0, math.min(x, self.hSize))
+		if (abs(dest - x) > 0.01) then
+			self.hScroll:SetValue(dest)
+		end
 	end
 	if y then
-		self.vScroll:SetValue(math.max(0, math.min(y, self.vSize)))
+		local dest = math.max(0, math.min(y, self.vSize))
+		if (abs(dest - y) > 0.01) then
+			self.vScroll:SetValue(dest)
+		end
 	end
 	self:ScrollSync()
 end
@@ -214,11 +226,17 @@ function kit:Update()
 	if (self.hPos > self.hSize) then self.hPos = self.hSize end
 	if (self.vPos > self.vSize) then self.vPos = self.vSize end
 
-	self.hScroll:SetMinMaxValues(0, self.hSize)
-	self.vScroll:SetMinMaxValues(0, self.vSize)
+	local hMin, hMax = self.hScroll:GetMinMaxValues()
+	local vMin, vMax = self.vScroll:GetMinMaxValues()
+	if abs(hMin) > 0.01 or abs(vMin) > 0.01 or 
+	abs(hMax-self.hSize) > 0.01 or
+	abs(vMax-self.vSize) > 0.01 then
+		self.hScroll:SetMinMaxValues(0, self.hSize)
+		self.vScroll:SetMinMaxValues(0, self.vSize)
 
-	self.hScroll:SetValue(self.hPos)
-	self.vScroll:SetValue(self.vPos)
+		self.hScroll:SetValue(self.hPos)
+		self.vScroll:SetValue(self.vPos)
+	end
 
 	if self.hType == "NO" then
 		self.hScroll:Hide()
