@@ -1,7 +1,7 @@
 ## Title: Configator
 ## Notes: Easily construct a GUI configuration editor.
 ##
-## Interface: 20400
+## Interface: 30000
 ## LoadOnDemand: 0
 ##
 ## Version: <%version%> (<%codename%>)

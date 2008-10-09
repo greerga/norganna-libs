@@ -1,7 +1,7 @@
 ## Title: Constructor
 ## Notes: Easily build frames in Lua using a table-based definition.
 ##
-## Interface: 20400
+## Interface: 30000
 ## LoadOnDemand: 0
 ##
 ## Version: <%version%> (<%codename%>)
