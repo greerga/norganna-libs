@@ -192,7 +192,7 @@
 	Note:
 		This AddOn's source code is specifically designed to work with
 		World of Warcraft's interpreted AddOn system.
-		You have an implicit licence to use this AddOn with these facilities
+		You have an implicit license to use this AddOn with these facilities
 		since that is its designated purpose as per:
 		http://www.fsf.org/licensing/licenses/gpl-faq.html#InterpreterIncompat
 ]]
@@ -645,8 +645,8 @@ end
 --[[
 	This function registers a given function to be called when a given addon is loaded, or immediatly if it is already loaded (this can be
 	used to setup a hooking function to execute when an addon is loaded but not before)
-	In certain cenarios IsAddOnLoaded returns 1 even though addon is not fully loaded yet. See http://jira.norganna.org/browse/STUB-8 
-	for details. In these cases the hook function will be called twice. It should check by querting a global variable form the addon 
+	In certain cenarios IsAddOnLoaded returns 1 even though addon is not fully loaded yet. See http://jira.norganna.org/browse/STUB-8
+	for details. In these cases the hook function will be called twice. It should check by querting a global variable form the addon
 	if the addon was actually loaded, before accessing its functionality
  ]]
 function registerAddOnHook(triggerAddOn, ownerAddOn, hookFunction, ...)

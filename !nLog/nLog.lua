@@ -142,7 +142,7 @@ function nLog.AddMessage(mAddon, mType, mLevel, mTitle, ...)
 	local ts = date("%b %d %H:%M:%S");
 	pid = pid + 1
 	local msg = format(...)
-	
+
 	-- safety
 	if (type(mLevel) ~= "number") then mLevel = tonumber(mLevel) end
 

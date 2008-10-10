@@ -142,9 +142,9 @@ function kit:ScrollByPercent(axis, percent)
 		--vertical is 1 page of data varies by # of  data rows in that scrollframe or (winsize*percent)
 		if self:GetParent().sheet and self:GetParent().sheet.rows then
 			if percent > 0 then
-				percent = #self:GetParent().sheet.rows 
-			else 
-				percent = -#self:GetParent().sheet.rows 
+				percent = #self:GetParent().sheet.rows
+			else
+				percent = -#self:GetParent().sheet.rows
 			end
 		else
 			percent = (winsize*percent)
@@ -228,7 +228,7 @@ function kit:Update()
 
 	local hMin, hMax = self.hScroll:GetMinMaxValues()
 	local vMin, vMax = self.vScroll:GetMinMaxValues()
-	if abs(hMin) > 0.01 or abs(vMin) > 0.01 or 
+	if abs(hMin) > 0.01 or abs(vMin) > 0.01 or
 	abs(hMax-self.hSize) > 0.01 or
 	abs(vMax-self.vSize) > 0.01 then
 		self.hScroll:SetMinMaxValues(0, self.hSize)

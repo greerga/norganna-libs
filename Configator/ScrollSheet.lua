@@ -244,7 +244,7 @@ function kit:RowSelect(row, mouseButton)
 			self.selected = nil
 		end
 	end
-	
+
 	for i = 1, #self.rows do
 		for j = 1, #self.rows[i] do
 			self.rows[i][j]["highlight"]:SetAlpha(0)
@@ -271,7 +271,7 @@ end
 
 function kit:ButtonClick(column, mouseButton)
 	if mouseButton == "RightButton" then lib.moveColumn(self, column, mouseButton) return end
-	
+
 	if (self.curSort == column) then
 		self.curDir = self.curDir * -1
 	else
@@ -333,7 +333,7 @@ function kit:PerformSort()
 	end
 
 	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
-	
+
 	self.panel:Update()
 end
 
@@ -392,7 +392,7 @@ local PanelScroller = LibStub:GetLibrary("PanelScroller")
 function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
-	
+
 	local id = 1
 	while (_G[name..id]) do
 		id = id + 1
@@ -422,12 +422,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			button:SetPoint("TOPLEFT", labels[i-1].button, "TOPRIGHT", 3,0)
 			totalWidth = totalWidth + 3
 		end
-		
+
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetText(layout[i][1])
 
 		local colWidth = layout[i][3] or 0
-		
+
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(16)
@@ -493,7 +493,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
-				
+
 				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -513,7 +513,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
-				
+
 				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -550,7 +550,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		colorTex:Show()
 		colorTex:SetTexture(1 ,1 , 1)
 		row.colorTex = colorTex
-		
+
 		rows[rowNum] = row
 		rowNum = rowNum + 1
 		totalHeight = totalHeight + 14
@@ -768,29 +768,29 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize, onSele
 	return sheet
 end
 function  lib.moveColumn(self, column)
-	if self.resize then 
+	if self.resize then
 		if IsControlKeyDown() then --reset column to default
 			self.resize(self, column, nil) --sends nil as width, this will reset column to defaults
 		else
 			local originalScript = self.labels[column].button:GetScript("OnMouseDown") --store the original Sort onclick script will reset it when we are done resizing
-			
+
 			local point, relativeTo, relativePoint, xOfs, yOfs = self.labels[column].button:GetPoint() --Store the anchor point since its niled when resized
 			--limit the size we will allow buttons to get
 			local height = self.labels[column].button:GetHeight()
 			self.labels[column].button:SetResizable(true)
 			self.labels[column].button:SetMaxResize(400, height)
 			self.labels[column].button:SetMinResize(13, height) --Makes the nice ... elipsies line up
-			--set the resize script	
+			--set the resize script
 			self.labels[column].button:SetScript("OnMouseDown", function() self.labels[column].button:StartSizing(self.labels[column].button) end)
 			--resets the original onclick as well as setting new anchor points for our buttons
-			self.labels[column].button:SetScript("OnMouseUp", function() 
-										self.labels[column].button:StopMovingOrSizing() 
-										self.labels[column].button:SetScript("OnMouseDown", originalScript) 
+			self.labels[column].button:SetScript("OnMouseUp", function()
+										self.labels[column].button:StopMovingOrSizing()
+										self.labels[column].button:SetScript("OnMouseDown", originalScript)
 										self.labels[column].button:ClearAllPoints()
 										self.labels[column].button:SetPoint(point, relativeTo, relativePoint, xOfs,yOfs)
 										self.resize(self, column, self.labels[column].button:GetWidth()) --sends new width info to the module
 						end)
-			--start resizing self			
+			--start resizing self
 			self.labels[column].button:StartSizing(self.labels[column].button)
 		end
 	end
