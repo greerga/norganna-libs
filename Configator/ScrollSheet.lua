@@ -72,6 +72,8 @@ end
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
+
 local GSC_GOLD="ffd100"
 local GSC_SILVER="e6e6e6"
 local GSC_COPPER="c8602c"

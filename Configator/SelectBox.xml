@@ -27,6 +27,9 @@
 		since that is it's designated purpose as per:
 		http://www.fsf.org/licensing/licenses/gpl-faq.html#InterpreterIncompat
 -->
+	<Script>
+		LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
+	</Script>
 	<Script file="SelectBox.lua"/>
 	<Frame name="SelectBoxTemplate_v1" virtual="true">
 		<Size>

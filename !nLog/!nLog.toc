@@ -8,5 +8,6 @@
 ## Revision: $Id$
 ## URL: http://auctioneeraddon.com/dl/nLog/
 ##
+Support\Load.xml
 Libs\Load.xml
 nLog.lua

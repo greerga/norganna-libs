@@ -3,6 +3,13 @@ local LIBSTRING = MAJOR.."-"..MINOR -- a string unique to this version to preven
 local lib = LibStub:NewLibrary(MAJOR,MINOR)
 if not lib then return end
 
+if SetAddOnDetail then
+	SetAddOnDetail("LibTooltip", {
+		name = "LibTooltip",
+		version = "1.0",
+	})
+end
+
 -- housekeeping upgrade stuff...
 if lib.Deactivate then lib:Deactivate() end -- calls the OLD version of this function.  NOT the one defined in this file's scope
 

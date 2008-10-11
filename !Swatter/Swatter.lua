@@ -19,6 +19,7 @@
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ]]
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
 
 -- Check to see if another debugging aid has been loaded.
 for addon, name in pairs({
@@ -39,6 +40,7 @@ Swatter = {
 		GetName = function() return "Global" end
 	},
 	errorOrder = {},
+	moduleDetail = {},
 	HISTORY_SIZE = 50,
 }
 local origItemRef = Swatter.origItemRef
@@ -54,6 +56,27 @@ SwatterData = {
 	autoshow = true,
 	errors = {},
 }
+
+local tinsert = table.insert
+
+
+-- SetAddOnDetail global function:
+--   (See http://wowwiki.com/SetAddOnDetail for details)
+
+-- Define a blank stub if the function doesn't exist.
+if not _G['SetAddOnDetail'] then
+	_G['SetAddOnDetail'] = function(name, detail) end
+end
+-- Define my functions to process the information.
+local function addOnDetail(name, detail)
+	if not detail.name then detail.name = name end
+	Swatter.moduleDetail[name:lower()] = detail
+end
+-- Post hook the global SetAddOnDetail function.
+hooksecurefunc("SetAddOnDetail", addOnDetail)
+
+-- End SetAddOnDetail function hook.
+
 
 function Swatter.ChatMsg(msg)
 	DEFAULT_CHAT_FRAME:AddMessage(msg)
@@ -95,7 +118,7 @@ function Swatter.OnError(msg, frame, stack, etype, ...)
 		end
 		local ts = date("%Y-%m-%d %H:%M:%S");
 		local addons = Swatter.GetAddOns()
-		table.insert(SwatterData.errors, {
+		tinsert(SwatterData.errors, {
 			context = context,
 			timestamp = ts,
 			addons = addons,
@@ -114,7 +137,7 @@ function Swatter.OnError(msg, frame, stack, etype, ...)
 			end
 		end
 	end
-	table.insert(Swatter.errorOrder, id)
+	tinsert(Swatter.errorOrder, id)
 
 	local err = SwatterData.errors[id]
 	local count = err.count or 0
@@ -146,16 +169,59 @@ function Swatter.NamedFrame(name)
 	return Swatter.named[name]
 end
 
+local function keyPairs(t,f)
+	local a, i = {}, 0
+	for n in pairs(t) do table.insert(a, n) end
+	table.sort(a, f)
+	local iter = function ()
+		i = i + 1
+		if a[i] == nil then return nil
+		else return a[i], t[a[i]] end
+	end
+	return iter
+end
+
 function Swatter.GetAddOns()
 	local addlist = ""
+
+	local addons = {}
 	for i = 1, GetNumAddOns() do
 		local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(i)
-
 		local loaded = IsAddOnLoaded(i)
 		if (loaded) then
-			if not name then name = "Anonymous" end
-			name = name:gsub("[^a-zA-Z0-9]+", "")
 			local version = GetAddOnMetadata(i, "Version")
+			local addition = GetAddOnMetadata(i, "X-Swatter-Extra")
+			if not version then
+				version = GetAddOnMetadata(i, "X-Version")
+			end
+			if not version then
+				version = ""
+			end
+			addons[name:lower()] = {
+				name = name,
+				version = version,
+				["x-swatter-extra"] = addition,
+			}
+		end
+	end
+
+	for addon, reg in pairs(Swatter.moduleDetail) do
+		addons[addon] = reg
+	end
+
+	for addon, reg in keyPairs(addons) do
+		local version
+		local addition = ""
+	
+		local name = reg.name
+		version = reg.version
+		if (reg["x-swatter-extra"]) then
+			addition = "("..reg["x-swatter-extra"]..")"
+		end
+
+		name = name:gsub("[^a-zA-Z0-9]+", "")
+
+		if not version then
 			local class = getglobal(name)
 			if not class or type(class)~='table' then class = getglobal(name:lower()) end
 			if not class or type(class)~='table' then class = getglobal(name:sub(1,1):upper()..name:sub(2):lower()) end
@@ -169,23 +235,28 @@ function Swatter.GetAddOns()
 					version = class.VERSION
 				end
 			end
+		end
+
+		if not version then
 			local const = getglobal(name:upper().."_VERSION")
 			if (const) then version = const end
+		end
 
-			if type(version)=='table' then
-				if (nLog) then
-					nLog.AddMessage("!swatter", "Swatter.lua", N_INFO, "version is a table", name, table.concat(version,":"))
-				end
-				version = table.concat(version,":")
+		if type(version)=='table' then
+			if (nLog) then
+				nLog.AddMessage("!swatter", "Swatter.lua", N_INFO, "version is a table", name, table.concat(version,":"))
 			end
+			version = table.concat(version,":")
+		end
 
-			if (version) then
-				addlist = addlist.."  "..name..", v"..version.."\n"
-			else
-				addlist = addlist.."  "..name.."\n"
-			end
+		if (version) then
+			addlist = addlist.."  "..name..", v"..tostring(version)..addition.."\n"
+		else
+			addlist = addlist.."  "..name.."\n"
 		end
 	end
+
+	addlist = addlist..string.format("  (ck=%x)\n", addlist:len())
 	return addlist
 end
 
@@ -230,7 +301,7 @@ function Swatter.OnEvent(frame, event, ...)
 				end
 			end
 			for pos, err in ipairs(SwatterData.errors) do
-				table.insert(Swatter.errorOrder, pos)
+				tinsert(Swatter.errorOrder, pos)
 			end
 			frame:UnregisterEvent("ADDON_LOADED")
 			return
@@ -406,7 +477,7 @@ Swatter.ProxyFrame:SetScript("OnUpdate",
 		self.timer = timer
 	end
 )
-table.insert(UISpecialFrames, "SwatterProxyFrame")
+tinsert(UISpecialFrames, "SwatterProxyFrame")
 
 Swatter.Drag = CreateFrame("Button", nil, Swatter.Error)
 Swatter.Drag:SetPoint("TOPLEFT", Swatter.Error, "TOPLEFT", 10,-5)
@@ -520,16 +591,14 @@ local function toggle()
 end
 
 local sideIcon
-if LibStub then
-	local SlideBar = LibStub:GetLibrary("SlideBar", true)
-	if SlideBar then
-		sideIcon = SlideBar.AddButton("Swatter", "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon", 9000)
-		sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
-		sideIcon:SetScript("OnClick", toggle)
-		sideIcon.tip = {
-			"Swatter",
-			"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
-			"{{Click}} to open the report.",
-		}
-	end
+local SlideBar = LibStub:GetLibrary("SlideBar", true)
+if SlideBar then
+	sideIcon = SlideBar.AddButton("Swatter", "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon", 9000)
+	sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
+	sideIcon:SetScript("OnClick", toggle)
+	sideIcon.tip = {
+		"Swatter",
+		"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
+		"{{Click}} to open the report.",
+	}
 end

@@ -19,6 +19,7 @@
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ]]
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
 
 -- /run for i = 1, 100000 do nLog.AddMessage("Auctioneer", N_NOTICE, "Scan", "Empty Auction "..i, "Found empty auction with item "..i) end
 
@@ -625,17 +626,15 @@ local function toggle()
 end
 
 local sideIcon
-if LibStub then
-	local SlideBar = LibStub:GetLibrary("SlideBar", true)
-	if SlideBar then
-		sideIcon = SlideBar.AddButton("nLog", "Interface\\AddOns\\!nLog\\Textures\\nLogIcon", 10000)
-		sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
-		sideIcon:SetScript("OnClick", toggle)
-		sideIcon.tip = {
-			"Norganna's Log",
-			"nLog is a debugging utility designed for use by AddOn authors or professional testers only.",
-			"If you have inadvertently found yourself with this addon installed, and are a normal end-user, we recommend that you disable it from loading.",
-			"{{Click}} to open the log window.",
-		}
-	end
+local SlideBar = LibStub:GetLibrary("SlideBar", true)
+if SlideBar then
+	sideIcon = SlideBar.AddButton("nLog", "Interface\\AddOns\\!nLog\\Textures\\nLogIcon", 10000)
+	sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
+	sideIcon:SetScript("OnClick", toggle)
+	sideIcon.tip = {
+		"Norganna's Log",
+		"nLog is a debugging utility designed for use by AddOn authors or professional testers only.",
+		"If you have inadvertently found yourself with this addon installed, and are a normal end-user, we recommend that you disable it from loading.",
+		"{{Click}} to open the log window.",
+	}
 end

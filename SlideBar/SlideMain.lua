@@ -74,6 +74,8 @@ end
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
+
 -- Autoconvert existing nSideBar instances to SlideBar
 if LibStub.libs.nSideBar then
 	for k,v in pairs(LibStub.libs.nSideBar) do

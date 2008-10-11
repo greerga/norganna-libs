@@ -84,6 +84,8 @@ end -- LibStub
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
+
 local kit = {
 	hPos = 0, hSize = 0, hWin = 0, hType = "AUTO",
 	vPos = 0, vSize = 0, vWin = 0, vType = "YES",
