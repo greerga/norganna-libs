@@ -328,10 +328,8 @@ function Swatter.OnEvent(frame, event, ...)
 			for pos, err in ipairs(SwatterData.errors) do
 				tinsert(Swatter.errorOrder, pos)
 			end
-			frame:UnregisterEvent("ADDON_LOADED")
 			return
-		end
-		if (addon:lower() == "slidebar") then
+		elseif (addon:lower() == "slidebar") then
 			addSlideIcon()
 		end
 	elseif (event == "ADDON_ACTION_BLOCKED" and SwatterData.warning) then
