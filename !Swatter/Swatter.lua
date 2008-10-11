@@ -19,7 +19,6 @@
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ]]
-LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
 
 -- Check to see if another debugging aid has been loaded.
 for addon, name in pairs({
@@ -77,6 +76,32 @@ hooksecurefunc("SetAddOnDetail", addOnDetail)
 
 -- End SetAddOnDetail function hook.
 
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
+
+
+local sideIcon
+
+local function toggle()
+	if Swatter.Error:IsVisible() then
+		Swatter.Error:Hide()
+	else
+		Swatter.Error:Show()
+	end
+end
+
+local function addSlideIcon()
+	local SlideBar = LibStub:GetLibrary("SlideBar", true)
+	if SlideBar then
+		sideIcon = SlideBar.AddButton("Swatter", "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon", 9000)
+		sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
+		sideIcon:SetScript("OnClick", toggle)
+		sideIcon.tip = {
+			"Swatter",
+			"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
+			"{{Click}} to open the report.",
+		}
+	end
+end
 
 function Swatter.ChatMsg(msg)
 	DEFAULT_CHAT_FRAME:AddMessage(msg)
@@ -305,6 +330,9 @@ function Swatter.OnEvent(frame, event, ...)
 			end
 			frame:UnregisterEvent("ADDON_LOADED")
 			return
+		end
+		if (addon:lower() == "slidebar") then
+			addSlideIcon()
 		end
 	elseif (event == "ADDON_ACTION_BLOCKED" and SwatterData.warning) then
 		local addon, func = ...
@@ -582,23 +610,5 @@ SlashCmdList["SWATTER"] = function(msg)
 	end
 end
 
-local function toggle()
-	if Swatter.Error:IsVisible() then
-		Swatter.Error:Hide()
-	else
-		Swatter.Error:Show()
-	end
-end
+addSlideIcon()
 
-local sideIcon
-local SlideBar = LibStub:GetLibrary("SlideBar", true)
-if SlideBar then
-	sideIcon = SlideBar.AddButton("Swatter", "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon", 9000)
-	sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
-	sideIcon:SetScript("OnClick", toggle)
-	sideIcon.tip = {
-		"Swatter",
-		"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
-		"{{Click}} to open the report.",
-	}
-end
