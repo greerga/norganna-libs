@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 21
+local LIBRARY_VERSION_MINOR = 22
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -702,12 +702,16 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 	if not gapWidth then gapWidth = self.gapWidth or 0 end
 	if not gapHeight then gapHeight = self.gapHeight or 0 end
 
+	local expandGap = 0
+	if self.expandGap then expandGap = self.expandGap end
+
 	self.tabs[0] = {
 		nil, frame, content, -- For backwards compatability
 		catId = catId,
 		tabName = tabName,
 		gapWidth = gapWidth,
 		gapHeight = gapHeight,
+		expandGap = expandGap,
 		frame = frame,
 		content = content,
 		scroll = nil,
@@ -717,6 +721,40 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 	self.config.selectedTab = "zero"
 
 	return 0
+end
+
+function kit:ToggleExpand(id)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	local tab = self.tabs[id]
+	if not tab.expanded then
+		self:ExpandFrame(id)
+	else
+		self:ContractFrame(id)
+	end
+end
+function kit:ExpandFrame(id)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	local tab = self.tabs[id]
+	if tab.gapHeight == 0 then return end
+	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up")
+	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Down")
+	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.expandGap)
+	tab.expanded = true
+end
+function kit:ContractFrame(id)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	local tab = self.tabs[id]
+	if tab.gapHeight == 0 then return end
+	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
+	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Down")
+	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.gapHeight)
+	tab.expanded = nil
+end
+function kit:SetExpandGap(id, gap)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	local tab = self.tabs[id]
+	if tab.gapHeight == 0 then return end
+	tab.expandGap = gap
 end
 
 function kit:AddTab(tabName, catId, gapWidth, gapHeight)
@@ -742,15 +780,20 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 	if not gapWidth then gapWidth = self.gapWidth or 0 end
 	if not gapHeight then gapHeight = self.gapHeight or 0 end
 
+	local expandGap = 0
+	if self.expandGap then expandGap = self.expandGap end
+
 	local tab = {
 		nil, frame, content, -- For backwards compatability
 		catId = catId,
 		tabName = tabName,
 		gapWidth = gapWidth,
 		gapHeight = gapHeight,
+		expandGap = expandGap,
 		frame = frame,
 		content = content,
 		scroll = nil,
+		expanded = nil,
 	}
 	table.insert(self.tabs, tab)
 	id = table.getn(self.tabs)
@@ -773,23 +816,21 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 	frame:SetBackdropColor(0,0,0, 1)
 	frame:SetFrameLevel(10)
 
-	if gapHeight > 0 then
-		frame.fullsize = CreateFrame("Button", nil, frame, "OptionsButtonTemplate")
-		frame.fullsize:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 5, 5)
-		frame.fullsize:SetWidth(15)
-		frame.fullsize:SetHeight(15)
-		frame.fullsize:SetText("v")
-		frame.fullsize:SetScript("OnClick", function()
-				local height = 0
-				if frame.fullsize:GetText() == "v" then
-					frame.fullsize:SetText("^")
-				else
-					frame.fullsize:SetText("v")
-					height = gapHeight
-				end
-				frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+height)
+	frame.fullsize = CreateFrame("Button", nil, frame)
+	frame.fullsize:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -3, -3)
+	frame.fullsize:SetWidth(22)
+	frame.fullsize:SetHeight(22)
+	frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
+	frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Down")
+	frame.fullsize:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+	frame.fullsize:SetScript("OnClick", function()
+		self:ToggleExpand(id)
+	end)
 
-			end)
+	if gapHeight > 0 then
+		frame.fullsize:Show()
+	else
+		frame.fullsize:Hide()
 	end
 
 	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
@@ -1505,6 +1546,10 @@ function kit:ActivateTab(id)
 		self:RegenTabs()
 	else
 		self:RenderTabs()
+	end
+
+	if self.expandOnActivate then
+		self:ExpandFrame(id)
 	end
 end
 
