@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "SelectBox"
-local LIBRARY_VERSION_MINOR = 3
+local LIBRARY_VERSION_MINOR = 4
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -86,6 +86,8 @@ if not lib then return end
 
 LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
 
+local NUM_MENU_ITEMS = 15
+
 local kit = {}
 local buttonKit = {}
 
@@ -132,9 +134,37 @@ end
 function kit:SetWidth(width)
 	local fname = self:GetName()
 	self:origSetWidth(width + 50)
+	self.curWidth = width
 	getglobal(fname.."Middle"):SetWidth(width)
 	getglobal(fname.."Text"):SetWidth(width - 25)
-	getglobal(fname.."Button"):SetHitRectInsets(0-width+5, -2,-2,-2)
+	self:UpdateInset()
+end
+
+function kit:UpdateInset()
+	local leftInset = -2
+	if not self.hiddenInput then
+		leftInset = 5-self.curWidth
+	end
+	local fname = self:GetName()
+	getglobal(fname.."Button"):SetHitRectInsets(leftInset, -2,-2,-2)
+end
+
+function kit:SetInputHidden(hide)
+	local fname = self:GetName()
+	if hide then
+		self.hiddenInput = true
+		getglobal(fname.."Left"):Hide()
+		getglobal(fname.."Middle"):Hide()
+		getglobal(fname.."Right"):Hide()
+		getglobal(fname.."Text"):Hide()
+	else
+		self.hiddenInput = nil
+		getglobal(fname.."Left"):Show()
+		getglobal(fname.."Middle"):Show()
+		getglobal(fname.."Right"):Show()
+		getglobal(fname.."Text"):Show()
+	end
+	self:UpdateInset()
 end
 
 function kit:GetHeight()
@@ -219,14 +249,14 @@ function lib:DoUpdate()
 	end
 
 	j = 0
-	for i = 1, 10 do
+	for i = 1, NUM_MENU_ITEMS do
 		pos = cp + i - 1
 		if (i==1 and pos > 1) then
 			j = j + 1
 			lib.menu.buttons[j].index = "prev"
 			lib.menu.buttons[j]:SetText("...")
 			lib.menu.buttons[j]:Show()
-		elseif (i == 10 and pos < ts) then
+		elseif (i == NUM_MENU_ITEMS and pos < ts) then
 			j = j + 1
 			lib.menu.buttons[j].index = "next"
 			lib.menu.buttons[j]:SetText("...")
@@ -242,10 +272,16 @@ function lib:DoUpdate()
 			end
 		end
 	end
-	for i = j+1, 10 do
+	local total = j
+	for i = j+1, NUM_MENU_ITEMS do
 		lib.menu.buttons[i]:SetText("")
 		lib.menu.buttons[i]:Hide()
 	end
+
+	local height = 50
+	height = max(height, 42 + (total * 12))
+
+	lib.menu:SetHeight(height)
 end
 
 function lib:DoShow()
@@ -308,7 +344,7 @@ if not lib.menu then
 	lib.menu = CreateFrame("Frame", "SelectBoxMenu", UIParent)
 	lib.menu:Hide()
 	lib.menu:SetWidth(120)
-	lib.menu:SetHeight(165)
+	lib.menu:SetHeight(16 * NUM_MENU_ITEMS + 5)
 	lib.menu:EnableMouse(true)
 	lib.menu:SetFrameStrata("TOOLTIP")
 	lib.menu:SetScript("OnEnter", lib.MouseIn)
@@ -327,7 +363,7 @@ if not lib.menu then
 	})
 	lib.menu.back:SetBackdropColor(0,0,0, 0.8)
 	lib.menu.buttons = {}
-	for i=1, 10 do
+	for i=1, NUM_MENU_ITEMS do
 		local l = CreateFrame("Button", "SelectBoxMenuButton"..i, lib.menu.back)
 		lib.menu.buttons[i] = l
 		if (i == 1) then
@@ -344,6 +380,9 @@ if not lib.menu then
 		l:SetScript("OnEnter", lib.MouseIn)
 		l:SetScript("OnLeave", lib.MouseOut)
 		l:SetScript("OnClick", lib.OnClick)
+	--	getglobal("SelectBoxMenuButton"..i.."Text"):SetJustifyH("LEFT")
 		l:Show()
 	end
+
+	cmenu = lib.menu
 end
