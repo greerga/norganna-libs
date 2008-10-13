@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 22
+local LIBRARY_VERSION_MINOR = 23
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -187,7 +187,7 @@ function lib:TabLink(frame, el, noHook)
 	end
 end
 
-function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeight)
+function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeight, topOffset, leftOffset)
 	local id = #(lib.frames) + 1
 	local name = "ConfigatorDialog_"..id
 
@@ -205,6 +205,8 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	gui.dialogHeight = dialogHeight
 	gui.gapWidth     = gapWidth
 	gui.gapHeight    = gapHeight
+	gui.topOffset    = topOffset
+	gui.leftOffset  = leftOffset
 
 	local top = getter("configator.top")
 	local left = getter("configator.left")
@@ -663,7 +665,7 @@ function kit:RegenTabs()
 	self:RenderTabs()
 end
 
-function kit:ZeroFrame(gapWidth, gapHeight)
+function kit:ZeroFrame()
 	assert(isGuiObject(self), "Must be called on a valid object")
 	assert(self.config.isZero == false, "Cannot zero a frame with tabs")
 
@@ -687,8 +689,6 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 
 	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
 	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5,5)
-	content.gapWidth = gapWidth
-	content.gapHeight = gapHeight
 
 	self.config = {}
 	self.config.current = "zero"
@@ -699,19 +699,15 @@ function kit:ZeroFrame(gapWidth, gapHeight)
 	self.config.cats.zero = {}
 	self.config.isZero = true
 
-	if not gapWidth then gapWidth = self.gapWidth or 0 end
-	if not gapHeight then gapHeight = self.gapHeight or 0 end
-
-	local expandGap = 0
-	if self.expandGap then expandGap = self.expandGap end
-
 	self.tabs[0] = {
 		nil, frame, content, -- For backwards compatability
 		catId = catId,
 		tabName = tabName,
-		gapWidth = gapWidth,
-		gapHeight = gapHeight,
-		expandGap = expandGap,
+		gapWidth = 0,
+		gapHeight = 0,
+		expandGap = 0,
+		leftOffset = 0,
+		topOffset = 0,
 		frame = frame,
 		content = content,
 		scroll = nil,
@@ -757,7 +753,7 @@ function kit:SetExpandGap(id, gap)
 	tab.expandGap = gap
 end
 
-function kit:AddTab(tabName, catId, gapWidth, gapHeight)
+function kit:AddTab(tabName, catId, gapWidth, gapHeight, topOffset, leftOffset)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	assert(not self.config.isZero, "Cannot add tabs to a zeroed frame")
 
@@ -779,6 +775,8 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 
 	if not gapWidth then gapWidth = self.gapWidth or 0 end
 	if not gapHeight then gapHeight = self.gapHeight or 0 end
+	if not topOffset then topOffset = self.topOffset or 0 end
+	if not leftOffset then leftOffset = self.leftOffset or 0 end
 
 	local expandGap = 0
 	if self.expandGap then expandGap = self.expandGap end
@@ -790,6 +788,8 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 		gapWidth = gapWidth,
 		gapHeight = gapHeight,
 		expandGap = expandGap,
+		topOffset = topOffset,
+		leftOffset = leftOffset,
 		frame = frame,
 		content = content,
 		scroll = nil,
@@ -805,7 +805,7 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 
 	self.config.cats[catId].hasTabs = true
 
-	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 160, -10)
+	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 160+leftOffset, -10-topOffset)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+gapHeight)
 	frame:SetBackdrop({
 		bgFile = "Interface/Tooltips/ChatBubble-Background",
@@ -844,6 +844,10 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight)
 		self:ActivateTab(id)
 	else
 		frame:Hide()
+	end
+
+	if (self.autoScrollTabs) then
+		self:MakeScrollable(id)
 	end
 
 	return id
