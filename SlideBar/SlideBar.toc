@@ -4,6 +4,7 @@
 ##
 ## Interface: 30000
 ## LoadOnDemand: 0
+## SavedVariables: SlideBarConfig
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$

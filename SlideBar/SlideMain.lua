@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 5
+local LIBRARY_VERSION_MINOR = 6
 
 --[[-----------------------------------------------------------------
 
@@ -359,7 +359,6 @@ function lib.ApplyLayout(useLayout)
 	end
 end
 
-
 --[[  END OF API FUNCTIONS ]]--
 
 -- Private functions and variables follow, you shouldn't need to fiddle with these.
@@ -387,6 +386,7 @@ else
 	frame:SetScript("OnMouseUp", function(...) private.EndMove(...) end)
 	frame:SetScript("OnUpdate", function(...) private.Popper(...) end)
 	frame:SetScript("OnEvent", function(...)
+		private.loadElements(strsplit(";", SlideBarConfig or ""))
 		private.startCounter = 10
 		frame:UnregisterEvent("PLAYER_LOGIN")
 	end)
@@ -598,7 +598,6 @@ function private:MouseUp(...)
 end
 
 -- Functions for handling loading and saving of config
-RegisterCVar("SlideBarConfig", "")
 function private.loadElements(...)
 	local n = select("#", ...)
 	local e, k, v
@@ -609,14 +608,14 @@ function private.loadElements(...)
 	end
 end
 private.config = {}
-private.loadElements(strsplit(";", GetCVar("SlideBarConfig")))
+--private.loadElements(strsplit(";", SlideBarConfig or ""))
 function private.saveConfig()
 	local config, sep = "", ""
 	for k,v in pairs(private.config) do
 		config = strconcat(config, sep, k, "=", v)
 		sep = ";"
 	end
-	SetCVar("SlideBarConfig", config)
+	SlideBarConfig = config
 end
 
 -- Command processor
