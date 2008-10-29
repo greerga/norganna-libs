@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 23
+local LIBRARY_VERSION_MINOR = 24
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -198,7 +198,6 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 
 	local gui = CreateFrame("Frame", name, UIParent)
 	table.insert(lib.frames, gui)
-	gui.Done = CreateFrame("Button", nil, gui, "OptionsButtonTemplate")
 	gui.setter = setter
 	gui.getter = getter
 	gui.dialogWidth  = dialogWidth
@@ -206,7 +205,9 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	gui.gapWidth     = gapWidth
 	gui.gapHeight    = gapHeight
 	gui.topOffset    = topOffset
-	gui.leftOffset  = leftOffset
+	gui.leftOffset   = leftOffset
+	gui.heightDelta  = 0
+	gui.buttonTop    = 0
 
 	local top = getter("configator.top")
 	local left = getter("configator.left")
@@ -219,30 +220,38 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	gui:SetFrameStrata("HIGH")
 	gui:SetToplevel(true)
 	gui:SetMovable(true)
-	gui:EnableMouse(true)
 	gui:SetWidth(dialogWidth)
 	gui:SetHeight(dialogHeight)
-	gui:SetBackdrop({
+	gui:EnableMouse(true)
+
+	gui.Backdrop = CreateFrame("Frame", name.."Backdrop", gui)
+	gui.Backdrop:SetAllPoints(gui)
+	gui.Backdrop:SetBackdrop({
 		bgFile = "Interface/Tooltips/ChatBubble-Background",
 		edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
 		tile = true, tileSize = 32, edgeSize = 32,
 		insets = { left = 32, right = 32, top = 32, bottom = 32 }
 	})
-	gui:SetBackdropColor(0, 0, 0, 1)
-	table.insert(UISpecialFrames, name) -- make frames Esc Sensitive by default
+	gui.Backdrop:SetBackdropColor(0, 0, 0, 1)
+	table.insert(UISpecialFrames, name.."Backdrop") -- make frames Esc Sensitive by default
 
-	gui.DragTop = CreateFrame("Button", nil, gui)
-	gui.DragTop:SetPoint("TOPLEFT", gui, "TOPLEFT", 10,-5)
-	gui.DragTop:SetPoint("TOPRIGHT", gui, "TOPRIGHT", -10,-5)
+	gui.Done = CreateFrame("Button", nil, gui.Backdrop, "OptionsButtonTemplate")
+	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
+	gui.Done:SetScript("OnClick", function() gui:Hide() end)
+	gui.Done:SetText(DONE)
+
+	gui.DragTop = CreateFrame("Button", nil, gui.Backdrop)
+	gui.DragTop:SetPoint("TOPLEFT", gui.Backdrop, "TOPLEFT", 10,-5)
+	gui.DragTop:SetPoint("TOPRIGHT", gui.Backdrop, "TOPRIGHT", -10,-5)
 	gui.DragTop:SetHeight(6)
 	gui.DragTop:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
 
 	gui.DragTop:SetScript("OnMouseDown", function() gui:StartMoving() end)
 	gui.DragTop:SetScript("OnMouseUp", function() gui:StopMovingOrSizing() setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
 
-	gui.DragBottom = CreateFrame("Button", nil, gui)
-	gui.DragBottom:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 10,5)
-	gui.DragBottom:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10,5)
+	gui.DragBottom = CreateFrame("Button", nil, gui.Backdrop)
+	gui.DragBottom:SetPoint("BOTTOMLEFT", gui.Backdrop, "BOTTOMLEFT", 10,5)
+	gui.DragBottom:SetPoint("BOTTOMRIGHT", gui.Backdrop, "BOTTOMRIGHT", -10,5)
 	gui.DragBottom:SetHeight(6)
 	gui.DragBottom:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
 
@@ -251,10 +260,6 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 
 	gui:RegisterEvent("PLAYER_LOGOUT")
 	gui:SetScript("OnEvent", function() gui:SetClampedToScreen(1) setter("configator.left", gui:GetLeft()) setter("configator.top", gui:GetTop()) end)
-
-	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
-	gui.Done:SetScript("OnClick", function() gui:Hide() end)
-	gui.Done:SetText(DONE)
 
 	gui.config = {
 		current = "",
@@ -578,7 +583,7 @@ function kit:GetButton(pos)
 	self.buttons[pos] = button
 
 	if pos == 1 then
-		button:SetPoint("TOPLEFT", self, "TOPLEFT", 5, -15)
+		button:SetPoint("TOPLEFT", self, "TOPLEFT", 5, self.buttonTop-15)
 	else
 		button:SetPoint("TOPLEFT", self:GetButton(pos-1), "BOTTOMLEFT", 0, 0)
 	end
@@ -711,12 +716,68 @@ function kit:ZeroFrame()
 		frame = frame,
 		content = content,
 		scroll = nil,
+		buttonTop = 0,
 	}
 	self.tabs.active = 0
 	self.config.selectedCat = "zero"
 	self.config.selectedTab = "zero"
 
 	return 0
+end
+
+function kit:SetPosition(parent, width, height, left, top)
+	assert(isGuiObject(self), "Must be called on a valid object")
+
+	parent = parent or UIParent
+	top = top or self.getter("configator.top")
+	left = left or self.getter("configator.left")
+	width = width or self.dialogWidth
+	height = height or self.dialogHeight
+	self.heightDelta = self.dialogHeight - height
+
+	self:SetParent(parent)
+	self:ClearAllPoints()
+	if (top and left) then
+		self:SetPoint("TOPLEFT", parent, "BOTTOMLEFT", left, top)
+	else
+		self:SetPoint("CENTER", parent, "CENTER")
+	end
+	self:SetWidth(width)
+	self:SetHeight(height)
+
+	for id, tab in ipairs(self.tabs) do
+		if tab and tab.scroll then
+			local frame = tab.frame
+			local lOfs = frame.leftOffset or 0
+			local gWidth = frame.gapWidth or 0
+			local cWidth = width - lOfs - gWidth - 210
+			tab.content:SetWidth(cWidth)
+		end
+	end
+	local button = self.buttons[1]
+	if button then
+		button:SetPoint("TOPLEFT", self, "TOPLEFT", 5, self.buttonTop-15)
+	end
+
+	local id = self.tabs.active
+	if id and self.tabs[id] then
+		local tab = self.tabs[id]
+		if tab.expanded then
+			self:ExpandFrame(id)
+		else
+			self:ContractFrame(id)
+		end
+	end
+end
+
+function kit:ShowBackdrop()
+	assert(isGuiObject(self), "Must be called on a valid object")
+	self.Backdrop:Show()
+end
+
+function kit:HideBackdrop()
+	assert(isGuiObject(self), "Must be called on a valid object")
+	self.Backdrop:Hide()
 end
 
 function kit:ToggleExpand(id)
@@ -743,7 +804,7 @@ function kit:ContractFrame(id)
 	if tab.gapHeight == 0 then return end
 	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
 	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Down")
-	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.gapHeight)
+	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.gapHeight-self.heightDelta)
 	tab.expanded = nil
 end
 function kit:SetExpandGap(id, gap)
@@ -805,6 +866,7 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight, topOffset, leftOffset)
 
 	self.config.cats[catId].hasTabs = true
 
+	frame:ClearAllPoints()
 	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 160+leftOffset, -10-topOffset)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+gapHeight)
 	frame:SetBackdrop({
