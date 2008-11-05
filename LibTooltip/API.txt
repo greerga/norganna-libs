@@ -149,5 +149,5 @@ LibExtraTip
      it.
 
      tooltip: GameTooltip object
-     Returns: talbe containing the additional information
+     Returns: table containing the additional information
      Available since v1.0
