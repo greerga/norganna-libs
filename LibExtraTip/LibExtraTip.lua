@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 @version 1.0
 --]]
 
-local MAJOR,MINOR,REVISION = "LibExtraTip", 1, 0
+local MAJOR,MINOR,REVISION = "LibExtraTip", 1, "$Revision$"
 
 -- A string unique to this version to prevent frame name conflicts.
 local LIBSTRING = MAJOR.."_"..MINOR.."_"..REVISION
@@ -41,6 +41,7 @@ if lib.Deactivate then lib:Deactivate() end
 -- the file.
 local tooltipMethods
 local ExtraTipClass
+local MoneyViewClass
 
 -- Function that gets run when an item is set on a registered tooltip.
 local function OnTooltipSetItem(tooltip)
@@ -513,16 +514,15 @@ end
 function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity of the item
 	local reg = self.tooltipRegistry
 	tooltipMethods = {
-		SetBagItem = function(self,bag,slot)
-			local _,q,l,_,r= GetContainerItemInfo(bag,slot)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetBagItem"
-			reg[self].additional.eventContainer = bag
-			reg[self].additional.eventIndex = slot
-			reg[self].additional.readable = r
-			reg[self].additional.locked = l
+		SetAction = function(self, actionid)
+			local t = GetActionInfo(actionid)
+			if t == "item" then
+				reg[self].quantity = GetActionCount(actionid)
+				reg[self].additional.event = "SetAction"
+				reg[self].additional.actionid = actionid
+			end		
 		end,
-
+		
 		SetAuctionItem = function(self,type,index)
 			local _,_,q,cu,min,inc,bo,ba,hb,own = GetAuctionItemInfo(type,index)
 			reg[self].quantity = q
@@ -538,6 +538,39 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg[self].additional.owner = own
 		end,
 
+		SetAuctionSellItem = function(self)
+			local name,texture,quantity,quality,canUse,price = GetAuctionSellItemInfo()
+			reg[self].quantity = quantity
+			reg[self].additional.event = "SetAuctionSellItem"
+			reg[self].additional.canUse = canUse
+		end,
+		
+		SetBagItem = function(self,bag,slot)
+			local _,q,l,_,r= GetContainerItemInfo(bag,slot)
+			reg[self].quantity = q
+			reg[self].additional.event = "SetBagItem"
+			reg[self].additional.eventContainer = bag
+			reg[self].additional.eventIndex = slot
+			reg[self].additional.readable = r
+			reg[self].additional.locked = l
+		end,
+		
+		SetBuybackItem = function(self,index)
+			local name,texture,price,quantity = GetBuybackItemInfo(index)
+			reg[self].quantity = quantity
+			reg[self].additional.event = "SetBuybackItem"
+			reg[self].additional.eventIndex = index
+		end,
+		
+		SetGuildBankItem = function(self,tab,index)
+			local texture,quantity,locked = GetGuildBankItemInfo(tab,index)
+			reg[self].quantity = quantity
+			reg[self].additional.event = "SetGuildBankItem"
+			reg[self].additional.eventContainer = tab
+			reg[self].additional.eventIndex = index
+			reg[self].additional.locked = locked
+		end,
+		
 		SetInboxItem = function(self,index)
 			local _,_,q,_,cu = GetInboxItem(index)
 			reg[self].quantity = q
@@ -552,6 +585,13 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg[self].additional.event = "SetLootItem"
 			reg[self].additional.eventIndex = index
 		end,
+		
+		SetLootRollItem = function(self,index)
+			local texture, name, count, quality = GetLootRollItemInfo(index)
+			reg[self].quantity = q
+			reg[self].additional.event = "SetLootRollItem"
+			reg[self].additional.eventIndex = index
+		end,
 
 		SetMerchantItem = function(self,index)
 			local _,_,p,q,na,cu,ec = GetMerchantItemInfo(index)
@@ -564,15 +604,6 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg[self].additional.extendedCost = ec
 		end,
 
-		SetQuestLogItem = function(self,type,index)
-			local _,_,q,_,cu = GetQuestLogChoiceInfo(type,index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetQuestLogItem"
-			reg[self].additional.eventType = type
-			reg[self].additional.eventIndex = index
-			reg[self].additional.canUse = cu
-		end,
-
 		SetQuestItem = function(self,type,index)
 			local _,_,q,_,cu = GetQuestItemInfo(type,index)
 			reg[self].quantity = q
@@ -581,7 +612,37 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg[self].additional.eventIndex = index
 			reg[self].additional.canUse = cu
 		end,
+		
+		SetQuestLogItem = function(self,type,index)
+			local _,_,q,_,cu = GetQuestLogChoiceInfo(type,index)
+			reg[self].quantity = q
+			reg[self].additional.event = "SetQuestLogItem"
+			reg[self].additional.eventType = type
+			reg[self].additional.eventIndex = index
+			reg[self].additional.canUse = cu
+		end,
+		
+		SetSendMailItem = function(self,index)
+			local name,texture,quantity = GetSendMailItem(index)
+			reg[self].quantity = quantity
+			reg[self].additional.event = "SetSendMailItem"
+			reg[self].additional.eventIndex = index
+		end,	
 
+		SetTradePlayerItem = function(self,index)
+			local name, texture, quantity = GetTradePlayerItemInfo(index)
+			reg[self].quantity = quantity
+			reg[self].additional.event = "SetTradePlayerItem"
+			reg[self].additional.eventIndex = index
+		end,
+		
+		SetTradeTargetItem = function(self,index)
+			local name, texture, quantity = GetTradeTargetItemInfo(index)
+			reg[self].quantity = quantity
+			reg[self].additional.event = "SetTradeTargetItem"
+			reg[self].additional.eventIndex = index
+		end,
+		
 		SetTradeSkillItem = function(self,index,reagentIndex)
 			reg[self].additional.event = "SetTradeSkillItem"
 			reg[self].additional.eventIndex = index
@@ -594,27 +655,13 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 				reg[self].quantity = GetTradeSkillNumMade(index)
 			end
 		end,
-
-		SetCraftItem = function(self,index,reagentIndex)
-			reg[self].additional.event = "SetCraftItem"
-			reg[self].additional.eventIndex = index
-			reg[self].additional.eventReagentIndex = reagentIndex
-			if reagentIndex then
-				local _,_,q,rc = GetCraftReagentInfo(index,reagentIndex)
-				reg[self].quantity = q
-				reg[self].additional.playerReagentCount = rc
-			else
-				-- Doesn't look like there is a way to get quantity info for crafts
-				reg[self].quantity = 1
-			end
-		end
 	}
 end
 
 do -- MoneyView "class" definition
-	_G['MoneyViewClass'] = {}
-	local class = MoneyViewClass
-	local methods = { }
+	local class = {}
+	MoneyViewClass = class
+	local methods = {}
 	local numMoneys = 0
 
 	local function createCoin(frame, pos, width, height)
@@ -795,8 +842,8 @@ do -- ExtraTip "class" definition
 	local methods = {"InitLines","Attach","Show","MatchSize","Release","NeedsRefresh"}
 	local scripts = {"OnShow","OnHide","OnSizeChanged"}
 	local numTips = 0
-	_G['ExtraTipClass'] = {}
-	local class = ExtraTipClass
+	local class = {}
+	ExtraTipClass = class
 
 	local addLine,addDoubleLine,show = GameTooltip.AddLine,GameTooltip.AddDoubleLine,GameTooltip.Show
 
@@ -942,8 +989,6 @@ lib:SetEmbedMode(lib.embedMode)
 lib:Activate()
 
 
-
-
 --[[ Test Code -----------------------------------------------------
 
 local LT = LibStub("LibExtraTip-1")
@@ -951,18 +996,18 @@ local LT = LibStub("LibExtraTip-1")
 LT:RegisterTooltip(GameTooltip)
 LT:RegisterTooltip(ItemRefTooltip)
 
+--[[
 LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,1,1,1,0)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
 end,0)
-
+--]]
 LT:AddCallback(function(tip,item,quantity)
 	quantity = quantity or 1
 	local price = GetSellValue(item)
 	if price then
-		price = price * quantity
-		LT:AddMoneyLine(tip,"Sell to vendor"..(quantity and quantity > 1 and "("..quantity..")" or "") .. ":",price)
+		LT:AddMoneyLine(tip,"Sell to vendor"..(quantity > 1 and "("..quantity..")" or "") .. ":",price*quantity)
 	end
 end)
 
