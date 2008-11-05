@@ -273,7 +273,7 @@ function lib:SetEmbedMode(flag)
 	self.embedMode = flag and true or false
 end
 
---[[
+--[[-
 	Adds a line to a registered tooltip.
 	@param tooltip GameTooltip object
 	@param text the contents of the tooltip line
@@ -785,7 +785,7 @@ do -- ExtraTip "class" definition
 	local methods = {"InitLines","Attach","Show","MatchSize","Release","NeedsRefresh"}
 	local scripts = {"OnShow","OnHide","OnSizeChanged"}
 	local numTips = 0
-	ExtraTipClass = {}
+	_G['ExtraTipClass'] = {}
 	local class = ExtraTipClass
 
 	local addLine,addDoubleLine,show = GameTooltip.AddLine,GameTooltip.AddDoubleLine,GameTooltip.Show
