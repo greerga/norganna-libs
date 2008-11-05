@@ -602,7 +602,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 end
 
 do -- MoneyView "class" definition
-	MoneyViewClass = {}
+	_G['MoneyViewClass'] = {}
 	local class = MoneyViewClass
 	local methods = { }
 	local numMoneys = 0
@@ -776,7 +776,6 @@ do -- MoneyView "class" definition
 		o:SetColor(red, green, blue)
 		o:Hide()
 		
-		LastMoney = o
 		return o
 	end
 end
