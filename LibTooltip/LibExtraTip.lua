@@ -1,21 +1,31 @@
 --[[-
-LibTooltip
+LibExtraTip
 
-LibTooltip is a library of API functions for manipulating additional information into GameTooltips by either adding information to the bottom of existing tooltips (embedded mode) or by adding information to an extra "attached" tooltip construct which is placed to the bottom of the existing tooltip.
+LibExtraTip is a library of API functions for manipulating additional information into GameTooltips by either adding information to the bottom of existing tooltips (embedded mode) or by adding information to an extra "attached" tooltip construct which is placed to the bottom of the existing tooltip.
 
-This tooltip library is released under <TODO: insert final licence terms here>.
+Copyright (C) 2008, by the respecive below authors.
 
-Until final licence terms are determined:
-	Unless mentioned elsewhere, this code is the intellectual property of the
-	below mentioned authors. Copyright (C) 2008. All rights reserved.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 @author Tem
 @author Ken Allan <ken@norganna.org>
-@libname LibTooltip
+@libname LibExtraTip
 @version 1.0
 --]]
 
-local MAJOR,MINOR,REVISION = "LibTooltip", 1, 0
+local MAJOR,MINOR,REVISION = "LibExtraTip", 1, 0
 
 -- A string unique to this version to prevent frame name conflicts.
 local LIBSTRING = MAJOR.."_"..MINOR.."_"..REVISION
@@ -36,7 +46,7 @@ local ExtraTipClass
 local function OnTooltipSetItem(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:OnTooltipSetItem()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipSetItem()")
 
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
@@ -83,7 +93,7 @@ end
 local function OnTooltipCleared(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:OnTooltipCleared()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipCleared()")
 
 	if reg.extraTip then
 		table.insert(self.extraTippool, reg.extraTip)
@@ -105,7 +115,7 @@ end
 local function OnSizeChanged(tooltip,w,h)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:OnSizeChanged()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:OnSizeChanged()")
 
 	local extraTip = reg.extraTip
 	if extraTip then
@@ -202,7 +212,7 @@ function lib:RegisterTooltip(tooltip)
 end
 
 --[[-
-	Checks to see if the tooltip has been registered with LibTooltip
+	Checks to see if the tooltip has been registered with LibExtraTip
 	@param tooltip GameTooltip object
 	@return true if tooltip is registered
 	@since 1.0
@@ -286,7 +296,7 @@ end
 ]]
 function lib:AddLine(tooltip,text,r,g,b,embed)
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:AddLine()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:AddLine()")
 
 	if r and not g then embed = r r = nil end
 	embed = embed ~= nil and embed or self.embedMode
@@ -312,7 +322,7 @@ end
 ]]
 function lib:AddDoubleLine(tooltip,textLeft,textRight,lr,lg,lb,rr,rg,rb,embed)
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:AddDoubleLine()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:AddDoubleLine()")
 
 	if lr and not lg and not rr then embed = lr lr = nil end
 	if lr and lg and rr and not rg then embed = rr rr = nil end
@@ -340,7 +350,7 @@ end
 ]]
 function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:AddMoneyLine()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:AddMoneyLine()")
 
 	if r and not g then embed = r r = nil end
 	embed = embed ~= nil and embed or self.embedMode
@@ -373,7 +383,7 @@ end
 
 --[[-
 	Calls a tooltip's method, passing arguments and setting additional details.
-	You must use this function when you are setting your own tooltip, but want LibTooltip to display the extra tooltip information and notify any callbacks.
+	You must use this function when you are setting your own tooltip, but want LibExtraTip to display the extra tooltip information and notify any callbacks.
 	@param tooltip GameTooltip object
 	@param method the tooltip method to call (or nil to not call any)
 	@param args table of arguments to pass to tooltip method
@@ -383,7 +393,7 @@ end
 ]]
 function lib:CallTooltipMethod(tooltip, method, args, detail)
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:CallTooltipMethod()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:CallTooltipMethod()")
 
 	if detail.quantity then reg.quantity = detail.quantity end
 	if detail.item then reg.item = detail.item end
@@ -410,12 +420,12 @@ end
 		* Any data provided by the Get*Info() functions.
 	If you require access to this information for the current tooltip, call this function to retrieve it.
 	@param tooltip GameTooltip object
-	@return talbe containing the additional information
+	@return table containing the additional information
 	@since 1.0
 ]]
 function lib:GetTooltipAdditional(tooltip)
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibTooltip:GetTooltipAdditional()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:GetTooltipAdditional()")
 
 	if reg then
 		return reg.additional
@@ -936,7 +946,7 @@ lib:Activate()
 
 --[[ Test Code -----------------------------------------------------
 
-local LT = LibStub("LibTooltip-1")
+local LT = LibStub("LibExtraTip-1")
 
 LT:RegisterTooltip(GameTooltip)
 LT:RegisterTooltip(ItemRefTooltip)

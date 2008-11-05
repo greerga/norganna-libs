@@ -1,7 +1,7 @@
-## Title: LibTooltip
+## Title: LibExtraTip
 ## Notes: Assists in the management of additional tooltip information.
 ##
-## Interface: 20400
+## Interface: 30000
 ## LoadOnDemand: 0
 ##
 ## Version: 1.0

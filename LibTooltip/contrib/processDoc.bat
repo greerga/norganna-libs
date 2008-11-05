@@ -1,5 +1,5 @@
 @echo off
 
-perl processDoc.pl ..\LibTooltip.lua
+perl processDoc.pl ..\LibExtraTip.lua
 move API.html ..\API.html
 
