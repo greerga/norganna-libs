@@ -1,4 +1,4 @@
-## Title: Configator
+## Title: Configator |cff224477(lib)
 ## Notes: Easily construct a GUI configuration editor.
 ##
 ## Interface: 30000

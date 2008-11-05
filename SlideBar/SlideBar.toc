@@ -1,4 +1,4 @@
-## Title: SlideBar
+## Title: SlideBar |cff224477(lib)
 ## Notes: Allows alternative placement of minimap icons into an expanding bar tab that sits on the side of the screen.
 ## OptionalDeps: !Swatter
 ##
