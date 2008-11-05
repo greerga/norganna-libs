@@ -1,4 +1,10 @@
+## Title: LibTooltip
+## Notes: Assists in the management of additional tooltip information.
+##
+## Interface: 20400
+## LoadOnDemand: 0
+##
 ## Version: 1.0
-## Interface: 30000
-LibStub.lua
-LibTooltip.lua
+## Revision: $Id$
+##
+Load.xml

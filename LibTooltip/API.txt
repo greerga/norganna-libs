@@ -2,6 +2,9 @@ LibTooltip-1.0 API:
 	:RegisterTooltip(tooltip)
 		Adds the provided tooltip to the list of tooltips to monitor for items
 
+	:IsRegistered(tooltip)
+		Checks to see if the tooltip has been registered with LibTooltip
+
 	:AddCallback(callback[, priority])
 		Adds a callback to be called when one of the registered tooltips has an item.
 		* callback - function
@@ -48,3 +51,11 @@ LibTooltip-1.0 API:
 		* tooltip, text, r, g, b and embed behave the same as in :AddLine
 		* money - an integer amount denoting the money value to be displayed.
 			This is given in copper (i.e. 1g 27s 5c would be 12705)
+
+	:GetTooltipExtra(tooltip)
+		Returns a table with additional situation specific information about
+		situation under which the tooltip was invoked, such as the call that
+		triggered the tooltip, slot/inventory/index of the item in question
+		and additional information provided by the GetInfo() functions.
+		* tooltip - same as in AddLine.
+
