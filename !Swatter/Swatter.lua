@@ -344,6 +344,16 @@ function Swatter.OnEvent(frame, event, ...)
 	elseif (event == "ADDON_ACTION_FORBIDDEN") then
 		local addon, func = ...
 		Swatter.OnError(string.format("Error: AddOn %s attempted to call a forbidden function (%s) from a tainted execution path.", addon, func), Swatter.NamedFrame("AddOn: "..addon), debugstack(2, 20, 20), event, ...)
+	elseif (event == "PLAYER_LOGIN") then
+		-- Check to see if any events have happened since we loaded and the player is ready to view them
+		local curCount = #SwatterData.errors
+		local loadCount = Swatter.loadCount
+		if curCount > loadCount then
+			Swatter.ErrorShow()
+		end
+	elseif (event == "PLAYER_ENTERING_WORLD") then
+		tinsert(UISpecialFrames, "SwatterProxyFrame")
+		Swatter.Frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
 	end
 end
 
@@ -375,7 +385,7 @@ function Swatter.ErrorShow(pos)
 	if not curError then
 		curError = Swatter.lastShown
 		if curError then
-			curError = max(curError + 1, maxError)
+			curError = min(curError + 1, maxError)
 		else
 			curError = maxError
 		end
@@ -454,7 +464,6 @@ end
 function Swatter.UpdateNextPrev()
 	local cur = Swatter.Error.pos or 1
 	local max = #Swatter.errorOrder or 0
-	print("Cur/Max", cur, max)
 	if ((max > cur) and (cur ~= -1)) then Swatter.Error.Next:Enable() else Swatter.Error.Next:Disable() end
 	if (cur > 1) then Swatter.Error.Prev:Enable() else Swatter.Error.Prev:Disable() end
 end
@@ -531,7 +540,6 @@ Swatter.ProxyFrame:SetScript("OnUpdate",
 
 	end
 )
-tinsert(UISpecialFrames, "SwatterProxyFrame")
 
 Swatter.Drag = CreateFrame("Button", nil, Swatter.Error)
 Swatter.Drag:SetPoint("TOPLEFT", Swatter.Error, "TOPLEFT", 10,-5)
@@ -588,6 +596,8 @@ Swatter.Frame:SetScript("OnEvent", Swatter.OnEvent)
 Swatter.Frame:RegisterEvent("ADDON_LOADED")
 Swatter.Frame:RegisterEvent("ADDON_ACTION_FORBIDDEN")
 Swatter.Frame:RegisterEvent("ADDON_ACTION_BLOCKED")
+Swatter.Frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+Swatter.Frame:RegisterEvent("PLAYER_LOGIN")
 Swatter.Frame:SetScript("OnUpdate", function(self, elapsed)
 	if not self.timer then self.timer = 0 end
 	self.timer = self.timer + elapsed
