@@ -404,7 +404,7 @@ function lib:CallTooltipMethod(tooltip, method, args, detail)
 	for k,v in pairs(detail) do
 		reg.additional[k] = v
 	end
-	if method then
+	if method and tooltip[method] then
 		-- If we have a tooltip method to call:
 		return tooltip[method](tooltip,unpack(args))
 	end
