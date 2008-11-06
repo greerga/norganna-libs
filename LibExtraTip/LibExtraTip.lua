@@ -406,7 +406,7 @@ function lib:CallTooltipMethod(tooltip, method, args, detail)
 	end
 	if method then
 		-- If we have a tooltip method to call:
-		return tooltip[method](unpack(args))
+		return tooltip[method](tooltip,unpack(args))
 	end
 	OnTooltipSetItem(tooltip)
 end
