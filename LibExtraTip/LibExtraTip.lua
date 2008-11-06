@@ -719,8 +719,16 @@ do -- ExtraTip "class" definition
 				else
 					font = GameFontNormalSmall
 				end
+
+				local r,g,b,a
+
+				r,g,b,a = left:GetTextColor()
 				left:SetFontObject(font)
+				left:SetTextColor(r,g,b,a)
+
+				r,g,b,a = right:GetTextColor()
 				right:SetFontObject(font)
+				right:SetTextColor(r,g,b,a)
 			end
 			self.changedLines = n
 		end
