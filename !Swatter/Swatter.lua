@@ -40,7 +40,7 @@ Swatter = {
 	},
 	errorOrder = {},
 	moduleDetail = {},
-	HISTORY_SIZE = 50,
+	HISTORY_SIZE = 100,
 }
 local origItemRef = Swatter.origItemRef
 
@@ -85,7 +85,7 @@ local function toggle()
 	if Swatter.Error:IsVisible() then
 		Swatter.Error:Hide()
 	else
-		Swatter.Error:Show()
+		Swatter.ErrorShow()
 	end
 end
 
@@ -328,6 +328,8 @@ function Swatter.OnEvent(frame, event, ...)
 			for pos, err in ipairs(SwatterData.errors) do
 				tinsert(Swatter.errorOrder, pos)
 			end
+			Swatter.loadCount = #SwatterData.errors
+			Swatter.lastShown = Swatter.loadCount
 			return
 		elseif (addon:lower() == "slidebar") then
 			addSlideIcon()
@@ -353,8 +355,8 @@ function Swatter.SetItemRef(...)
 		if (Swatter) then
 			for pos, errid in ipairs(Swatter.errorOrder) do
 				if (errid == id) then
-					Swatter.Error:Show()
-					return Swatter.ErrorDisplay(pos)
+					Swatter.ErrorShow(pos)
+					return
 				end
 			end
 		end
@@ -367,8 +369,19 @@ function Swatter.SetItemRef(...)
 	end
 end
 
-function Swatter.ErrorShow()
-	Swatter.Error.pos = table.getn(Swatter.errorOrder)
+function Swatter.ErrorShow(pos)
+	local maxError = #SwatterData.errors
+	local curError = tonumber(pos)
+	if not curError then
+		curError = Swatter.lastShown
+		if curError then
+			curError = max(curError + 1, maxError)
+		else
+			curError = maxError
+		end
+	end
+		
+	Swatter.Error.pos = curError or -1
 	if (Swatter.Error.pos == 0) then
 		Swatter.Error.pos = -1
 	end
@@ -406,13 +419,14 @@ function Swatter.ErrorDisplay(id)
 	local count = err.count
 	if (count > 999) then count = "\226\136\158" --[[Infinity]] end
 
+	local errPos = id - Swatter.loadCount
+	if errPos <= 0 then errPos = errPos - 1 end
 
-	Swatter.Error.curError = "|cffff5533Date:|r "..ts.."\n|cffff5533ID:|r "..id.."\n|cffff5533Error occured in:|r "..(err.context or "Anonymous").."\n|cffff5533Count:|r "..count.."\n|cffff5533Message:|r "..message.."\n|cffff5533Debug:|r\n"..trace.."\n|cffff5533AddOns:|r\n"..addlist.."\n"
+	Swatter.Error.curError = "|cffff5533Date:|r "..ts.."\n|cffff5533ID:|r "..errPos.."\n|cffff5533Error occured in:|r "..(err.context or "Anonymous").."\n|cffff5533Count:|r "..count.."\n|cffff5533Message:|r "..message.."\n|cffff5533Debug:|r\n"..trace.."\n|cffff5533AddOns:|r\n"..addlist.."\n"
 	Swatter.Error.selected = false
 	Swatter.ErrorUpdate()
 	Swatter.Error:Show()
 end
-
 
 function Swatter.ErrorDone()
 	Swatter.Error:Hide()
@@ -439,7 +453,8 @@ end
 
 function Swatter.UpdateNextPrev()
 	local cur = Swatter.Error.pos or 1
-	local max = table.getn(Swatter.errorOrder) or 0
+	local max = #Swatter.errorOrder or 0
+	print("Cur/Max", cur, max)
 	if ((max > cur) and (cur ~= -1)) then Swatter.Error.Next:Enable() else Swatter.Error.Next:Disable() end
 	if (cur > 1) then Swatter.Error.Prev:Enable() else Swatter.Error.Prev:Disable() end
 end
@@ -450,6 +465,7 @@ function Swatter.ErrorUpdate()
 	Swatter.Error.Scroll:UpdateScrollChildRect()
 	Swatter.Error.Box:ClearFocus()
 	Swatter.UpdateNextPrev()
+	Swatter.Error:Show()
 end
 
 function Swatter.ErrorClicked()
@@ -475,6 +491,17 @@ Swatter.Error:SetBackdropColor(0,0,0, 1)
 Swatter.Error:SetScript("OnShow", Swatter.ErrorShow)
 Swatter.Error:SetMovable(true)
 Swatter.Error:SetClampedToScreen(true)
+Swatter.Error.RealShow = Swatter.Error.Show
+Swatter.Error.RealHide = Swatter.Error.Hide
+function Swatter.Error:Show(...)
+	Swatter.Error.isShown = true
+	Swatter.Error:RealShow(...)
+end
+function Swatter.Error:Hide(...)
+	Swatter.Error.isShown = nil
+	Swatter.lastShown = #Swatter.errorOrder
+	Swatter.Error:RealHide(...)
+end
 
 Swatter.ProxyFrame = CreateFrame("Frame", "SwatterProxyFrame")
 Swatter.ProxyFrame:SetParent(Swatter.Error)
@@ -501,6 +528,7 @@ Swatter.ProxyFrame:SetScript("OnUpdate",
 			self.escCount = 0
 		end
 		self.timer = timer
+
 	end
 )
 tinsert(UISpecialFrames, "SwatterProxyFrame")
@@ -560,6 +588,20 @@ Swatter.Frame:SetScript("OnEvent", Swatter.OnEvent)
 Swatter.Frame:RegisterEvent("ADDON_LOADED")
 Swatter.Frame:RegisterEvent("ADDON_ACTION_FORBIDDEN")
 Swatter.Frame:RegisterEvent("ADDON_ACTION_BLOCKED")
+Swatter.Frame:SetScript("OnUpdate", function(self, elapsed)
+	if not self.timer then self.timer = 0 end
+	self.timer = self.timer + elapsed
+	if self.timer > 2 then
+		self.timer = 0
+		if Swatter.Error.isShown then
+			if not Swatter.Error:IsVisible() then
+				Swatter.Error:RealShow()
+			end
+		elseif Swatter.Error:IsVisible() then
+			Swatter.Error:RealHide()
+		end
+	end
+end)
 SetItemRef = Swatter.SetItemRef
 
 UIParent:UnregisterEvent("ADDON_ACTION_FORBIDDEN")
@@ -579,7 +621,7 @@ SlashCmdList["SWATTER"] = function(msg)
 		chat("  /swat nowarn    -  Disables swatter's blocked warnings")
 		chat("  /swat clear     -  Swatter will clear the list of errors")
 	elseif (msg == "show") then
-		Swatter.Error:Show()
+		Swatter.ErrorShow()
 	elseif (msg == "enable") then
 		SwatterData.enabled = true
 		chat("Swatter will now catch errors")
@@ -602,6 +644,8 @@ SlashCmdList["SWATTER"] = function(msg)
 		Swatter.Error:Hide()
 		SwatterData.errors = {}
 		Swatter.errorOrder = {}
+		Swatter.loadCount = 0
+		Swatter.lastShown = 0
 		--Note: we are not killing the frame.Swatter values - I am hoping that they are transient to the game session and aren't saved anywhere
 		--Swatter.ErrorUpdate()
 		chat("Swatter errors have been cleared")
