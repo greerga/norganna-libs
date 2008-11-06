@@ -209,7 +209,6 @@ do -- tooltip class definition
 
 	-- Call the given frame's SetHyperlink call
 	function lib:ShowItemLink(frame, link, count, additional)
-		frame:SetHyperlink(link)
 		if not additional then additional = {} end
 		additional.quantity = count
 		additional.item = link
