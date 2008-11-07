@@ -398,7 +398,7 @@ function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 	
 	if r and not g then embed = r r = nil end
 	
-	moneyText = self:GetMoneyText(money)
+	local moneyText = self:GetMoneyText(money)
 	self:AddDoubleLine(tooltip,text,moneyText,r,g,b,1,1,1,embed)
 end
 
