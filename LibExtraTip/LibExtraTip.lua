@@ -96,7 +96,9 @@ local function OnTooltipCleared(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipCleared()")
-
+	
+	if reg.ignoreOnCleared then return end
+	
 	if reg.extraTip then
 		table.insert(self.extraTippool, reg.extraTip)
 		reg.extraTip:Hide()
@@ -137,11 +139,16 @@ local function hook(tip,method,hook)
 	local orig = tip[method]
 	hooks[tip] = hooks[tip] or {origs = {}, hooks = {}}
 	hooks[tip].origs[method] = orig
+	local reg = lib.tooltipRegistry[tip]
 	local h = function(...)
+		OnTooltipCleared(tip)
+		reg.ignoreOnCleared = true
 		if hooks[tip].hooks[method] then
 			hook(...)
 		end
-		return orig(...)
+		local a,b,c,d = orig(...)
+		reg.ignoreOnCleared = nil
+		return a,b,c,d
 	end
 	hooks[tip].hooks[method] = h
 	tip[method] = h
@@ -825,13 +832,13 @@ local LT = LibStub("LibExtraTip-1")
 LT:RegisterTooltip(GameTooltip)
 LT:RegisterTooltip(ItemRefTooltip)
 
---[ [
+--[=[
 LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,nil,nil,nil,1,1,1,0)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,1,1,1,0)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
 end,0)
---] ]
+--]=]
 LT:AddCallback(function(tip,item,quantity)
 	quantity = quantity or 1
 	local price = GetSellValue(item)
