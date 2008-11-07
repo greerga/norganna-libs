@@ -19,7 +19,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-@author Tem
+@author Matt Richard (Tem)
 @author Ken Allan <ken@norganna.org>
 @libname LibExtraTip
 @version 1.0
@@ -42,7 +42,11 @@ if lib.Deactivate then lib:Deactivate() end
 local tooltipMethods
 local ExtraTipClass
 
-local MoneyViewClass = LibStub("LibMoneyFrame-1")
+-- Money Icon setup
+local iconpath = debugstack():match("(.*)LibExtraTip.lua") .. "icons\\"  --EW EW EW EW Sadly, this is the best way I know of to get the path.
+local goldicon = "%d|T"..iconpath.."GoldIcon:::1:-2|t"
+local silvericon = "%s|T"..iconpath.."SilverIcon:::1:-2|t"
+local coppericon = "%s|T"..iconpath.."CopperIcon:::1:-2|t"
 
 -- Function that gets run when an item is set on a registered tooltip.
 local function OnTooltipSetItem(tooltip)
@@ -345,6 +349,37 @@ function lib:AddDoubleLine(tooltip,textLeft,textRight,lr,lg,lb,rr,rg,rb,embed)
 end
 
 --[[-
+	Creates a string representation of the money value passed using embedded textures for the icons
+	@param money the money value to be converted in copper
+	@param concise when false (default), the representation of 1g is "1g 00s 00c" when false, it is simply "1g" (optional)
+	@since 1.0
+]]
+function lib:GetMoneyText(money, concise)
+	local g = math.floor(money / 10000)
+	local s = math.floor(money % 10000 / 100)
+	local c = math.floor(money % 100)
+	
+	local moneyText = ""
+	
+	local f = false
+	if g > 0 then
+		moneyText = goldicon:format(g)
+		f = true
+	end
+	
+	if s > 0 or (concise and f and c > 0) or (not concise and f) then
+		moneyText = moneyText..(f and " " or "")..silvericon:format(f and "%02d" or "%d"):format(s)
+		f = true
+	end
+	
+	if not concise or c > 0 or not f then
+		moneyText = moneyText .. (f and " " or "")..coppericon:format(f and "%02d" or "%d"):format(c)
+	end
+	
+	return moneyText
+end
+
+--[[-
 	Adds a line with text in the left column and a money frame in the right.
 	The money parameter is given in copper coins (i.e. 1g 27s 5c would be 12705)
 	@param tooltip GameTooltip object
@@ -360,34 +395,11 @@ end
 function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:AddMoneyLine()")
-
+	
 	if r and not g then embed = r r = nil end
-	embed = embed ~= nil and embed or self.embedMode
-
-	local width
-	local t = tooltip
-	if not embed then
-		t = reg.extraTip
-		reg.extraTipUsed = true
-	end
-	local moneyFrame = self:GetFreeMoneyFrame(t)
-
-	t:AddLine(text,r,g,b)
-	local n = t:NumLines()
-	local left = getglobal(t:GetName().."TextLeft"..n)
-	moneyFrame:SetPoint("RIGHT",t,"RIGHT", -5,0)
-	moneyFrame:SetPoint("LEFT",left,"RIGHT", 2,0)
-	moneyFrame:SetValue(money)
-	width = left:GetWidth() + moneyFrame:GetWidth() + 7
-
-	if t == tooltip and width > (reg.minWidth or 0) then
-		reg.minWidth = width
-		t:SetMinimumWidth(width)
-	elseif t.minWidth and width > t.minWidth then
-		t.minWidth = width
-		t:SetMinimumWidth(width)
-	end
-	t:Show()
+	
+	moneyText = self:GetMoneyText(money)
+	self:AddDoubleLine(tooltip,text,moneyText,r,g,b,1,1,1,embed)
 end
 
 --[[-
@@ -443,43 +455,6 @@ function lib:GetTooltipAdditional(tooltip)
 end
 
 
-local function moneyFrameOnHide(self)
-	lib.moneyPool[self] = true
-	self:Hide()
-end
-
-local function createMoney()
-	local m = MoneyViewClass:new(10)
-	m:Show()
-	m:SetScript("OnHide",moneyFrameOnHide)
-	m:SetFrameStrata("TOOLTIP")
-
-	return m
-end
-
---[[ INTERNAL USE ONLY
-	Returns an available money frame or creates a new one.
-	@param parent the parent to attach the money frame to
-	@param scale the scale to applu to the money frame
-	@return the money frame found for use.
-	@since 1.0
-]]
-function lib:GetFreeMoneyFrame(parent)
-	if not self.moneyPool then
-		self.moneyPool = {}
-	end
-	local m = next(self.moneyPool) or createMoney()
-	m:SetParent(parent)
-	m:Show()
-	self.moneyPool[m] = nil
-
-	local level = parent:GetFrameLevel() + 1
-	m.gold:SetFrameLevel(level)
-	m.silver:SetFrameLevel(level)
-	m.copper:SetFrameLevel(level)
-
-	return m
-end
 
 --[[ INTERNAL USE ONLY
 	Deactivates this version of the library, rendering it inert.
@@ -839,12 +814,13 @@ LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
 	LT:AddDoubleLine(tip,"Item Level:",ilvl,0)
 end,0)
 --]=]
-LT:AddCallback(function(tip,item,quantity)
+LT:AddCallback(function(tip,item,quantity,name,link,quality,ilvl)
 	quantity = quantity or 1
 	local price = GetSellValue(item)
 	if price then
-		LT:AddMoneyLine(tip,"Sell to vendor"..(quantity > 1 and "("..quantity..")" or "") .. ":",price*quantity)
+		LT:AddMoneyLine(tip,"Sell to vendor"..(quantity > 1 and "("..quantity..")" or "") .. ":",price*quantity,1)
 	end
+	LT:AddDoubleLine(tip,"Item Level:",ilvl,1)
 end)
 
 -- Test Code ]]-----------------------------------------------------
