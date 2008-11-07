@@ -58,7 +58,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA<br/>
  <br/>
-<b class="author">Author: Tem</b><br/>
+<b class="author">Author: Matt Richard (Tem)</b><br/>
 <b class="author">Author: Ken Allan &lt;ken@norganna.org></b><br/>
 <b class="version">Version: 1.0</b><br/>
 
@@ -120,6 +120,12 @@ This setting only takes effect when embed mode is not specified on individual Ad
 <b class="param">b</b>: blue component of the tooltip line color (optional)<br/>
 <b class="param">embed</b>: override the lib's embedMode setting (optional)<br/>
 <b class="see">See also</b>: <a href="#SetEmbedMode">SetEmbedMode</a><br/>
+<b class="since">Available since v1.0</b><br/>
+
+<h3 class="method" id="GetMoneyText">Class Method LibExtraTip:GetMoneyText(money, concise)</h3><br/>
+<h4 class="summary">Creates a string representation of the money value passed using embedded textures for the icons</h4><br/>
+<b class="param">money</b>: the money value to be converted in copper<br/>
+<b class="param">concise</b>: when false (default), the representation of 1g is "1g 00s 00c" when true, it is simply "1g" (optional)<br/>
 <b class="since">Available since v1.0</b><br/>
 
 <h3 class="method" id="AddMoneyLine">Class Method LibExtraTip:AddMoneyLine(tooltip, text, money, r, g, b, embed)</h3><br/>

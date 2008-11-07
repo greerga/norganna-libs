@@ -351,7 +351,7 @@ end
 --[[-
 	Creates a string representation of the money value passed using embedded textures for the icons
 	@param money the money value to be converted in copper
-	@param concise when false (default), the representation of 1g is "1g 00s 00c" when false, it is simply "1g" (optional)
+	@param concise when false (default), the representation of 1g is "1g 00s 00c" when true, it is simply "1g" (optional)
 	@since 1.0
 ]]
 function lib:GetMoneyText(money, concise)
