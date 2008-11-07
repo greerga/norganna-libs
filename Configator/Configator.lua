@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 24
+local LIBRARY_VERSION_MINOR = 25
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -233,7 +233,16 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 		insets = { left = 32, right = 32, top = 32, bottom = 32 }
 	})
 	gui.Backdrop:SetBackdropColor(0, 0, 0, 1)
-	table.insert(UISpecialFrames, name.."Backdrop") -- make frames Esc Sensitive by default
+
+	-- Create a proxy to see if we should react to global CloseWindow() calls
+	gui.Proxy = CreateFrame("Frame", name.."Proxy", gui)
+	table.insert(UISpecialFrames, name.."Proxy") -- make frames Esc Sensitive by default
+	function gui.Proxy:Hide()
+		if gui.Backdrop:IsVisible() then
+			-- We are not embedded
+			gui:Hide()
+		end
+	end
 
 	gui.Done = CreateFrame("Button", nil, gui.Backdrop, "OptionsButtonTemplate")
 	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
