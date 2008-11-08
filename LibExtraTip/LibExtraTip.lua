@@ -112,11 +112,12 @@ local function OnTooltipCleared(tooltip)
 	reg.extraTipUsed = nil
 	reg.minWidth = 0
 	reg.quantity = nil
-
+	table.wipe(reg.additional)
+	--[[
 	local additional = reg.additional
 	for k,v in pairs(additional) do
 		additional[k] = nil
-	end
+	end]]
 end
 
 -- Function that gets run when a registered tooltip's size changes.
