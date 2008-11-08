@@ -187,6 +187,15 @@ function lib:TabLink(frame, el, noHook)
 	end
 end
 
+local function proxyHide(self)
+	self.gui:Hide()	
+end
+
+local function proxyIsShown(self)
+	return self.gui.Backdrop:IsVisible()
+end
+
+
 function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeight, topOffset, leftOffset)
 	local id = #(lib.frames) + 1
 	local name = "ConfigatorDialog_"..id
@@ -236,13 +245,10 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 
 	-- Create a proxy to see if we should react to global CloseWindow() calls
 	gui.Proxy = CreateFrame("Frame", name.."Proxy", gui)
+	gui.Proxy.gui = gui
 	table.insert(UISpecialFrames, name.."Proxy") -- make frames Esc Sensitive by default
-	function gui.Proxy:Hide()
-		if gui.Backdrop:IsVisible() then
-			-- We are not embedded
-			gui:Hide()
-		end
-	end
+	gui.Proxy.Hide = proxyHide
+	gui.Proxy.IsShown = proxyIsShown
 
 	gui.Done = CreateFrame("Button", nil, gui.Backdrop, "OptionsButtonTemplate")
 	gui.Done:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -10, 10)
