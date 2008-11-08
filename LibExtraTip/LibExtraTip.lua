@@ -145,13 +145,13 @@ local function hook(tip,method,hook)
 	hooks[tip] = hooks[tip] or {origs = {}, hooks = {}}
 	hooks[tip].origs[method] = orig
 	local reg = lib.tooltipRegistry[tip]
-	local h = function(...)
+	local h = function(self,...)
 		OnTooltipCleared(tip)
 		reg.ignoreOnCleared = true
 		if hooks[tip].hooks[method] then
-			hook(...)
+			hook(self,reg,...)
 		end
-		local a,b,c,d = orig(...)
+		local a,b,c,d = orig(self,...)
 		reg.ignoreOnCleared = nil
 		return a,b,c,d
 	end
@@ -404,31 +404,31 @@ function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
 end
 
 --[[-
-	Calls a tooltip's method, passing arguments and setting additional details.
-	You must use this function when you are setting your own tooltip, but want LibExtraTip to display the extra tooltip information and notify any callbacks.
+	Sets a tooltip to hyperlink with specified quantity
 	@param tooltip GameTooltip object
-	@param method the tooltip method to call (or nil to not call any)
-	@param args table of arguments to pass to tooltip method
+	@param link hyperlink to display in the tooltip
+	@param quantity quantity of the item to display
 	@param detail additional detail items to set for the callbacks
-	@return whatever the called method returns
+	@return nil
 	@since 1.0
 ]]
-function lib:CallTooltipMethod(tooltip, method, args, detail)
+function lib:SetHyperlinkAndCount(tooltip, link, quantity, detail)
 	local reg = self.tooltipRegistry[tooltip]
-	assert(reg, "Unknown tooltip passed to LibExtraTip:CallTooltipMethod()")
+	assert(reg, "Unknown tooltip passed to LibExtraTip:SetHyperlinkAndCount()")
 
-	if detail.quantity then reg.quantity = detail.quantity end
-	if detail.item then reg.item = detail.item end
-	reg.additional.event = "Custom"
-	reg.additional.eventMethod = tostring(method)
-	for k,v in pairs(detail) do
-		reg.additional[k] = v
+	OnTooltipCleared(tooltip)
+	reg.quantity = quantity
+	reg.item = link
+	reg.additional.event = "SetHyperlinkAndCount"
+	reg.additional.eventLink = link
+	if detail then
+		for k,v in pairs(detail) do
+			reg.additional[k] = v
+		end
 	end
-	if method and tooltip[method] then
-		-- If we have a tooltip method to call:
-		return tooltip[method](tooltip,unpack(args))
-	end
-	OnTooltipSetItem(tooltip)
+	reg.ignoreOnCleared = true
+	hooks[tooltip].origs["SetHyperlink"](tooltip,link)
+	reg.ignoreOnCleared = nil
 end
 
 --[[-
@@ -498,146 +498,151 @@ end
 function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity of the item
 	local reg = self.tooltipRegistry
 	tooltipMethods = {
-		SetAction = function(self, actionid)
+		SetAction = function(self,reg, actionid)
 			local t = GetActionInfo(actionid)
 			if t == "item" then
-				reg[self].quantity = GetActionCount(actionid)
-				reg[self].additional.event = "SetAction"
-				reg[self].additional.actionid = actionid
+				reg.quantity = GetActionCount(actionid)
+				reg.additional.event = "SetAction"
+				reg.additional.actionid = actionid
 			end		
 		end,
 		
-		SetAuctionItem = function(self,type,index)
+		SetAuctionItem = function(self,reg,type,index)
 			local _,_,q,cu,min,inc,bo,ba,hb,own = GetAuctionItemInfo(type,index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetAuctionItem"
-			reg[self].additional.eventType = type
-			reg[self].additional.eventIndex = index
-			reg[self].additional.canUse = cu
-			reg[self].additional.minBid = min
-			reg[self].additional.minIncrement = inc
-			reg[self].additional.buyoutPrice = bo
-			reg[self].additional.bidAmount = ba
-			reg[self].additional.highBidder = hb
-			reg[self].additional.owner = own
+			reg.quantity = q
+			reg.additional.event = "SetAuctionItem"
+			reg.additional.eventType = type
+			reg.additional.eventIndex = index
+			reg.additional.canUse = cu
+			reg.additional.minBid = min
+			reg.additional.minIncrement = inc
+			reg.additional.buyoutPrice = bo
+			reg.additional.bidAmount = ba
+			reg.additional.highBidder = hb
+			reg.additional.owner = own
 		end,
 
-		SetAuctionSellItem = function(self)
+		SetAuctionSellItem = function(self,reg)
 			local name,texture,quantity,quality,canUse,price = GetAuctionSellItemInfo()
-			reg[self].quantity = quantity
-			reg[self].additional.event = "SetAuctionSellItem"
-			reg[self].additional.canUse = canUse
+			reg.quantity = quantity
+			reg.additional.event = "SetAuctionSellItem"
+			reg.additional.canUse = canUse
 		end,
 		
-		SetBagItem = function(self,bag,slot)
+		SetBagItem = function(self,reg,bag,slot)
 			local _,q,l,_,r= GetContainerItemInfo(bag,slot)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetBagItem"
-			reg[self].additional.eventContainer = bag
-			reg[self].additional.eventIndex = slot
-			reg[self].additional.readable = r
-			reg[self].additional.locked = l
+			reg.quantity = q
+			reg.additional.event = "SetBagItem"
+			reg.additional.eventContainer = bag
+			reg.additional.eventIndex = slot
+			reg.additional.readable = r
+			reg.additional.locked = l
 		end,
 		
-		SetBuybackItem = function(self,index)
+		SetBuybackItem = function(self,reg,index)
 			local name,texture,price,quantity = GetBuybackItemInfo(index)
-			reg[self].quantity = quantity
-			reg[self].additional.event = "SetBuybackItem"
-			reg[self].additional.eventIndex = index
+			reg.quantity = quantity
+			reg.additional.event = "SetBuybackItem"
+			reg.additional.eventIndex = index
 		end,
 		
-		SetGuildBankItem = function(self,tab,index)
+		SetGuildBankItem = function(self,reg,tab,index)
 			local texture,quantity,locked = GetGuildBankItemInfo(tab,index)
-			reg[self].quantity = quantity
-			reg[self].additional.event = "SetGuildBankItem"
-			reg[self].additional.eventContainer = tab
-			reg[self].additional.eventIndex = index
-			reg[self].additional.locked = locked
+			reg.quantity = quantity
+			reg.additional.event = "SetGuildBankItem"
+			reg.additional.eventContainer = tab
+			reg.additional.eventIndex = index
+			reg.additional.locked = locked
 		end,
 		
-		SetInboxItem = function(self,index)
+		SetInboxItem = function(self,reg,index)
 			local _,_,q,_,cu = GetInboxItem(index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetInboxItem"
-			reg[self].additional.eventIndex = index
-			reg[self].additional.canUse = cu
+			reg.quantity = q
+			reg.additional.event = "SetInboxItem"
+			reg.additional.eventIndex = index
+			reg.additional.canUse = cu
 		end,
 
-		SetLootItem = function(self,index)
+		SetLootItem = function(self,reg,index)
 			local _,_,q = GetLootSlotInfo(index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetLootItem"
-			reg[self].additional.eventIndex = index
+			reg.quantity = q
+			reg.additional.event = "SetLootItem"
+			reg.additional.eventIndex = index
 		end,
 		
-		SetLootRollItem = function(self,index)
+		SetLootRollItem = function(self,reg,index)
 			local texture, name, count, quality = GetLootRollItemInfo(index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetLootRollItem"
-			reg[self].additional.eventIndex = index
+			reg.quantity = q
+			reg.additional.event = "SetLootRollItem"
+			reg.additional.eventIndex = index
 		end,
 
-		SetMerchantItem = function(self,index)
+		SetMerchantItem = function(self,reg,index)
 			local _,_,p,q,na,cu,ec = GetMerchantItemInfo(index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetLootItem"
-			reg[self].additional.eventIndex = index
-			reg[self].additional.price = p
-			reg[self].additional.numAvailable = na
-			reg[self].additional.canUse = cu
-			reg[self].additional.extendedCost = ec
+			reg.quantity = q
+			reg.additional.event = "SetLootItem"
+			reg.additional.eventIndex = index
+			reg.additional.price = p
+			reg.additional.numAvailable = na
+			reg.additional.canUse = cu
+			reg.additional.extendedCost = ec
 		end,
 
-		SetQuestItem = function(self,type,index)
+		SetQuestItem = function(self,reg,type,index)
 			local _,_,q,_,cu = GetQuestItemInfo(type,index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetQuestItem"
-			reg[self].additional.eventType = type
-			reg[self].additional.eventIndex = index
-			reg[self].additional.canUse = cu
+			reg.quantity = q
+			reg.additional.event = "SetQuestItem"
+			reg.additional.eventType = type
+			reg.additional.eventIndex = index
+			reg.additional.canUse = cu
 		end,
 		
-		SetQuestLogItem = function(self,type,index)
+		SetQuestLogItem = function(self,reg,type,index)
 			local _,_,q,_,cu = GetQuestLogChoiceInfo(type,index)
-			reg[self].quantity = q
-			reg[self].additional.event = "SetQuestLogItem"
-			reg[self].additional.eventType = type
-			reg[self].additional.eventIndex = index
-			reg[self].additional.canUse = cu
+			reg.quantity = q
+			reg.additional.event = "SetQuestLogItem"
+			reg.additional.eventType = type
+			reg.additional.eventIndex = index
+			reg.additional.canUse = cu
 		end,
 		
-		SetSendMailItem = function(self,index)
+		SetSendMailItem = function(self,reg,index)
 			local name,texture,quantity = GetSendMailItem(index)
-			reg[self].quantity = quantity
-			reg[self].additional.event = "SetSendMailItem"
-			reg[self].additional.eventIndex = index
+			reg.quantity = quantity
+			reg.additional.event = "SetSendMailItem"
+			reg.additional.eventIndex = index
 		end,	
 
-		SetTradePlayerItem = function(self,index)
+		SetTradePlayerItem = function(self,reg,index)
 			local name, texture, quantity = GetTradePlayerItemInfo(index)
-			reg[self].quantity = quantity
-			reg[self].additional.event = "SetTradePlayerItem"
-			reg[self].additional.eventIndex = index
+			reg.quantity = quantity
+			reg.additional.event = "SetTradePlayerItem"
+			reg.additional.eventIndex = index
 		end,
 		
-		SetTradeTargetItem = function(self,index)
+		SetTradeTargetItem = function(self,reg,index)
 			local name, texture, quantity = GetTradeTargetItemInfo(index)
-			reg[self].quantity = quantity
-			reg[self].additional.event = "SetTradeTargetItem"
-			reg[self].additional.eventIndex = index
+			reg.quantity = quantity
+			reg.additional.event = "SetTradeTargetItem"
+			reg.additional.eventIndex = index
 		end,
 		
-		SetTradeSkillItem = function(self,index,reagentIndex)
-			reg[self].additional.event = "SetTradeSkillItem"
-			reg[self].additional.eventIndex = index
-			reg[self].additional.eventReagentIndex = reagentIndex
+		SetTradeSkillItem = function(self,reg,index,reagentIndex)
+			reg.additional.event = "SetTradeSkillItem"
+			reg.additional.eventIndex = index
+			reg.additional.eventReagentIndex = reagentIndex
 			if reagentIndex then
 				local _,_,q,rc = GetTradeSkillReagentInfo(index,reagentIndex)
-				reg[self].quantity = q
-				reg[self].additional.playerReagentCount = rc
+				reg.quantity = q
+				reg.additional.playerReagentCount = rc
 			else
-				reg[self].quantity = GetTradeSkillNumMade(index)
+				reg.quantity = GetTradeSkillNumMade(index)
 			end
+		end,
+
+		SetHyperlink = function(self,reg,link)
+			reg.additional.event = "SetHyperlink"
+			reg.additional.eventLink = link
 		end,
 	}
 end
