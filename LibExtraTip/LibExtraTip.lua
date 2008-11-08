@@ -43,7 +43,7 @@ local tooltipMethods
 local ExtraTipClass
 
 -- Money Icon setup
-local iconpath = debugstack():match("(.*)LibExtraTip.lua") .. "icons\\"  --EW EW EW EW Sadly, this is the best way I know of to get the path.
+local iconpath = "Interface\\MoneyFrame\\UI-"
 local goldicon = "%d|T"..iconpath.."GoldIcon:::1:-2|t"
 local silvericon = "%s|T"..iconpath.."SilverIcon:::1:-2|t"
 local coppericon = "%s|T"..iconpath.."CopperIcon:::1:-2|t"
