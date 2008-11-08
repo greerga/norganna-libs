@@ -61,10 +61,11 @@ local function OnTooltipSetItem(tooltip)
 		-- For generated tooltips
 		if not item and reg.item then item = reg.item end
 
-		if item then
+		if item and not reg.hasItem then
 			local name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture = GetItemInfo(item)
 			if link then
 				name = name or "unknown" -- WotLK bug
+				reg.hasItem = true
 				local extraTip = self:GetFreeExtraTipObject()
 				reg.extraTip = extraTip
 				extraTip:Attach(tooltip)
@@ -112,12 +113,8 @@ local function OnTooltipCleared(tooltip)
 	reg.extraTipUsed = nil
 	reg.minWidth = 0
 	reg.quantity = nil
+	reg.hasItem = nil
 	table.wipe(reg.additional)
-	--[[
-	local additional = reg.additional
-	for k,v in pairs(additional) do
-		additional[k] = nil
-	end]]
 end
 
 -- Function that gets run when a registered tooltip's size changes.
