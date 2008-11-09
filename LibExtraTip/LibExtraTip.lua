@@ -595,7 +595,12 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 		end,
 		
 		SetQuestLogItem = function(self,reg,type,index)
-			local _,_,q,_,cu = GetQuestLogChoiceInfo(type,index)
+			local _,q,cu
+			if type == "choice" then
+				_,_,q,_,cu = GetQuestLogChoiceInfo(index)
+			else
+				_,_,q,_,cu = GetQuestLogRewardInfo(index)
+			end
 			reg.quantity = q
 			reg.additional.event = "SetQuestLogItem"
 			reg.additional.eventType = type
