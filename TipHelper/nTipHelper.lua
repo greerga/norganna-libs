@@ -36,7 +36,7 @@
 		We will attempt to avoid this happening where possible (of course).
 ]]
 
-local MAJOR,MINOR,REVISION = "nTipHelper", 1, 0
+local MAJOR,MINOR,REVISION = "nTipHelper", 1, 1
 
 --[[-----------------------------------------------------------------
 
@@ -340,7 +340,7 @@ do -- tooltip class definition
 		if embed == nil then
 			embed = defaultEmbed
 		end
-
+		left = left:gsub("{{", "|cffddeeff"):gsub("}}", "|r")
 		if amount then
 			libTT:AddMoneyLine(curFrame, left, amount, red, green, blue, embed)
 		elseif right then
