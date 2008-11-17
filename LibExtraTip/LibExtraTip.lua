@@ -69,7 +69,8 @@ local function OnTooltipSetItem(tooltip)
 				local extraTip = self:GetFreeExtraTipObject()
 				reg.extraTip = extraTip
 				extraTip:Attach(tooltip)
-				extraTip:AddLine(ITEM_QUALITY_COLORS[quality].hex .. name)
+				local r,g,b = GetItemQualityColor(quality) 
+				extraTip:AddLine(name,r,g,b)
 
 				local quantity = reg.quantity
 
