@@ -53,7 +53,8 @@ local function OnTooltipSetItem(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipSetItem()")
-
+	--print("tooltip set item",reg.quantity)
+	
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
 		local _,item = tooltip:GetItem()
@@ -102,7 +103,7 @@ local function OnTooltipCleared(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipCleared()")
-	
+	--print("tooltip cleared",reg.quantity)
 	if reg.ignoreOnCleared then return end
 	
 	if reg.extraTip then
@@ -144,6 +145,7 @@ local function hook(tip,method,hook)
 	hooks[tip].origs[method] = orig
 	local reg = lib.tooltipRegistry[tip]
 	local h = function(self,...)
+		--print("top of hook",method)
 		OnTooltipCleared(tip)
 		reg.ignoreOnCleared = true
 		if hooks[tip].hooks[method] then
@@ -561,6 +563,14 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.canUse = cu
 		end,
 
+		SetInventoryItem = function(self,reg,unit,index)
+			local q = GetInventoryItemCount(unit,index)
+			reg.quantity = q
+			reg.additional.event = "SetInventoryItem"
+			reg.additional.eventIndex = index
+			reg.additional.eventUnit = unit
+		end,
+		
 		SetLootItem = function(self,reg,index)
 			local _,_,q = GetLootSlotInfo(index)
 			reg.quantity = q
