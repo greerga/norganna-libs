@@ -53,7 +53,7 @@ local function OnTooltipSetItem(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipSetItem()")
-	--print("tooltip set item",reg.quantity)
+	--print("tooltip set item")
 	
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
@@ -103,7 +103,7 @@ local function OnTooltipCleared(tooltip)
 	local self = lib
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipCleared()")
-	--print("tooltip cleared",reg.quantity)
+	--print("tooltip cleared",reg.ignoreOnCleared)
 	if reg.ignoreOnCleared then return end
 	
 	if reg.extraTip then
@@ -116,6 +116,7 @@ local function OnTooltipCleared(tooltip)
 	reg.minWidth = 0
 	reg.quantity = nil
 	reg.hasItem = nil
+	reg.item = nil
 	table.wipe(reg.additional)
 end
 
