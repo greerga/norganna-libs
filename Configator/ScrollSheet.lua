@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 5
+local LIBRARY_VERSION_MINOR = 6
 
 --[[-----------------------------------------------------------------
 
@@ -298,7 +298,8 @@ local function sortDataSet(data, sort, width, column, dir)
 		if dir < 0 then
 			return (data[aPos] > data[bPos])
 		end
-		return (data[aPos] < data[bPos])
+		local dataA, dataB = data[aPos], data[bPos]
+		return (dataA < dataB) or (dataA == dataB and a < b)
 	end)
 end
 
