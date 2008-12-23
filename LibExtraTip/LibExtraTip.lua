@@ -3,7 +3,7 @@ LibExtraTip
 
 LibExtraTip is a library of API functions for manipulating additional information into GameTooltips by either adding information to the bottom of existing tooltips (embedded mode) or by adding information to an extra "attached" tooltip construct which is placed to the bottom of the existing tooltip.
 
-Copyright (C) 2008, by the respecive below authors.
+Copyright (C) 2008, by the respective below authors.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -42,11 +42,56 @@ if lib.Deactivate then lib:Deactivate() end
 local tooltipMethods
 local ExtraTipClass
 
+-- The following events are enabled by default unless disabled in the
+-- callback options "enabled" table all other events are default disabled:
+local defaultEnable = {
+	SetAuctionItem = true,
+	SetAuctionSellItem = true,
+	SetBagItem = true,
+	SetBuybackItem = true,
+	SetGuildBankItem = true,
+	SetInboxItem = true,
+	SetInventoryItem = true,
+	SetLootItem = true,
+	SetLootRollItem = true,
+	SetMerchantItem = true,
+	SetQuestItem = true,
+	SetQuestLogItem = true,
+	SetSendMailItem = true,
+	SetTradePlayerItem = true,
+	SetTradeTargetItem = true,
+	SetTradeSkillItem = true,
+	SetHyperlink = true,
+}
+
 -- Money Icon setup
 local iconpath = "Interface\\MoneyFrame\\UI-"
 local goldicon = "%d|T"..iconpath.."GoldIcon:%d:%d:2:0|t"
 local silvericon = "%s|T"..iconpath.."SilverIcon:%d:%d:2:0|t"
 local coppericon = "%s|T"..iconpath.."CopperIcon:%d:%d:2:0|t"
+
+-- Function that calls all the interested tooltips
+local function ProcessCallbacks(reg, tiptype, tooltip, ...)
+	local self = lib
+	if not reg then return end
+
+	local event = reg.additional.event or "Unknown"
+	local default = defaultEnable[event]
+
+	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
+		for i,options in ipairs(self.sortedCallbacks) do
+			if options.type == tiptype and options.callback and type(options.callback) == "function" then
+				local enable = default
+				if options.enable and options.enable[event] ~= nil then
+					enable = options.enable[event]
+				end
+				if enable then
+					options.callback(tooltip, ...)
+				end
+			end
+		end
+	end
+end
 
 -- Function that gets run when an item is set on a registered tooltip.
 local function OnTooltipSetItem(tooltip)
@@ -57,8 +102,8 @@ local function OnTooltipSetItem(tooltip)
 	
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
-		local _,item = tooltip:GetItem()
 
+		local _,item = tooltip:GetItem()
 		-- For generated tooltips
 		if not item and reg.item then item = reg.item end
 
@@ -88,12 +133,62 @@ local function OnTooltipSetItem(tooltip)
 				reg.additional.equipLocation = equiploc
 				reg.additional.texture = texture
 				
-				for i,callback in ipairs(self.sortedCallbacks) do
-					callback(tooltip,item,quantity,name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture)
-				end
+				ProcessCallbacks(reg, "item", tooltip, item,quantity,name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture)
 				tooltip:Show()
 				if reg.extraTipUsed then reg.extraTip:Show() end
 			end
+		end
+	end
+end
+
+-- Function that gets run when a spell is set on a registered tooltip.
+local function OnTooltipSetSpell(tooltip)
+	local self = lib
+	local reg = self.tooltipRegistry[tooltip]
+	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipSetSpell()")
+	--print("tooltip set spell")
+	
+	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
+		tooltip:Show()
+		local name, rank = tooltip:GetSpell()
+		local link = reg.additional.link
+		
+		if name and not reg.hasItem then
+			reg.hasItem = true
+			local extraTip = self:GetFreeExtraTipObject()
+			reg.extraTip = extraTip
+			extraTip:Attach(tooltip)
+			extraTip:AddLine(name, 1,0.8,0)
+
+			ProcessCallbacks(reg, "spell", tooltip, link, name,rank)
+			tooltip:Show()
+			if reg.extraTipUsed then reg.extraTip:Show() end
+		end
+	end
+end
+
+
+-- Function that gets run when a unit is set on a registered tooltip.
+local function OnTooltipSetUnit(tooltip)
+	local self = lib
+	local reg = self.tooltipRegistry[tooltip]
+	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipSetUnit()")
+	--print("tooltip set unit")
+	
+	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
+		tooltip:Show()
+		local name, unitId = tooltip:GetUnit()
+		
+		if name and not reg.hasItem then
+			reg.hasItem = true
+			local extraTip = self:GetFreeExtraTipObject()
+			reg.extraTip = extraTip
+			extraTip:Attach(tooltip)
+			extraTip:AddLine(name, 0.8,0.8,0.8)
+
+			ProcessCallbacks(reg, "unit", tooltip, name,unitId)
+			tooltip:Show()
+			if reg.extraTipUsed then reg.extraTip:Show() end
 		end
 	end
 end
@@ -146,7 +241,6 @@ local function hook(tip,method,hook)
 	hooks[tip].origs[method] = orig
 	local reg = lib.tooltipRegistry[tip]
 	local h = function(self,...)
-		--print("top of hook",method)
 		OnTooltipCleared(tip)
 		reg.ignoreOnCleared = true
 		if hooks[tip].hooks[method] then
@@ -216,6 +310,8 @@ function lib:RegisterTooltip(tooltip)
 		reg.additional = {}
 
 		hookscript(tooltip,"OnTooltipSetItem",OnTooltipSetItem)
+		hookscript(tooltip,"OnTooltipSetUnit",OnTooltipSetUnit)
+		hookscript(tooltip,"OnTooltipSetSpell",OnTooltipSetSpell)
 		hookscript(tooltip,"OnTooltipCleared",OnTooltipCleared)
 		hookscript(tooltip,"OnSizeChanged",OnSizeChanged)
 
@@ -248,13 +344,17 @@ local sortFunc
 		* item: The item being shown (in {@wowwiki:ItemLink} format)
 		* quantity: The quantity of the item being shown (may be nil when the quantity is unavailable)
 		* return values from {@wowwiki:API_GetItemInfo|GetItemInfo} (in order)
-	@param callback the method to be called
+	@param options a table containing the callback type and callback function
 	@param priority the priority of the callback (optional, default 200)
 	@since 1.0
 ]]
-function lib:AddCallback(callback,priority)
+function lib:AddCallback(options,priority)
 -- Lower priority gets called before higher priority.  Default is 200.
-	if not callback or type(callback) ~= "function" then return end
+	if not options then return end
+	local otype = type(options)
+	if otype == "function" then 
+		options = { type = "item", callback = options }
+	elseif otype ~= "table" then return end
 
 	if not self.callbacks then
 		self.callbacks = {}
@@ -265,8 +365,8 @@ function lib:AddCallback(callback,priority)
 		end
 	end
 
-	self.callbacks[callback] = priority or 200
-	table.insert(self.sortedCallbacks,callback)
+	self.callbacks[options] = priority or 200
+	table.insert(self.sortedCallbacks,options)
 	table.sort(self.sortedCallbacks,sortFunc)
 end
 
@@ -484,6 +584,8 @@ function lib:Deactivate()
 	if self.tooltipRegistry then
 		for tooltip in self.tooltipRegistry do
 			unhookscript(tooltip,"OnTooltipSetItem")
+			unhookscript(tooltip,"OnTooltipSetUnit")
+			unhookscript(tooltip,"OnTooltipSetSpell")
 			unhookscript(tooltip,"OnTooltipCleared")
 			unhookscript(tooltip,"OnSizeChanged")
 			for k,v in pairs(tooltipMethods) do
@@ -508,6 +610,21 @@ function lib:Activate()
 	end
 end
 
+-- Sets all the complex spell details
+local function SetSpellDetail(reg, link)
+	local name, rank, icon, cost, funnel, power, ctime, min, max = GetSpellInfo(link)
+	reg.additional.name = name
+	reg.additional.link = link
+	reg.additional.rank = rank
+	reg.additional.icon = icon
+	reg.additional.cost = cost
+	reg.additional.powerType = power
+	reg.additional.isFunnel = funnel
+	reg.additional.castTime = ctime
+	reg.additional.minRange = min
+	reg.additional.maxRange = max
+end
+
 --[[ INTERNAL USE ONLY
 	Generates a tooltip method table.
 	The tooltip method table supplies hooking information for the tooltip registration functions, including the methods to hook and a function to run that parses the hooked functions parameters.
@@ -516,15 +633,9 @@ end
 function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity of the item
 	local reg = self.tooltipRegistry
 	tooltipMethods = {
-		SetAction = function(self,reg, actionid)
-			local t = GetActionInfo(actionid)
-			if t == "item" then
-				reg.quantity = GetActionCount(actionid)
-				reg.additional.event = "SetAction"
-				reg.additional.actionid = actionid
-			end		
-		end,
-		
+
+		-- Default enabled events
+
 		SetAuctionItem = function(self,reg,type,index)
 			local _,_,q,cu,min,inc,bo,ba,hb,own = GetAuctionItemInfo(type,index)
 			reg.quantity = q
@@ -642,7 +753,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.quantity = quantity
 			reg.additional.event = "SetSendMailItem"
 			reg.additional.eventIndex = index
-		end,	
+		end,
 
 		SetTradePlayerItem = function(self,reg,index)
 			local name, texture, quantity = GetTradePlayerItemInfo(index)
@@ -667,13 +778,129 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 				reg.quantity = q
 				reg.additional.playerReagentCount = rc
 			else
+				local link = GetTradeSkillItemLink(index)
+				reg.additional.link = link
+				reg.result = item
 				reg.quantity = GetTradeSkillNumMade(index)
+				if (link:sub(0, 6) == "spell:") then
+					SetSpellDetail(reg, link)
+				end
 			end
 		end,
 
 		SetHyperlink = function(self,reg,link)
 			reg.additional.event = "SetHyperlink"
 			reg.additional.eventLink = link
+			reg.additional.link = link
+		end,
+
+		-- Default disabled events:
+	
+		SetAction = function(self,reg, actionid)
+			local t,id,sub = GetActionInfo(actionid)
+			reg.additional.event = "SetAction"
+			reg.additional.eventIndex = actionid
+			reg.additional.actionType = t
+			reg.additional.actionIndex = id
+			reg.additional.actionSubtype = subtype
+			if t == "item" then
+				reg.quantity = GetActionCount(actionid)
+			elseif t == "spell" then
+				if id and id > 0 then
+					local link = GetSpellLink(id, sub)
+					SetSpellDetail(reg, link)
+				end
+			end
+		end,
+		
+		SetAuctionCompareItem = function(self, reg, type, index, offset)
+			reg.additional.event = "SetAuctionCompareItem"
+			reg.additional.eventType = type
+			reg.additional.eventIndex = index
+			reg.additional.eventOffset = offset
+		end,
+
+		SetCurrencyToken = function(self, reg, index)
+			reg.additional.event = "SetCurrencyToken"
+			reg.additional.eventIndex = index
+		end,
+
+		SetMerchantCompareItem = function(self, reg, index, offset)
+			reg.additional.event = "SetMerchantCompareItem"
+			reg.additional.eventIndex = index
+			reg.additional.eventOffset = offset
+		end,
+
+		SetPetAction = function(self, reg, index)
+			reg.additional.event = "SetPetAction"
+			reg.additional.eventIndex = index
+		end,
+
+		SetPlayerBuff = function(self, reg, index)
+			reg.additional.event = "SetPlayerBuff"
+			reg.additional.eventIndex = index
+		end,
+
+		SetQuestLogRewardSpell = function(self, reg)
+			reg.additional.event = "SetQuestLogRewardSpell"
+		end,
+
+		SetQuestRewardSpell = function(self, reg)
+			reg.additional.event = "SetQuestRewardSpell"
+		end,
+
+		SetShapeshift = function(self, reg, index)
+			reg.additional.event = "SetShapeshift"
+			reg.additional.eventIndex = index
+		end,
+
+		SetSpell = function(self,reg,index,type)
+			reg.additional.event = "SetSpell"
+			reg.additional.eventIndex = index
+			reg.additional.eventType = type
+			local link = GetSpellLink(index, type)
+			SetSpellDetail(reg, link)
+		end,
+
+		SetTalent = function(self, reg, type, index)
+			reg.additional.event = "SetTalent"
+			reg.additional.eventIndex = index
+		end,
+
+		SetTracking = function(self, reg, index)
+			reg.additional.event = "SetTracking"
+			reg.additional.eventIndex = index
+		end,
+
+		SetTrainerService = function(self, reg, index)
+			reg.additional.event = "SetTrainerService"
+			reg.additional.eventIndex = index
+		end,
+
+		SetUnit = function(self, reg, unit)
+			reg.additional.event = "SetUnit"
+			reg.additional.eventUnit= unit
+		end,
+
+		SetUnitAura = function(self, reg, unit, index, filter)
+			reg.additional.event = "SetUnitAura"
+			reg.additional.eventUnit = unit
+			reg.additional.eventIndex = index
+			reg.additional.eventFilter = filter
+		end,
+
+		SetUnitBuff = function(self, reg, unit, index, filter)
+			reg.additional.event = "SetUnitBuff"
+			reg.additional.eventUnit = unit
+			reg.additional.eventIndex = index
+			reg.additional.eventFilter = filter
+		end,
+
+		SetUnitDebuff = function(self, reg, unit, index, filter)
+			reg.additional.event = "SetUnitDebuff"
+			reg.additional.eventUnit = unit
+			reg.additional.eventIndex = index
+			reg.additional.eventFilter = filter
 		end,
 	}
 end
