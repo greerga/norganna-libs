@@ -546,7 +546,6 @@ function lib:SetHyperlinkAndCount(tooltip, link, quantity, detail)
 		end
 	end
 	reg.ignoreOnCleared = true
-	print("Calling setHyperlink", link)
 	hooks[tooltip].origs["SetHyperlink"](tooltip,link)
 	reg.ignoreOnCleared = nil
 end
