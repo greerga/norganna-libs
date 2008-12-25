@@ -62,6 +62,7 @@ local defaultEnable = {
 	SetTradeTargetItem = true,
 	SetTradeSkillItem = true,
 	SetHyperlink = true,
+	SetHyperlinkAndCount = true, -- Creating a tooltip via lib:SetHyperlinkAndCount() 
 }
 
 -- Money Icon setup
@@ -545,6 +546,7 @@ function lib:SetHyperlinkAndCount(tooltip, link, quantity, detail)
 		end
 	end
 	reg.ignoreOnCleared = true
+	print("Calling setHyperlink", link)
 	hooks[tooltip].origs["SetHyperlink"](tooltip,link)
 	reg.ignoreOnCleared = nil
 end
