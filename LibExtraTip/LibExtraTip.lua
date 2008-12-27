@@ -67,9 +67,9 @@ local defaultEnable = {
 
 -- Money Icon setup
 local iconpath = "Interface\\MoneyFrame\\UI-"
-local goldicon = "%d|T"..iconpath.."GoldIcon:%d:%d:2:0|t"
-local silvericon = "%s|T"..iconpath.."SilverIcon:%d:%d:2:0|t"
-local coppericon = "%s|T"..iconpath.."CopperIcon:%d:%d:2:0|t"
+local goldicon = "%d|T"..iconpath.."GoldIcon:0|t"
+local silvericon = "%s|T"..iconpath.."SilverIcon:0|t"
+local coppericon = "%s|T"..iconpath.."CopperIcon:0|t"
 
 -- Function that calls all the interested tooltips
 local function ProcessCallbacks(reg, tiptype, tooltip, ...)
@@ -455,31 +455,28 @@ end
 	Creates a string representation of the money value passed using embedded textures for the icons
 	@param money the money value to be converted in copper
 	@param concise when false (default), the representation of 1g is "1g 00s 00c" when true, it is simply "1g" (optional)
-	@param textSize indicates the size of the font in which the string will be used.  When omitted, the coins use default sizing (this usually ends up making them appear too small)
 	@since 1.0
 ]]
-function lib:GetMoneyText(money, concise, textSize)
-	local size = textSize and textSize * 1.4 or 0
-		
+function lib:GetMoneyText(money, concise)
 	local g = math.floor(money / 10000)
 	local s = math.floor(money % 10000 / 100)
 	local c = math.floor(money % 100)
 	
 	local moneyText = ""
 	
-	local f = false
+	local sep, fmt = "", "%d"
 	if g > 0 then
-		moneyText = goldicon:format(g,size,size)
-		f = true
+		moneyText = goldicon:format(g)
+		sep, fmt = " ", "%02d"
 	end
 	
 	if s > 0 or (concise and f and c > 0) or (not concise and f) then
-		moneyText = moneyText..(f and " " or "")..silvericon:format(f and "%02d" or "%d",size,size):format(s)
-		f = true
+		moneyText = moneyText..sep..silvericon:format(fmt):format(s)
+		sep, fmt = " ", "%02d"
 	end
 	
 	if not concise or c > 0 or not f then
-		moneyText = moneyText .. (f and " " or "")..coppericon:format(f and "%02d" or "%d",size,size):format(c)
+		moneyText = moneyText..sep..coppericon:format(fmt):format(c)
 	end
 	
 	return moneyText
@@ -495,31 +492,25 @@ end
 	@param g green component of the tooltip line color (optional)
 	@param b blue component of the tooltip line color (optional)
 	@param embed override the lib's embedMode setting (optional)
+	@param concise specify if concise money mode is to be used (optional)
 	@see SetEmbedMode
 	@since 1.0
 ]]
-function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed)
+function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed,concise)
 	local reg = self.tooltipRegistry[tooltip]
 	assert(reg, "Unknown tooltip passed to LibExtraTip:AddMoneyLine()")
 	
 	if r and not g then embed = r r = nil end
 	embed = embed ~= nil and embed or self.embedMode
 	
-	local textHeight,_
-	if embed then
-		-- This is kind of a hack, but it appears to work pretty well
-		local line = reg.fontTestLine or getglobal(tooltip:GetName() .. "TextLeft2")
-		reg.fontTestLine = line
-			
-		if line then 
-			_,textHeight = line:GetFont()
-		end
+	local moneyText = self:GetMoneyText(money, concise)
+
+	if not embed then
+		reg.extraTip:AddDoubleLine(text,moneyText,r,g,b,1,1,1)
+		reg.extraTipUsed = true
 	else
-		_,textHeight = GameFontNormalSmall:GetFont()
-	end		
-	
-	local moneyText = self:GetMoneyText(money,nil,textHeight)
-	self:AddDoubleLine(tooltip,text,moneyText,r,g,b,1,1,1,embed)
+		tooltip:AddDoubleLine(text,moneyText,lr,lg,lb,1,1,1)
+	end
 end
 
 --[[-
