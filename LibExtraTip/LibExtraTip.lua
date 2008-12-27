@@ -470,12 +470,12 @@ function lib:GetMoneyText(money, concise)
 		sep, fmt = " ", "%02d"
 	end
 	
-	if s > 0 or (concise and f and c > 0) or (not concise and f) then
+	if s > 0 or (money >= 10000 and (concise and c > 0) or not concise) then
 		moneyText = moneyText..sep..silvericon:format(fmt):format(s)
 		sep, fmt = " ", "%02d"
 	end
 	
-	if not concise or c > 0 or not f then
+	if not concise or c > 0 or money < 100 then
 		moneyText = moneyText..sep..coppericon:format(fmt):format(c)
 	end
 	

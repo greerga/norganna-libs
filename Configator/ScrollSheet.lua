@@ -82,6 +82,11 @@ local GSC_3 = "|cff%s%d|cff000000.|cff%s%02d|cff000000.|cff%s%02d|r"
 local GSC_2 = "|cff%s%d|cff000000.|cff%s%02d|r"
 local GSC_1 = "|cff%s%d|r"
 
+local iconpath = "Interface\\MoneyFrame\\UI-"
+local goldicon = "%d|T"..iconpath.."GoldIcon:0|t"
+local silvericon = "%s|T"..iconpath.."SilverIcon:0|t"
+local coppericon = "%s|T"..iconpath.."CopperIcon:0|t"
+
 -- Table management functions:
 local function replicate(source, depth, history)
 	if type(source) ~= "table" then return source end
@@ -110,18 +115,28 @@ local function fill(item, ...)
 end
 -- End table management functions
 
-local function coins(money)
+local function coins(money, graphic)
 	money = math.floor(tonumber(money) or 0)
 	local g = math.floor(money / 10000)
 	local s = math.floor(money % 10000 / 100)
 	local c = money % 100
 
-	if (g>0) then
-		return (GSC_3):format(GSC_GOLD, g, GSC_SILVER, s, GSC_COPPER, c)
-	elseif (s>0) then
-		return (GSC_2):format(GSC_SILVER, s, GSC_COPPER, c)
+	if not graphic then
+		if (g>0) then
+			return (GSC_3):format(GSC_GOLD, g, GSC_SILVER, s, GSC_COPPER, c)
+		elseif (s>0) then
+			return (GSC_2):format(GSC_SILVER, s, GSC_COPPER, c)
+		end
+		return (GSC_1):format(GSC_COPPER, c)
+	else
+		if g > 0 then
+			return goldicon:format(g)..silvericon:format("%02d"):format(s)..coppericon:format("%02d"):format(c)
+		elseif s > 0  then
+			return silvericon:format("%d"):format(s)..coppericon:format("%02d"):format(c)
+		else
+			return coppericon:format("%d"):format(c)
+		end
 	end
-	return (GSC_1):format(GSC_COPPER, c)
 end
 
 local kit = {}
@@ -463,7 +478,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
 		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
 		label:SetJustifyH("CENTER")
-		label:SetJustifyV("TOP")
+		label:SetJustifyV("CENTER")
 		label:SetTextColor(0.8,0.8,0.8)
 
 		label.button = button
@@ -533,7 +548,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			highlight:SetAlpha(0)
 			cell.highlight = highlight
 			cell:SetHeight(14)
-			cell:SetJustifyV("CENTER")
+			cell:SetJustifyV("TOP")
 			if (layout[i][2] == "TEXT") then
 				cell:SetJustifyH("LEFT")
 			elseif (layout[i][2] == "TOOLTIP") then
@@ -643,7 +658,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize, onSele
 		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
 		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
 		label:SetJustifyH("CENTER")
-		label:SetJustifyV("TOP")
+		label:SetJustifyV("CENTER")
 		label:SetTextColor(0.8,0.8,0.8)
 
 		label.button = button
@@ -727,7 +742,7 @@ function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize, onSele
 			highlight:SetAlpha(0)
 			cell.highlight = highlight
 			cell:SetHeight(14)
-			cell:SetJustifyV("CENTER")
+			cell:SetJustifyV("TOP")
 			if (layout[i][2] == "TEXT") then
 				cell:SetJustifyH("LEFT")
 			elseif (layout[i][2] == "TOOLTIP") then
