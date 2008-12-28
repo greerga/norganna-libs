@@ -289,8 +289,8 @@ do -- tooltip class definition
 	end
 
 	-- Gets money as colorized text
-	function lib:Coins(amount)
-		return coins(amount)
+	function lib:Coins(amount, graphic)
+		return coins(amount, graphic)
 	end
 
 	--[[
