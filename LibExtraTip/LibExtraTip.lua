@@ -898,7 +898,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 end
 
 do -- ExtraTip "class" definition
-	local methods = {"InitLines","Attach","Show","MatchSize","Release","NeedsRefresh"}
+	local methods = {"InitLines","Attach","Show","MatchSize","Release","NeedsRefresh","SetParentClamp"}
 	local scripts = {"OnShow","OnHide","OnSizeChanged"}
 	local numTips = 0
 	local class = {}
@@ -933,6 +933,7 @@ do -- ExtraTip "class" definition
 	end
 
 	function class:Attach(tooltip)
+		if self.parent then self:SetParentClamp(0) end
 		self.parent = tooltip
 		self:SetParent(tooltip)
 		self:SetOwner(tooltip,"ANCHOR_NONE")
@@ -940,6 +941,7 @@ do -- ExtraTip "class" definition
 	end
 
 	function class:Release()
+		if self.parent then self:SetParentClamp(0) end
 		self.parent = nil
 		self:SetParent(nil)
 		self.minWidth = 0
@@ -985,19 +987,20 @@ do -- ExtraTip "class" definition
 		end
 	end
 
-	function class:OnSizeChanged(w,h)
+	function class:SetParentClamp(h)
 		local p = self.parent
 		if not p then return end
 		local l,r,t,b = p:GetClampRectInsets()
-		p:SetClampRectInsets(l,r,t,-h) -- should that be b-h?  Is playing nice even needed? Anyone who needs to mess with the bottom clamping inset will probably interfere with us anyway, right?
+		p:SetClampRectInsets(l,r,t,-h)
 		self:NeedsRefresh(true)
 	end
 
+	function class:OnSizeChanged(w,h)
+		self:SetParentClamp(h)
+	end
+
 	function class:OnHide()
-		local p = self.parent
-		if not p then return end
-		local l,r,t,b = p:GetClampRectInsets()
-		p:SetClampRectInsets(l,r,t,0)
+		self:SetParentClamp(0)
 	end
 		
 
@@ -1012,14 +1015,20 @@ do -- ExtraTip "class" definition
 			ln = name .. "TextLeft"
 		end
 		for i=1,tooltip:NumLines() do
-			if not lefts then
+			left = nil
+			right = nil
+
+			if lefts then left = lefts[i] end
+			if rights then right = rights[i] end
+			
+			if not left then
 				left = getglobal(ln..i)
-				right = getglobal(rn..i)
-			else
-				left = lefts[i]
-				right = rights[i]
 			end
-			if right:IsVisible() then
+			if not right then
+				right = getglobal(rn..i)
+			end
+
+			if right and right:IsVisible() then
 				right:ClearAllPoints()
 				right:SetPoint("LEFT",left,"RIGHT")
 				right:SetPoint("RIGHT",-10,0)
@@ -1033,11 +1042,11 @@ do -- ExtraTip "class" definition
 		local pw = p:GetWidth()
 		local w = self:GetWidth()
 		local d = pw - w
-		if d > .2 then
+		if d > .005 then
 			self.sizing = true
 			self:SetWidth(pw)
 			fixRight(self,self.left,self.right)
-		elseif d < -.2 then
+		elseif d < -.005 then
 			self.sizing = true
 			p:SetWidth(w)
 			fixRight(p)
