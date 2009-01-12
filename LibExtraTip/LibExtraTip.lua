@@ -847,11 +847,13 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 		end,
 
 		SetSpell = function(self,reg,index,type)
-			reg.additional.event = "SetSpell"
-			reg.additional.eventIndex = index
-			reg.additional.eventType = type
 			local link = GetSpellLink(index, type)
-			SetSpellDetail(reg, link)
+			if link then
+				reg.additional.event = "SetSpell"
+				reg.additional.eventIndex = index
+				reg.additional.eventType = type
+				SetSpellDetail(reg, link)
+			end
 		end,
 
 		SetTalent = function(self, reg, type, index)
