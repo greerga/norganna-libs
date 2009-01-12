@@ -629,7 +629,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 		-- Default enabled events
 
 		SetAuctionItem = function(self,reg,type,index)
-			local _,_,q,cu,min,inc,bo,ba,hb,own = GetAuctionItemInfo(type,index)
+			local _,_,q,_,cu,_ ,min,inc,bo,ba,hb,own = GetAuctionItemInfo(type,index)
 			reg.quantity = q
 			reg.additional.event = "SetAuctionItem"
 			reg.additional.eventType = type
