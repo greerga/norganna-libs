@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 6
+local LIBRARY_VERSION_MINOR = 7
 
 --[[-----------------------------------------------------------------
 
@@ -226,6 +226,7 @@ function kit:SetData(input, instyle)
 	end
 	self.panel.vSize = nRows
 	self:PerformSort()
+	self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
 end
 
 --This function only enables the display of the selected row.  The row still gets selected, and kit:GetSelection() will still work
