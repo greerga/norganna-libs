@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 7
+local LIBRARY_VERSION_MINOR = 8
 
 --[[-----------------------------------------------------------------
 
@@ -226,7 +226,9 @@ function kit:SetData(input, instyle)
 	end
 	self.panel.vSize = nRows
 	self:PerformSort()
-	self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
+	if self.vScrollReset then
+		self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
+	end
 end
 
 --This function only enables the display of the selected row.  The row still gets selected, and kit:GetSelection() will still work
@@ -354,6 +356,14 @@ function kit:PerformSort()
 	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
 
 	self.panel:Update()
+end
+-- if a scroll frame flags this as false we will not reset scroll position to 0,0 on new data renders
+function kit:EnableVerticalScrollReset(enable)
+	if enable then
+		self.vScrollReset = true
+	else
+		self.vScrollReset = false
+	end
 end
 
 local empty = {}
@@ -590,6 +600,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		data = {},
 		style = {},
 		sort = {},
+		vScrollReset = true,
 	}
 	for k,v in pairs(kit) do
 		sheet[k] = v
