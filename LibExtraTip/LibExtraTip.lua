@@ -201,6 +201,7 @@ local function OnTooltipCleared(tooltip)
 	assert(reg, "Unknown tooltip passed to LibExtraTip:OnTooltipCleared()")
 	--print("tooltip cleared",reg.ignoreOnCleared)
 	if reg.ignoreOnCleared then return end
+	tooltip:SetFrameLevel(1)
 	
 	if reg.extraTip then
 		table.insert(self.extraTippool, reg.extraTip)
@@ -1092,3 +1093,30 @@ end)
 
 -- Test Code ]]-----------------------------------------------------
 
+--[[ Debugging code
+local f = {"AddDoubleLine", "AddFontStrings", "AddLine", "AddTexture", "AppendText", "ClearLines", "FadeOut", "GetAnchorType", "GetItem", "GetSpell", "GetOwner", "GetUnit", "IsUnit", "NumLines", "SetAction", "SetAuctionCompareItem", "SetAuctionItem", "SetAuctionSellItem", "SetBagItem", "SetBuybackItem", "SetCraftItem", "SetCraftSpell", "SetCurrencyToken", "SetGuildBankItem", "SetHyperlink", "SetInboxItem", "SetInventoryItem", "SetLootItem", "SetLootRollItem", "SetMerchantCompareItem", "SetMerchantItem", "SetMinimumWidth", "SetOwner", "SetPadding", "SetPetAction", "SetPlayerBuff", "SetQuestItem", "SetQuestLogItem", "SetQuestLogRewardSpell", "SetQuestRewardSpell", "SetSendMailItem", "SetShapeshift", "SetSpell", "SetTalent", "SetText", "SetTracking", "SetTradePlayerItem", "SetTradeSkillItem", "SetTradeTargetItem", "SetTrainerService", "SetUnit", "SetUnitAura", "SetUnitBuff", "SetUnitDebuff"}
+
+for _,k in ipairs(f) do
+	print("Hooking ", k)
+	local h = GameTooltip[k]
+	GameTooltip[k] = function(...)
+	    local t
+	    for i=2,5 do
+			if not t then
+				t = debugstack(i,1,0):gsub("\n[.\s\n]*", ""):gsub(": in function.*", "")
+				if not t:match("Interface\\") then t = nil
+				else t = t:gsub("Interface\\", "") end
+			end
+		end
+		if t then
+			print(t..": "..k.."(", ..., ")")
+		elseif true then
+			print("-------");
+			print(debugstack());
+			print("Call to: "..k.."(", ..., ")")
+			print("-------");
+		end
+		return h(...)
+	end
+end
+--]]
