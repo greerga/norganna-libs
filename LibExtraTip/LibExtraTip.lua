@@ -998,6 +998,10 @@ do -- ExtraTip "class" definition
 		self:NeedsRefresh(true)
 	end
 
+	function class:OnShow()
+		self:SetParentClamp(self:GetHeight())
+	end
+	
 	function class:OnSizeChanged(w,h)
 		self:SetParentClamp(h)
 	end
@@ -1006,7 +1010,6 @@ do -- ExtraTip "class" definition
 		self:SetParentClamp(0)
 	end
 		
-
 	-- The right-side text is statically positioned to the right of the left-side text.
 	-- As a result, manually changing the width of the tooltip causes the right-side text to not be in the right place.
 	local function fixRight(tooltip,lefts,rights)
