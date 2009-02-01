@@ -38,7 +38,12 @@ N_NOTICE   = 4 -- used to give notice of current states which might be useful
                -- and clarify the current functional behaviour
 N_INFO     = 5 -- used to inform of less important states which still might be
                -- useful to track down how the code behaves
-N_DEBUG    = 6 -- used for local debugging, only
+N_DEBUG    = 6 -- used for local debugging, only - this level MUST NOT be used
+               -- in checked-in code - it is designed to provide easy means to
+               -- quickly debug code - one of that features is that Swatter can
+               -- be set up to output messages of that debuglevel; therefore
+               -- it MUST NOT be used in checked-in code, since it would pollute
+               -- the chat output of other developers
 
 nLog = {
 	messages = {},
