@@ -292,6 +292,20 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	return gui
 end
 
+
+-- this shows the game toolip for a specified link
+function lib:SetLinkTip(frame, link)
+	if not frame or link == nil then
+		GameTooltip:Hide()
+		return
+	end
+	GameTooltip:SetOwner(frame, "ANCHOR_NONE")
+	GameTooltip:SetHyperlink(link)
+	GameTooltip:ClearAllPoints()
+	GameTooltip:SetPoint("TOPRIGHT", frame, "TOPLEFT", -10, -20)
+	GameTooltip:Show()
+end
+
 -- Create a special tooltip just for us
 if not lib.tooltip then
 	lib.tooltip = CreateFrame("GameTooltip", "ConfigatorTipTooltip", UIParent, "GameTooltipTemplate")
@@ -1080,6 +1094,7 @@ function kit:MakeScrollable(id)
 	GSC = scroll
 end
 
+-- this is a text only tool tip
 function kit:AddTip(id, tip)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	local control
@@ -1107,6 +1122,42 @@ function kit:AddTip(id, tip)
 	local function help_leave(self, ...)
 		if old_enter then old_leave(self, ...) end
 		if tip then lib:SetTip() end
+	end
+	control:SetScript("OnEnter", help_enter)
+	control:SetScript("OnLeave", help_leave)
+end
+
+-- this will show the game tooltip for the link
+function kit:AddLinkTip(id, link)
+	assert(isGuiObject(self), "Must be called on a valid object")
+	local control
+	local idType = type(id)
+	if idType == "number" and self.tabs then
+		control = self:GetLast(id)
+	elseif idType == "string" then
+		control = _G[id]
+	elseif idType == "table" and type(id[0]) == "userdata" then
+		control = id
+	end
+	assert(isGuiObject(control), "Usage: ConfigatorGui:AddLinkTip(tabId|controlName|control, link)")
+
+	-- we would really prefer the text labels over the controls themselves (esp. for sliders)
+	-- ccox - Feb 8, 2009 - but I can't make that work correctly
+	if control.button and isGuiObject(control.button) then
+		control = control.button
+	elseif control.control and isGuiObject(control.control) then
+		control = control.control
+	end
+
+	local old_enter = control:GetScript("OnEnter")
+	local old_leave = control:GetScript("OnLeave")
+	local function help_enter(self, ...)
+		if old_enter then old_enter(self, ...) end
+		lib:SetLinkTip(self, link)
+	end
+	local function help_leave(self, ...)
+		if old_enter then old_leave(self, ...) end
+		lib:SetLinkTip()
 	end
 	control:SetScript("OnEnter", help_enter)
 	control:SetScript("OnLeave", help_leave)
