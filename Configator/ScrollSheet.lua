@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 8
+local LIBRARY_VERSION_MINOR = 9
 
 --[[-----------------------------------------------------------------
 
@@ -226,6 +226,8 @@ function kit:SetData(input, instyle)
 	end
 	self.panel.vSize = nRows
 	self:PerformSort()
+	--flag for column rearrangement code to know when we have a fresh data table that will need to be reorginized
+	self.newdata = true
 	if self.vScrollReset then
 		self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
 	end
@@ -243,9 +245,18 @@ end
 function kit:GetSelection()
 	local selection = {}
 	if self.selected then
-		for i = 1, self.hSize do
-			local pos = i + ((self.selected-1)*self.hSize)
-			selection[i] = self.data[pos]
+		if not self.order then
+			for i = 1, self.hSize do
+				local pos = i + ((self.selected-1)*self.hSize)
+				selection[i] = self.data[pos]
+			end
+		else--reorginize data so the calling module gets them back in expected order
+			for i = 1, self.hSize do
+				local pos = i + ((self.selected-1)*self.hSize)
+				local name = self.order[i]
+				local index = self.order[name][3]
+				selection[index] = self.data[pos]
+			end
 		end
 	end
 	return selection
@@ -376,7 +387,12 @@ function kit:Render()
 	local data = self.data
 	local sort = self.sort
 	local style = self.style
-
+	--if user has rearranged the columns we need to change data, style to match. Only done once per "fresh data, replaces internal stored data, style
+	if (self.rearrange or self.newdata) and self.order then
+		data, style = lib.dataToColumn(self, data, style)
+		self.data = data
+		self.style = style
+	end
 	for i = 1, #rows do
 		local rowNum = sort[vPos+i]
 		local rowPos = nil
@@ -395,7 +411,7 @@ function kit:Render()
 				if cell.layout == "COIN" then
 					text = coins(data[pos])
 				end
-
+				
 				if settings["textColor"] then
 					red, green, blue = unpack(settings['textColor'])
 				elseif settings["date"] then
@@ -454,7 +470,6 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetText(layout[i][1])
-
 		local colWidth = layout[i][3] or 0
 
 		totalWidth = totalWidth + colWidth
@@ -514,40 +529,39 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
 
-				local width = layout[i][3] or 10
 				local row, index = rowNum, i
-
-				button:SetHeight(16)
-				button:SetWidth(width)
-				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
+				button:SetHeight(totalHeight)
+				button:SetAllPoints(cell)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
 
 				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-				if (layout[i][2] == "TOOLTIP") then
-					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+				
+				if onEnter then
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+				end
+				if (layout[i][2] == "TOOLTIP") then
+					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 				end
 				cell.button = button --store in cell so we can refrence the button
 			else
 				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
 
-				local width = layout[i][3] or 0
 				local row, index = rowNum, i
-
-				button:SetHeight(16)
-				button:SetWidth(width)
-				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
+				button:SetHeight(totalHeight)
+				button:SetAllPoints(cell)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
 
 				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-				if (layout[i][2] == "TOOLTIP") then
-					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+				if onEnter then
 					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
 					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+				end
+				if (layout[i][2] == "TOOLTIP") then
+					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 				end
 				cell.button = button
 			end
@@ -608,200 +622,19 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	panel.callback = function() sheet:Render() end
 
 	_G[name] = sheet
+
 	return sheet
 end
 
 function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize, onSelect)
-	local sheet
-	local name = frame.sheet.name
-	local content = frame.sheet.content
-	local panel = frame.sheet.panel
-	local totalWidth = 0;
-
-	local labels = {}
-	for i = 1, #layout do
-		local button = frame.sheet.labels[i].button
-		if i == 1 then
-			button:SetPoint("TOPLEFT", content, "TOPLEFT", 5,0)
-			totalWidth = totalWidth + 5
-		else
-			button:SetPoint("TOPLEFT", labels[i-1].button, "TOPRIGHT", 3,0)
-			totalWidth = totalWidth + 3
-		end
-		--If the module does not provide a minimum Column width or the Width is too small for text, resize to fit
-		local label = frame.sheet.labels[i]
-		label:SetText(layout[i][1])
-
-		local colWidth = layout[i][3] or 0
-		if label:GetStringWidth() + 20 > colWidth then
-			colWidth = floor(label:GetStringWidth() + 20)
-		end
-
-		totalWidth = totalWidth + colWidth
-		button:SetWidth(colWidth)
-		button:SetHeight(16)
-		button:SetID(i)
-
-		button:SetScript("OnMouseDown", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
-
-
-		local texture = frame.sheet.labels[i].texture
-		--texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-		texture:SetTexCoord(0.1, 0.8, 0, 1)
-		texture:SetAllPoints(button)
-		button.texture = texture
-
-		local sortTexture = frame.sheet.labels[i].sortTexture
-		--sortTexture:SetTexture("Interface\\Buttons\\UI-SortArrow")
-		sortTexture:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0,0)
-		sortTexture:SetPoint("BOTTOM", button, "BOTTOM", 0,0)
-		sortTexture:SetWidth(12)
-		sortTexture:Hide()
-		button.sortTexture = sortTexture
-
-		local background = frame.sheet.labels[i].background
-		--background:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-		background:SetTexCoord(0.2, 0.9, 0, 0.9)
-		background:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0,0)
-		background:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 0,0)
-		background:SetPoint("BOTTOM", content, "BOTTOM", 0,0)
-		background:SetAlpha(0.2)
-
-		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
-		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
-		label:SetJustifyH("CENTER")
-		label:SetJustifyV("CENTER")
-		label:SetTextColor(0.8,0.8,0.8)
-
-		label.button = button
-		label.texture = texture
-		label.sortTexture = sortTexture
-		label.background = background
-		label.sort = layout[i][4]
-		labels[i] = label
-	end
-	totalWidth = totalWidth + 5
-
- 	local rows = {}
-	local rowNum = 1
- 	local maxHeight = content:GetHeight()
- 	local totalHeight = 16
-
-	--Store all the "buttons" that are currently used on "Tooltip" style frames for reuse
-	local buttonTable = {}
-	for rowNum, v in pairs (frame.sheet.rows) do
-		for column, data in pairs(v) do
-			if frame.sheet.rows[rowNum][column].button then
-				table.insert(buttonTable, frame.sheet.rows[rowNum][column].button)
-			end
-		end
-	end
-	while (totalHeight + 14 < maxHeight) do
-		local row = {}
-
-		for i = 1, #layout do
-
-			local cell = frame.sheet.rows[rowNum][i]
-			local button = buttonTable[1] --or CreateFrame("Button", nil, content)
-			if rowNum == 1 then
-				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
- 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
-
-				local width = layout[i][3] or 10
-				local row, index = rowNum, i
-
-				button:SetHeight(16)
-				button:SetWidth(width)
-				button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-				button:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
-				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
- 				if (layout[i][2] == "TOOLTIP") then
-					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
-					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-
-					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-
-				end
-				if buttonTable[1] then table.remove(buttonTable, 1) end
-			else
-				cell:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
-				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
-
-				local width = layout[i][3] or 0
-				local row, index = rowNum, i
-
-				button:SetHeight(16)
-				button:SetWidth(width)
-				button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-				button:SetPoint("TOPLEFT", rows[rowNum-1][i], "BOTTOMLEFT", 0,0)
-				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
-				if (layout[i][2] == "TOOLTIP") then
-					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
-					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
-
-					if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
-
-				end
-				if buttonTable[1] then table.remove(buttonTable, 1) end
-			end
-			local highlight = cell.button:CreateTexture(nil, "ARTWORK")
-			highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-			highlight:SetTexCoord(0.2, 0.9, 0, 0.9)
-			highlight:SetPoint("TOPLEFT", cell.button, "TOPLEFT", 0, 0)
-			highlight:SetPoint("BOTTOMRIGHT", cell.button, "BOTTOMRIGHT", 0, 0)
-			highlight:SetAlpha(0)
-			cell.highlight = highlight
-			cell:SetHeight(14)
-			cell:SetJustifyV("TOP")
-			if (layout[i][2] == "TEXT") then
-				cell:SetJustifyH("LEFT")
-			elseif (layout[i][2] == "TOOLTIP") then
-				cell:SetJustifyH("LEFT")
-			elseif (layout[i][2] == "INT") then
-				cell:SetJustifyH("RIGHT")
-			elseif (layout[i][2] == "COIN") then
-				cell:SetJustifyH("RIGHT")
-			end
-			cell.layout = layout[i][2]
-			--cell:SetTextColor(0.9, 0.9, 0.9)
-			row[i] = cell
-		end
-		rows[rowNum] = row
-		rowNum = rowNum + 1
-		totalHeight = totalHeight + 14
-	end
-
-	content:SetWidth(totalWidth)
-	panel:UpdateScrollChildRect()
-	panel:Update()
-
-	sheet = {
-		name = name,
-		content = content,
-		panel = panel,
-		labels = labels,
-		rows = rows,
-		hSize = #labels,
-		resize = onResize,
-		data = frame.sheet.data,
-		style = frame.sheet.style,
-		sort = frame.sheet.sort,
-	}
-	for k,v in pairs(kit) do
-		sheet[k] = v
-	end
-	panel.callback = function() sheet:Render() end
-
-	_G[name] = sheet
-	return sheet
+	--not implemented
 end
 function  lib.moveColumn(self, column)
 	if self.resize then
 		if IsControlKeyDown() then --reset column to default
 			self.resize(self, column, nil) --sends nil as width, this will reset column to defaults
-		else
+			
+		elseif IsAltKeyDown() then
 			local originalScript = self.labels[column].button:GetScript("OnMouseDown") --store the original Sort onclick script will reset it when we are done resizing
 
 			local point, relativeTo, relativePoint, xOfs, yOfs = self.labels[column].button:GetPoint() --Store the anchor point since its niled when resized
@@ -822,6 +655,151 @@ function  lib.moveColumn(self, column)
 						end)
 			--start resizing self
 			self.labels[column].button:StartSizing(self.labels[column].button)
+		else
+			local fakeButton = lib.fakeButton
+			local width, height, text = self.labels[column]:GetWidth(), self.labels[column]:GetHeight(), self.labels[column]:GetText()
+			fakeButton:SetWidth(width)
+			fakeButton:SetHeight(height)
+			fakeButton:Show()
+			fakeButton.Text:SetText(text)
+			fakeButton:ClearAllPoints()
+			fakeButton:SetPoint("BOTTOM", self.labels[column], "TOP", 0,5)
+			if not self.order then
+				self.order ={}
+				self.lastOrder = {}
+				for i,v in ipairs(self.labels) do
+					local layout = self.rows[1][i].layout
+					local justify = self.rows[1][i]:GetJustifyH()
+					local name = v:GetText() or "null "..i --appraiser has a unamed button used for "hidden" data
+					self.order[name] = {layout, justify, v.button:GetID(), v.button:GetWidth() or 80}
+					self.order[i] = name --used as a list of names to allow a column to smoothly be inserted
+					self.lastOrder[name] = i  --Stores the "current" self.data changes so we know where to remap from after initial changes until a new data table is sent
+				end
+			end
+			self.moving = {["button"] = self.labels[column].button,  ["movingFrom"] = self.labels[column].button:GetID()}
+			self.labels[column].button:SetScript("OnUpdate", function() lib.changeColumns(self, column, GetMouseFocus()) end)
+		
 		end
 	end
 end
+
+
+function lib.changeColumns(self, column, button)
+	local fakeButton = lib.fakeButton
+	--if mouse down we store button we are moving  column too
+	if IsMouseButtonDown() and self.moving then
+		local ID = GetMouseFocus():GetID()
+		if ID then
+			fakeButton:ClearAllPoints()
+			fakeButton:SetPoint("BOTTOM", self.labels[ID], "TOP", 0,5)
+		end
+		return
+	end
+	-- setup  column switch in here if these are not met then script will end
+	if not IsMouseButtonDown() and self.moving and GetMouseFocus():GetID() > 0 then
+		local movingTo = GetMouseFocus():GetID()
+		local movingFrom = self.moving["movingFrom"]
+		
+		--switch buttons text: used to rearrange the (data, style)  tables to new column order
+		local movingToText = self.labels[movingTo]:GetText()
+		local movingFromText = self.labels[movingFrom]:GetText()
+		table.remove(self.order, movingFrom)
+		table.insert(self.order, movingTo, movingFromText)
+		--rearrange and set data based on column order data
+		for i, name in ipairs(self.order) do
+			self.labels[i]:SetText(name)
+			self.labels[i].button:SetWidth(self.order[name][4])
+			
+			local scripts = self.order[name][5]
+			for index, cell in pairs(self.rows) do
+				cell[i].layout = self.order[name][1]
+				cell[i]:SetJustifyH(self.order[name][2])
+				if self.order[name][1] == "TOOLTIP" then
+					cell[i].button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+				elseif cell[i].button:GetHighlightTexture() then --if it had a highlight but is not tooltip type anymore nil it
+					cell[i].button:SetHighlightTexture(nil)
+				end
+			end
+		end
+		self.rearrange = true
+		self:Render()
+	end
+	--clear OnUpdate script
+	self.moving["button"]:SetScript("OnUpdate", function() end)
+	self.moving = nil
+	fakeButton:Hide()
+end
+--takes the data set sent by addon, rearranges it to match users changed column layout
+function lib.dataToColumn(self, data, style)
+	--[[take the self.data table  1, 2, 3 ....10000  serial table and break it into column segments of data. Each column's data is grouped then we simply rearrange column order and reserialize the table
+	self.style is stored in a non sync  index array  where the index == the data index. Merge style into data array for rearrangement
+	]]
+	
+	local temp = {}
+	local step = 1
+	for a, b in ipairs(data) do
+		if not temp[step] then temp[step] = {} end
+		table.insert(temp[step], {b, ["style"] = style[a]})
+		step = step + 1
+		if step == #self.labels + 1 then
+			step = 1
+		end
+	end
+	--if we have a new SetData() call we need to resync the self.lastOrder with self.order since we have self.data in teh starting layout
+	if self.newdata then
+		for i,v in ipairs(self.order) do
+			self.lastOrder[v] = self.order[v][3]
+		end
+	end
+	--rearrange to match current layout
+	local newData = {}
+	for i,v in ipairs(temp) do
+		--need to find what data i should have
+		local name = self.order[i]
+		--this column is currenty maped to..
+		local index = self.lastOrder[name]
+		--insert this data into appropriate changed area
+		newData[i] = temp[index]
+		--store changes to self.data so we know where we maped it to
+		self.lastOrder[name] = i
+	end
+	--Take the now rearranged data and reserialize the self.data and extract self.style to match new index positions
+	data, style = nil, nil
+	data, style = {}, {}
+	if #newData > 0 then --if no data to render skip it all
+		for i = 1, #newData[1] do
+			for index = 1, #newData do
+				table.insert(data, newData[index][i][1])
+				style[#data] = newData[index][i].style
+			end
+		end
+	end
+	--after we have changed the internal self.data we will not need to change unless a new  :SetData() or we change the column order again
+	self.rearrange = false
+	self.newdata = nil
+	return data, style
+end
+
+--this is our fake button for column movements
+local fakeButton = CreateFrame("Button", nil, UIParent)
+fakeButton:SetMovable(true)
+fakeButton:SetScript("OnMouseDown", function() fakeButton:StartMoving() end)
+fakeButton:SetScript("OnMouseUp", function() fakeButton:StopMovingOrSizing() end)
+fakeButton:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+fakeButton:SetFrameStrata("DIALOG")
+fakeButton:Show()
+
+local texture = fakeButton:CreateTexture(nil, "ARTWORK")
+texture:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+texture:SetTexCoord(0.1, 0.8, 0, 1)
+texture:SetAllPoints(fakeButton)
+fakeButton.texture = texture
+
+fakeButton.Text = fakeButton:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+fakeButton.Text:SetPoint("BOTTOMRIGHT", fakeButton, "BOTTOMRIGHT", 0,0)
+fakeButton.Text:SetJustifyH("CENTER")
+fakeButton.Text:SetJustifyV("CENTER")
+fakeButton.Text:SetTextColor(0.8,0.8,0.8)
+fakeButton.Text:SetText("")
+
+lib.fakeButton = fakeButton 
