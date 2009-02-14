@@ -578,13 +578,10 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetAllPoints(cell)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) lib.Processor("OnMouseDownCell", sheet, self, index, row, nil, ...) end)
-
-				if onClick then button:SetScript("OnClick", function(self, ...) lib.Processor("OnClickCell", sheet, self, index, row, nil, ...) end) end
-				
-				if onEnter then
-					button:SetScript("OnEnter", function(self, ...) lib.Processor("OnEnterCell", sheet, self, index, row, nil, ...) end)
-					button:SetScript("OnLeave", function(self, ...) lib.Processor("OnLeaveCell", sheet, self, index, row, nil, ...) end)
-				end
+				button:SetScript("OnClick", function(self, ...) lib.Processor("OnClickCell", sheet, self, index, row, nil, ...) end)
+				button:SetScript("OnEnter", function(self, ...) lib.Processor("OnEnterCell", sheet, self, index, row, nil, ...) end)
+				button:SetScript("OnLeave", function(self, ...) lib.Processor("OnLeaveCell", sheet, self, index, row, nil, ...) end)
+			
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 				end
@@ -598,12 +595,10 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetAllPoints(cell)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) lib.Processor("OnMouseDownCell", sheet, self, index, row, nil, ...) end)
-
-				if onClick then button:SetScript("OnClick", function(self, ...) lib.Processor("OnClickCell", sheet, self, index, row, nil, ...) end) end
-				if onEnter then
-					button:SetScript("OnEnter", function(self, ...) lib.Processor("OnEnterCell", sheet, self, index, row, nil, ...) end)
-					button:SetScript("OnLeave", function(self, ...) lib.Processor("OnLeaveCell", sheet, self, index, row, nil, ...) end)
-				end
+				button:SetScript("OnClick", function(self, ...) lib.Processor("OnClickCell", sheet, self, index, row, nil, ...) end)
+				button:SetScript("OnEnter", function(self, ...) lib.Processor("OnEnterCell", sheet, self, index, row, nil, ...) end)
+				button:SetScript("OnLeave", function(self, ...) lib.Processor("OnLeaveCell", sheet, self, index, row, nil, ...) end)
+				
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 				end
