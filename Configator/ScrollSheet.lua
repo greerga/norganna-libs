@@ -226,7 +226,7 @@ function kit:SetData(input, instyle)
 	end
 	self.panel.vSize = nRows
 	self:PerformSort()
-	--flag for column rearrangement code to know when we have a fresh data table that will need to be reorginized
+	--flag for column rearrangement code to know when we have a fresh data table
 	self.newdata = true
 	if self.vScrollReset then
 		self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
@@ -376,6 +376,50 @@ function kit:EnableVerticalScrollReset(enable)
 		self.vScrollReset = false
 	end
 end
+--use stored order table if provided or create new order table
+function kit:SetOrder(saved)
+	if saved and type(saved) == "table" then
+		self.order = saved[1]
+		self.lastOrder = saved[2]
+		for i, name in ipairs(self.order) do
+			self.labels[i]:SetText(name)
+			self.labels[i].button:SetWidth(self.order[name][4])
+		end
+		self:ChangeOrder() --apply saved order changes
+	end
+	if not self.order then
+		self.order ={}
+		self.lastOrder = {}
+		for i,v in ipairs(self.labels) do
+			local layout = self.rows[1][i].layout
+			local justify = self.rows[1][i]:GetJustifyH()
+			local name = v:GetText()
+			if not name or name == "" then name = ("null "..i) v:SetText(name) end--Need to create a useful name for unnamed buttons used for "hidden" data			
+			self.order[name] = {layout, justify, v.button:GetID(), v.button:GetWidth() or 80}
+			self.order[i] = name --used as a list of names to allow a column to smoothly be inserted
+			self.lastOrder[name] = i  --Stores the "current" self.data changes so we know where to remap from after initial changes until a new data table is sent
+		end
+	end
+end
+--rearrange and set data based on column order
+function kit:ChangeOrder()
+	for i, name in ipairs(self.order) do
+		self.labels[i]:SetText(name)
+		self.labels[i].button:SetWidth(self.order[name][4])
+					
+		for index, cell in pairs(self.rows) do
+			cell[i].layout = self.order[name][1]
+			cell[i]:SetJustifyH(self.order[name][2])
+			if self.order[name][1] == "TOOLTIP" then
+				cell[i].button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+			elseif cell[i].button:GetHighlightTexture() then --if it had a highlight but is not tooltip type anymore nil it
+				cell[i].button:SetHighlightTexture(nil)
+			end
+		end
+	end
+	self.rearrange = true
+	self:Render()
+end
 
 local empty = {}
 function kit:Render()
@@ -437,7 +481,7 @@ local PanelScroller = LibStub:GetLibrary("PanelScroller")
 function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect)
 	local sheet
 	local name = (frame:GetName() or "").."ScrollSheet"
-
+	
 	local id = 1
 	while (_G[name..id]) do
 		id = id + 1
@@ -533,13 +577,13 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetHeight(totalHeight)
 				button:SetAllPoints(cell)
 				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) lib.Processor("OnMouseDownCell", sheet, self, index, row, nil, ...) end)
 
-				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
+				if onClick then button:SetScript("OnClick", function(self, ...) lib.Processor("OnClickCell", sheet, self, index, row, nil, ...) end) end
 				
 				if onEnter then
-					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
-					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+					button:SetScript("OnEnter", function(self, ...) lib.Processor("OnEnterCell", sheet, self, index, row, nil, ...) end)
+					button:SetScript("OnLeave", function(self, ...) lib.Processor("OnLeaveCell", sheet, self, index, row, nil, ...) end)
 				end
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -553,12 +597,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				button:SetHeight(totalHeight)
 				button:SetAllPoints(cell)
 				button:SetID(rowNum)
-				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) if onSelect then onSelect() end end)
+				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) lib.Processor("OnMouseDownCell", sheet, self, index, row, nil, ...) end)
 
-				if onClick then button:SetScript("OnClick", function() onClick(button, row, index) end) end
+				if onClick then button:SetScript("OnClick", function(self, ...) lib.Processor("OnClickCell", sheet, self, index, row, nil, ...) end) end
 				if onEnter then
-					button:SetScript("OnEnter", function() onEnter(button, row, index) end)
-					button:SetScript("OnLeave", function() onLeave(button, row, index) end)
+					button:SetScript("OnEnter", function(self, ...) lib.Processor("OnEnterCell", sheet, self, index, row, nil, ...) end)
+					button:SetScript("OnLeave", function(self, ...) lib.Processor("OnLeaveCell", sheet, self, index, row, nil, ...) end)
 				end
 				if (layout[i][2] == "TOOLTIP") then
 					button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -602,7 +646,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	content:SetWidth(totalWidth)
 	panel:UpdateScrollChildRect()
 	panel:Update()
-
+	
+	--Used for compatible with older versions that lacked the General Processor callback
+	local compatibility = nil
+	if onEnter or onLeave or onClick or onResize or onSelect then
+		compatibility = {onEnter, onLeave, onClick, onResize, onSelect}
+	end
 	sheet = {
 		name = name,
 		content = content,
@@ -610,11 +659,11 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		labels = labels,
 		rows = rows,
 		hSize = #labels,
-		resize = onResize,
 		data = {},
 		style = {},
 		sort = {},
 		vScrollReset = true,
+		compatibility = compatibility,
 	}
 	for k,v in pairs(kit) do
 		sheet[k] = v
@@ -626,14 +675,34 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	return sheet
 end
 
-function lib:ReCreate(frame, layout, onEnter, onLeave, onClick, onResize, onSelect)
-	--not implemented
+function lib.Processor(type, self, button, column, row, order, ...)
+	--Use old callbacks for modules not using the general Processor
+	if self.compatibility then
+		if type == "OnEnterCell" and self.compatibility[1] then
+				self.compatibility[1](button, row, column) --onEnter(button, row, index)
+		elseif type == "OnLeaveCell" and self.compatibility[2] then
+				self.compatibility[2](button, row, column) --onLeave(button, row, index)
+		elseif type == "OnClickCell" and self.compatibility[3] then
+				self.compatibility[3](button, row, column)--onClick(button, row, index)
+		elseif type == "ColumnWidthSet" and self.compatibility[4] then
+			self.compatibility[4](self, column, button:GetWidth() ) --onResize(self, column, )
+		elseif type == "ColumnWidthReset" and self.compatibility[4] then
+			self.compatibility[4](self, column, nil ) --onResize(self, column, )
+		elseif type == "OnMouseDownCell" and self.compatibility[5] then
+			self.compatibility[5]() --onSelect()
+		end
+		return
+	end
+	
+	if not self.Processor then return end
+	self.Processor( type, self, button, column, row, order, ...)
 end
+
 function  lib.moveColumn(self, column)
-	if self.resize then
+	if self and column then
 		if IsControlKeyDown() then --reset column to default
-			self.resize(self, column, nil) --sends nil as width, this will reset column to defaults
-			
+			lib.Processor("ColumnWidthReset", self, self.labels[column].button, column)
+						
 		elseif IsAltKeyDown() then
 			local originalScript = self.labels[column].button:GetScript("OnMouseDown") --store the original Sort onclick script will reset it when we are done resizing
 
@@ -651,7 +720,13 @@ function  lib.moveColumn(self, column)
 										self.labels[column].button:SetScript("OnMouseDown", originalScript)
 										self.labels[column].button:ClearAllPoints()
 										self.labels[column].button:SetPoint(point, relativeTo, relativePoint, xOfs,yOfs)
-										self.resize(self, column, self.labels[column].button:GetWidth()) --sends new width info to the module
+										--store changed width on the order table, so we apply it when switching columns
+										if self.order then 
+											local width, name = self.labels[column].button:GetWidth(), self.labels[column]:GetText()
+											self.order[name][4] =  width or 80
+										end
+										--sends new width info to the module
+										lib.Processor("ColumnWidthSet", self, self.labels[column].button, column)
 						end)
 			--start resizing self
 			self.labels[column].button:StartSizing(self.labels[column].button)
@@ -660,30 +735,18 @@ function  lib.moveColumn(self, column)
 			local width, height, text = self.labels[column]:GetWidth(), self.labels[column]:GetHeight(), self.labels[column]:GetText()
 			fakeButton:SetWidth(width)
 			fakeButton:SetHeight(height)
-			fakeButton:Show()
 			fakeButton.Text:SetText(text)
 			fakeButton:ClearAllPoints()
 			fakeButton:SetPoint("BOTTOM", self.labels[column], "TOP", 0,5)
+			fakeButton:Show()
 			if not self.order then
-				self.order ={}
-				self.lastOrder = {}
-				for i,v in ipairs(self.labels) do
-					local layout = self.rows[1][i].layout
-					local justify = self.rows[1][i]:GetJustifyH()
-					local name = v:GetText() or "null "..i --appraiser has a unamed button used for "hidden" data
-					self.order[name] = {layout, justify, v.button:GetID(), v.button:GetWidth() or 80}
-					self.order[i] = name --used as a list of names to allow a column to smoothly be inserted
-					self.lastOrder[name] = i  --Stores the "current" self.data changes so we know where to remap from after initial changes until a new data table is sent
-				end
+				self:SetOrder()
 			end
 			self.moving = {["button"] = self.labels[column].button,  ["movingFrom"] = self.labels[column].button:GetID()}
 			self.labels[column].button:SetScript("OnUpdate", function() lib.changeColumns(self, column, GetMouseFocus()) end)
-		
 		end
 	end
 end
-
-
 function lib.changeColumns(self, column, button)
 	local fakeButton = lib.fakeButton
 	--if mouse down we store button we are moving  column too
@@ -705,27 +768,14 @@ function lib.changeColumns(self, column, button)
 		local movingFromText = self.labels[movingFrom]:GetText()
 		table.remove(self.order, movingFrom)
 		table.insert(self.order, movingTo, movingFromText)
-		--rearrange and set data based on column order data
-		for i, name in ipairs(self.order) do
-			self.labels[i]:SetText(name)
-			self.labels[i].button:SetWidth(self.order[name][4])
-			
-			local scripts = self.order[name][5]
-			for index, cell in pairs(self.rows) do
-				cell[i].layout = self.order[name][1]
-				cell[i]:SetJustifyH(self.order[name][2])
-				if self.order[name][1] == "TOOLTIP" then
-					cell[i].button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-				elseif cell[i].button:GetHighlightTexture() then --if it had a highlight but is not tooltip type anymore nil it
-					cell[i].button:SetHighlightTexture(nil)
-				end
-			end
-		end
-		self.rearrange = true
-		self:Render()
+		
+		--Apply column specific data to rearrangement
+		self:ChangeOrder()
 	end
+	--Inform module of change
+	lib.Processor("ColumnOrder", self, nil, nil, nil, {self.order, self.lastOrder})
 	--clear OnUpdate script
-	self.moving["button"]:SetScript("OnUpdate", function() end)
+	self.moving["button"]:SetScript("OnUpdate", nil)
 	self.moving = nil
 	fakeButton:Hide()
 end
@@ -734,7 +784,6 @@ function lib.dataToColumn(self, data, style)
 	--[[take the self.data table  1, 2, 3 ....10000  serial table and break it into column segments of data. Each column's data is grouped then we simply rearrange column order and reserialize the table
 	self.style is stored in a non sync  index array  where the index == the data index. Merge style into data array for rearrangement
 	]]
-	
 	local temp = {}
 	local step = 1
 	for a, b in ipairs(data) do
@@ -764,7 +813,6 @@ function lib.dataToColumn(self, data, style)
 		self.lastOrder[name] = i
 	end
 	--Take the now rearranged data and reserialize the self.data and extract self.style to match new index positions
-	data, style = nil, nil
 	data, style = {}, {}
 	if #newData > 0 then --if no data to render skip it all
 		for i = 1, #newData[1] do
@@ -783,8 +831,6 @@ end
 --this is our fake button for column movements
 local fakeButton = CreateFrame("Button", nil, UIParent)
 fakeButton:SetMovable(true)
-fakeButton:SetScript("OnMouseDown", function() fakeButton:StartMoving() end)
-fakeButton:SetScript("OnMouseUp", function() fakeButton:StopMovingOrSizing() end)
 fakeButton:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 fakeButton:SetFrameStrata("DIALOG")
 fakeButton:Show()
