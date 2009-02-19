@@ -224,13 +224,15 @@ function kit:SetData(input, instyle)
 			end
 		end
 	end
-	self.panel.vSize = nRows
-	self:PerformSort()
-	--flag for column rearrangement code to know when we have a fresh data table
+	--flag for column rearrangement code to know when we have a fresh data table. Needs to be before self:PerformSort() or the flag is set to late
 	self.newdata = true
+	--reset to top
 	if self.vScrollReset then
 		self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
 	end
+	
+	self.panel.vSize = nRows
+	self:PerformSort()
 end
 
 --This function only enables the display of the selected row.  The row still gets selected, and kit:GetSelection() will still work
@@ -432,6 +434,7 @@ function kit:Render()
 	local sort = self.sort
 	local style = self.style
 	--if user has rearranged the columns we need to change data, style to match. Only done once per "fresh data, replaces internal stored data, style
+	if BeanCounter then BeanCounter.Print("kit:render", self, self.data[1], self.data[2], self.data[3], self.data[4]) end
 	if (self.rearrange or self.newdata) and self.order then
 		data, style = lib.dataToColumn(self, data, style)
 		self.data = data
