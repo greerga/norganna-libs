@@ -767,8 +767,20 @@ function lib.changeColumns(self, column, button)
 		--Apply column specific data to rearrangement
 		self:ChangeOrder()
 	end
+	--Only keep the order table if columns are not in default state, otherwise clear
+	local default = true
+	for i, name in ipairs(self.order) do
+		if self.order[name][3] ~= i then
+			default = false
+		end
+	end
 	--Inform module of change
-	lib.Processor("ColumnOrder", self, nil, nil, nil, {self.order, self.lastOrder})
+	if default then
+		lib.Processor("ColumnOrder", self)
+		self.order, self.lastOrder = nil, nil
+	else
+		lib.Processor("ColumnOrder", self, nil, nil, nil, {self.order, self.lastOrder})
+	end
 	--clear OnUpdate script
 	self.moving["button"]:SetScript("OnUpdate", nil)
 	self.moving = nil
