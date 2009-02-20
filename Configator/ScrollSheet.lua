@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 10
+local LIBRARY_VERSION_MINOR = 11
 
 --[[-----------------------------------------------------------------
 
@@ -434,7 +434,6 @@ function kit:Render()
 	local sort = self.sort
 	local style = self.style
 	--if user has rearranged the columns we need to change data, style to match. Only done once per "fresh data, replaces internal stored data, style
-	if BeanCounter then BeanCounter.Print("kit:render", self, self.data[1], self.data[2], self.data[3], self.data[4]) end
 	if (self.rearrange or self.newdata) and self.order then
 		data, style = lib.dataToColumn(self, data, style)
 		self.data = data
