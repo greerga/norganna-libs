@@ -8,5 +8,4 @@
 ## URL: http://auctioneeraddon.com/dl/Swatter/
 ##
 Support\Load.xml
-Libs\Load.xml
 Swatter.lua
