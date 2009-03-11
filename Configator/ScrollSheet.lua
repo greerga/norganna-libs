@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 11
+local LIBRARY_VERSION_MINOR = 12
 
 --[[-----------------------------------------------------------------
 
@@ -438,6 +438,7 @@ function kit:Render()
 		data, style = lib.dataToColumn(self, data, style)
 		self.data = data
 		self.style = style
+		self:PerformSort()--sort our rearranged data
 	end
 	for i = 1, #rows do
 		local rowNum = sort[vPos+i]
