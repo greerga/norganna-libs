@@ -1,4 +1,4 @@
-## Interface: 30000
+## Interface: 30100
 ## Title: Swatter
 ## Notes: Debugging tool for handling and displaying of error messages in a useful way.
 ## SavedVariables: SwatterData
