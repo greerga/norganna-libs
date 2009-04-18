@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 12
+local LIBRARY_VERSION_MINOR = 13
 
 --[[-----------------------------------------------------------------
 
@@ -367,7 +367,8 @@ function kit:PerformSort()
 	end
 
 	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
-
+	lib.Processor("ColumnSort", self, nil, self.curSort, nil, nil, self.curDir )
+	
 	self.panel:Update()
 end
 -- if a scroll frame flags this as false we will not reset scroll position to 0,0 on new data renders
@@ -673,7 +674,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	return sheet
 end
 
-function lib.Processor(type, self, button, column, row, order, ...)
+function lib.Processor(type, self, button, column, row, order, curDir, ...)
 	--Use old callbacks for modules not using the general Processor
 	if self.compatibility then
 		if type == "OnEnterCell" and self.compatibility[1] then
@@ -693,7 +694,7 @@ function lib.Processor(type, self, button, column, row, order, ...)
 	end
 	
 	if not self.Processor then return end
-	self.Processor( type, self, button, column, row, order, ...)
+	self.Processor( type, self, button, column, row, order, curDir, ...)
 end
 
 function  lib.moveColumn(self, column)
