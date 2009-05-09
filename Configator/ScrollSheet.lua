@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 13
+local LIBRARY_VERSION_MINOR = 14
 
 --[[-----------------------------------------------------------------
 
@@ -533,7 +533,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		texture:SetAllPoints(button)
 		button.texture = texture
 
-		local sortTexture = content:CreateTexture(nil, "ARTWORK")
+		local sortTexture = button:CreateTexture(nil, "ARTWORK")
 		sortTexture:SetTexture("Interface\\Buttons\\UI-SortArrow")
 		sortTexture:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0,0)
 		sortTexture:SetPoint("BOTTOM", button, "BOTTOM", 0,0)
