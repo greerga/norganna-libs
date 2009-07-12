@@ -141,11 +141,11 @@ function Swatter.OnError(msg, frame, stack, etype, ...)
 				context = frame:GetName()
 			end
 		end
-		local ts = date("%Y-%m-%d %H:%M:%S");
+		local timestamp = date("%Y-%m-%d %H:%M:%S");
 		local addons = Swatter.GetAddOns()
 		tinsert(SwatterData.errors, {
 			context = context,
-			timestamp = ts,
+			timestamp = timestamp,
 			addons = addons,
 			message = msg,
 			stack = stack,
@@ -205,6 +205,18 @@ local function keyPairs(t,f)
 	end
 	return iter
 end
+
+
+function Swatter.GetConfig()
+	local locale = GetLocale()
+	local realmList = GetCVar("realmList") or "none"
+	local version, build, date, tocversion = GetBuildInfo()
+	local trimmedRealmList = realmList:gsub("\.logon\.worldofwarcraft\.com", "")
+	local configString = string.format("  BlizRuntimeLib_%s v%s.%s \<%s\>\n",
+					locale, version, tocversion, trimmedRealmList )
+	return configString
+end
+
 
 function Swatter.GetAddOns()
 	local addlist = ""
@@ -280,7 +292,9 @@ function Swatter.GetAddOns()
 			addlist = addlist.."  "..name.."\n"
 		end
 	end
-
+	
+	addlist = addlist..Swatter.GetConfig()
+	
 	addlist = addlist..string.format("  (ck=%x)\n", addlist:len())
 	return addlist
 end
@@ -421,8 +435,9 @@ function Swatter.ErrorDisplay(id)
 		return
 	end
 
-	local ts = err.timestamp or "Unavailable"
+	local timestamp = err.timestamp or "Unavailable"
 	local addlist = err.addons or "  Unavailable"
+	local context = err.context or "Anonymous"
 
 	local message = err.message:gsub("(.-):(%d+): ", "%1 line %2:\n   "):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)`", ": %1"):gsub("|", "||"):gsub("{{{", "|cffff8855"):gsub("}}}", "|r")
 	local trace = "   "..err.stack:gsub("Interface\\AddOns\\", ""):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)'", ": %1()"):gsub(": in function <(.-)>", ":\n   %1"):gsub(": in main chunk ", ": "):gsub("\n$",""):gsub("\n", "\n   ")
@@ -432,7 +447,7 @@ function Swatter.ErrorDisplay(id)
 	local errPos = id - Swatter.loadCount
 	if errPos <= 0 then errPos = errPos - 1 end
 
-	Swatter.Error.curError = "|cffff5533Date:|r "..ts.."\n|cffff5533ID:|r "..errPos.."\n|cffff5533Error occured in:|r "..(err.context or "Anonymous").."\n|cffff5533Count:|r "..count.."\n|cffff5533Message:|r "..message.."\n|cffff5533Debug:|r\n"..trace.."\n|cffff5533AddOns:|r\n"..addlist.."\n"
+	Swatter.Error.curError = "|cffff5533Date:|r "..timestamp.."\n|cffff5533ID:|r "..errPos.."\n|cffff5533Error occured in:|r "..context.."\n|cffff5533Count:|r "..count.."\n|cffff5533Message:|r "..message.."\n|cffff5533Debug:|r\n"..trace.."\n|cffff5533AddOns:|r\n"..addlist.."\n"
 	Swatter.Error.selected = false
 	Swatter.ErrorUpdate()
 	Swatter.Error:Show()
