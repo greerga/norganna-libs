@@ -4,7 +4,7 @@
 ## Interface: 30100
 ## LoadOnDemand: 0
 ##
-## Version: 1.0
+## Version: 1.1
 ## Revision: $Id$
 ##
 Load.xml
