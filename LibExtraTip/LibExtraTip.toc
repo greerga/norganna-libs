@@ -1,4 +1,4 @@
-## Title: LibExtraTip
+## Title: LibExtraTip |cff224477(lib)
 ## Notes: Assists in the management of additional tooltip information.
 ##
 ## Interface: 30200
@@ -6,5 +6,6 @@
 ##
 ## Version: 1.1
 ## Revision: $Id$
+## Author: Norganna's AddOns
 ##
 Load.xml

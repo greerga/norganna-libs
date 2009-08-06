@@ -1,5 +1,5 @@
 ## Title: SlideBar |cff224477(lib)
-## Notes: Allows alternative placement of minimap icons into an expanding bar tab that sits on the side of the screen.
+## Notes: Allows alternative placement of minimap icons into an expanding bar that sits off the side of the screen, just below the Minimap, by default.
 ## OptionalDeps: !Swatter
 ##
 ## Interface: 30200
@@ -8,6 +8,7 @@
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
-## URL: http://auctioneeraddon.com/dl/
+## URL: http://auctioneeraddon.com/
+## Author: Norganna's AddOns
 ##
 Load.xml

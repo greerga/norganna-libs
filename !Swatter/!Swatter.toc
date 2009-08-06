@@ -1,11 +1,13 @@
-## Interface: 30200
 ## Title: Swatter
 ## Notes: Debugging tool for handling and displaying of error messages in a useful way.
+##
+## Interface: 30200
 ## SavedVariables: SwatterData
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
 ## URL: http://auctioneeraddon.com/dl/Swatter/
+## Author: Norganna's AddOns
 ##
 Support\Load.xml
 Swatter.lua

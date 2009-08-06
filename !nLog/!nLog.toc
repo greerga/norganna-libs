@@ -1,12 +1,13 @@
-## Interface: 30200
-## Title: nLog
+## Title: nLog |cff224477(lib)
 ## Notes: Debugging console to display debugging messages easily.
+## Interface: 30200
 ## SavedVariables: nLogData
 ## OptionalDeps: !Swatter, SlideBar
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
 ## URL: http://auctioneeraddon.com/dl/nLog/
+## Author: Norganna's AddOns
 ##
 Support\Load.xml
 Libs\Load.xml

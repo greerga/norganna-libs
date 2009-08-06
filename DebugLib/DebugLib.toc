@@ -7,6 +7,7 @@
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
-## URL: http://auctioneeraddon.com/dl/
+## URL: http://auctioneeraddon.com/
+## Author: Norganna's AddOns
 ##
 Load.xml

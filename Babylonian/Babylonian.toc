@@ -1,11 +1,12 @@
 ## Title: Babylonian |cff224477(lib)
-## Notes: A localization library that allows localization in languages other than those supported by the client locale.
+## Notes: Provides the facilites to support languages other than those supported by the client locale.
 ##
 ## Interface: 30200
 ## LoadOnDemand: 0
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
-## URL: http://auctioneeraddon.com/dl/
+## URL: http://auctioneeraddon.com/
+## Author: Norganna's AddOns
 ##
 Load.xml

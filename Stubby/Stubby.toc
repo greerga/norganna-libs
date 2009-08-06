@@ -1,5 +1,5 @@
-## Title: Stubby
-## Notes: Allows on-demand addons to load automatically based upon simple event notification hooks [<%version%>] This AddOn is licensed under the GNU GPL, see GPL.txt for details.
+## Title: Stubby |cff224477(lib)
+## Notes: Allows AddOns to load automatically, when called, based upon simple event notification hooks. [<%version%>] This AddOn is licensed under the GNU GPL, see GPL.txt for details.
 ##
 ## Interface: 30200
 ## OptionalDeps: !nLog, DebugLib
@@ -7,7 +7,9 @@
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
-## URL: http://auctioneeraddon.com/dl/Stubby
+## URL: http://auctioneeraddon.com/
+## Author: Norganna's AddOns
+##
 Support\Load.xml
 
 Libs\Load.xml

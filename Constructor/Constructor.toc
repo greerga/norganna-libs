@@ -1,4 +1,4 @@
-## Title: Constructor
+## Title: Constructor |cff224477(lib)
 ## Notes: Easily build frames in Lua using a table-based definition.
 ##
 ## Interface: 30200
@@ -6,6 +6,7 @@
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
-## URL: http://auctioneeraddon.com/dl/
+## URL: http://auctioneeraddon.com/
+## Author: Norganna's AddOns
 ##
 Load.xml
