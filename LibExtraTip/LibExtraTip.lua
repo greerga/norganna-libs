@@ -885,25 +885,25 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 
 		-- Default disabled events:
 
-		SetAction = function(self,actionid)
-			OnTooltipCleared(self)
-			local reg = tooltipRegistry[self]
-			reg.ignoreOnCleared = true
-			local t,id,sub = GetActionInfo(actionid)
-			reg.additional.event = "SetAction"
-			reg.additional.eventIndex = actionid
-			reg.additional.actionType = t
-			reg.additional.actionIndex = id
-			reg.additional.actionSubtype = subtype
-			if t == "item" then
-				reg.quantity = GetActionCount(actionid)
-			elseif t == "spell" then
-				if id and id > 0 then
-					local link = GetSpellLink(id, sub)
-					SetSpellDetail(reg, link)
-				end
-			end
-		end,
+--		SetAction = function(self,actionid)
+--			OnTooltipCleared(self)
+--			local reg = tooltipRegistry[self]
+--			reg.ignoreOnCleared = true
+--			local t,id,sub = GetActionInfo(actionid)
+--			reg.additional.event = "SetAction"
+--			reg.additional.eventIndex = actionid
+--			reg.additional.actionType = t
+--			reg.additional.actionIndex = id
+--			reg.additional.actionSubtype = subtype
+--			if t == "item" then
+--				reg.quantity = GetActionCount(actionid)
+--			elseif t == "spell" then
+--				if id and id > 0 then
+--					local link = GetSpellLink(id, sub)
+--					SetSpellDetail(reg, link)
+--				end
+--			end
+--		end,
 
 		SetAuctionCompareItem = function(self, type, index, offset)
 			OnTooltipCleared(self)
@@ -1074,7 +1074,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			end
 		end,
 
-		SetAction = posthookClearIgnore,
+--		SetAction = posthookClearIgnore,
 		SetAuctionCompareItem = posthookClearIgnore,
 		SetCurrencyToken = posthookClearIgnore,
 		SetMerchantCompareItem = posthookClearIgnore,
