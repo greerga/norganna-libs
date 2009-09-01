@@ -423,11 +423,21 @@ end
 	@since 1.0
 ]]
 function lib:RemoveCallback(callback)
-	if not (self.callbacks and self.callbacks[callback]) then return end
+	if not (callback and self.callbacks) then return end
+	if not self.callbacks[callback] then
+		-- backward compatibility for old 'function' style AddCallback and RemoveCallback
+		for options, priority in pairs(self.callbacks) do
+			if options.callback == callback then
+				callback = options
+				break
+			end
+		end
+		if not self.callbacks[callback] then return end
+	end
 	self.callbacks[callback] = nil
-	for i,c in ipairs(self.sortedCallbacks) do
-		if c == callback then
-			table.remove(self.sortedCallbacks,i)
+	for index,options in ipairs(self.sortedCallbacks) do
+		if options == callback then
+			table.remove(self.sortedCallbacks, index)
 			return true
 		end
 	end
