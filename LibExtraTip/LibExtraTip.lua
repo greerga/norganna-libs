@@ -1135,7 +1135,6 @@ do -- ExtraTip "class" definition
 			o:SetScript(script,self[script])
 		end
 
-		assert(not o.Left and not o.Right, "keys Left or Right already exist in Tooltip table")
 		o.Left = setmetatable({name = o:GetName().."TextLeft"},line_mt)
 		o.Right = setmetatable({name = o:GetName().."TextRight"},line_mt)
 		return o
@@ -1218,39 +1217,6 @@ do -- ExtraTip "class" definition
 
 	-- The right-side text is statically positioned to the right of the left-side text.
 	-- As a result, manually changing the width of the tooltip causes the right-side text to not be in the right place.
-	--[[
-	local function fixRight(tooltip,lefts,rights)
-		local name,rn,ln,left,right
-		local getglobal = getglobal
-		if not lefts then
-			name = tooltip:GetName()
-			rn = name .. "TextRight"
-			ln = name .. "TextLeft"
-		end
-		for i=1,tooltip:NumLines() do
-			left = nil
-			right = nil
-
-			if lefts then left = lefts[i] end
-			if rights then right = rights[i] end
-
-			if not left then
-				left = getglobal(ln..i)
-			end
-			if not right then
-				right = getglobal(rn..i)
-			end
-
-			if right and right:IsVisible() then
-				right:ClearAllPoints()
-				right:SetPoint("LEFT",left,"RIGHT")
-				right:SetPoint("RIGHT",-10,0)
-				right:SetJustifyH("RIGHT")
-			end
-		end
-	end
-	--]]
-	--[
 	local function fixRight(tooltip, shift)
 		local rights, rightname
 		rights = tooltip.Right
@@ -1274,7 +1240,6 @@ do -- ExtraTip "class" definition
 			end
 		end
 	end
-	--]]
 
 	function class:MatchSize()
 		local p = self.parent
