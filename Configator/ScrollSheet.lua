@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 14
+local LIBRARY_VERSION_MINOR = 15
 
 --[[-----------------------------------------------------------------
 
@@ -379,16 +379,41 @@ function kit:EnableVerticalScrollReset(enable)
 		self.vScrollReset = false
 	end
 end
+--is stored order table valid
+local function checkValidOrder(text, saved)
+	for i,v in ipairs(saved) do
+		if v == text then
+			return true
+		end
+	end
+	return false
+end
 --use stored order table if provided or create new order table
 function kit:SetOrder(saved)
 	if saved and type(saved) == "table" then
-		self.order = saved[1]
-		self.lastOrder = saved[2]
-		for i, name in ipairs(self.order) do
-			self.labels[i]:SetText(name)
-			self.labels[i].button:SetWidth(self.order[name][4])
+		local passed = false
+		--check if # of entries match, fail immediately if they do not. Otherwise check each value
+		if #saved[1] == #self.labels then
+			for i,v in pairs(self.labels) do
+				local text = v:GetText()
+				passed = checkValidOrder(text, saved[1])
+				if not passed then
+					break
+				end
+			end
 		end
-		self:ChangeOrder() --apply saved order changes
+		--check that the stored data is valid for use and no changes to the original scrollsheet has occured due to upgrades
+		if passed then
+			self.order = saved[1]
+			self.lastOrder = saved[2]
+			for i, name in ipairs(self.order) do
+				self.labels[i]:SetText(name)
+				self.labels[i].button:SetWidth(self.order[name][4])
+			end
+			self:ChangeOrder() --apply saved order changes
+		else
+			self.order = nil --trash the saved table and start fresh
+		end
 	end
 	if not self.order then
 		self.order ={}
