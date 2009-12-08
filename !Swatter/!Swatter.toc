@@ -1,7 +1,7 @@
 ## Title: Swatter
 ## Notes: Debugging tool for handling and displaying of error messages in a useful way.
 ##
-## Interface: 30200
+## Interface: 30300
 ## SavedVariables: SwatterData
 ##
 ## Version: <%version%> (<%codename%>)
