@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 15
+local LIBRARY_VERSION_MINOR = 16
 
 --[[-----------------------------------------------------------------
 
@@ -279,9 +279,7 @@ function kit:RowSelect(row, mouseButton)
 	end
 
 	for i = 1, #self.rows do
-		for j = 1, #self.rows[i] do
-			self.rows[i][j]["highlight"]:SetAlpha(0)
-		end
+		self.rows[i]["highlight"]:SetAlpha(0)
 	end
 	if self.enableselect and self.selected then
 		if not row then
@@ -295,9 +293,7 @@ function kit:RowSelect(row, mouseButton)
 			end
 		end
 		if row and (row > 0) and (row <= #self.rows) then
-			for j = 1, #self.rows[row] do
-				self.rows[row][j]["highlight"]:SetAlpha(0.2)
-			end
+			self.rows[row]["highlight"]:SetAlpha(.5)
 		end
 	end
 end
@@ -633,13 +629,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				end
 				cell.button = button
 			end
-			local highlight = cell.button:CreateTexture(nil, "ARTWORK")
-			highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-			highlight:SetTexCoord(0.2, 0.9, 0, 0.9)
-			highlight:SetPoint("TOPLEFT", cell.button, "TOPLEFT", 0, 0)
-			highlight:SetPoint("BOTTOMRIGHT", cell.button, "BOTTOMRIGHT", 0, 0)
-			highlight:SetAlpha(0)
-			cell.highlight = highlight
+		
 			cell:SetHeight(14)
 			cell:SetJustifyV("TOP")
 			if (layout[i][2] == "TEXT") then
@@ -655,12 +645,19 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			cell:SetTextColor(0.9, 0.9, 0.9)
 			row[i] = cell
 		end
+		--create a color texture for row color gradiants
 		local colorTex = content:CreateTexture()
 		colorTex:SetPoint("TOPLEFT", row[1], "TOPLEFT", 0,0)
 		colorTex:SetPoint("BOTTOMRIGHT", row[#layout], "BOTTOMRIGHT", 0, 1)
-		colorTex:Show()
-		colorTex:SetTexture(1 ,1 , 1)
+		colorTex:SetTexture(1, 1, 1)
 		row.colorTex = colorTex
+		--create a highlight texture for row selection, replaces the per cell highlight system
+		local highlight = content:CreateTexture()
+		highlight:SetPoint("TOPLEFT", row[1], "TOPLEFT", 0,0)
+		highlight:SetPoint("BOTTOMRIGHT", row[#layout], "BOTTOMRIGHT", 0, 1)
+		highlight:SetAlpha(0)
+		highlight:SetTexture(.8, .6, 0)
+		row.highlight = highlight
 
 		rows[rowNum] = row
 		rowNum = rowNum + 1
