@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 16
+local LIBRARY_VERSION_MINOR = 17
 
 --[[-----------------------------------------------------------------
 
@@ -362,7 +362,13 @@ function kit:PerformSort()
 		self.labels[self.curSort].sortTexture:Show()
 	end
 
-	sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
+	-- Allow modules to use their own custom sorter 
+	-- The module can create a self.CustomSort() function that will provide any special needs. ie proper itemlink sorting
+	if self.CustomSort then
+		self.CustomSort(self.data, self.sort, self.hSize, self.curSort, self.curDir)
+	else
+		sortDataSet(self.data, self.sort, self.hSize, self.curSort, self.curDir)
+	end
 	lib.Processor("ColumnSort", self, nil, self.curSort, nil, nil, self.curDir )
 	
 	self.panel:Update()
