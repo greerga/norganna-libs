@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "PanelScroller"
-local LIBRARY_VERSION_MINOR = 2
+local LIBRARY_VERSION_MINOR = 3
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -200,7 +200,7 @@ end
 
 function kit:ScrollSync()
 	if (self.hType ~= "FAUX") then
-		self:SetHorizontalScroll(self.hScroll:GetValue() * -1)
+		self:SetHorizontalScroll(self.hScroll:GetValue()) --removed the * -1  inversion. Scrolling >right> now uses a positive integer as of wow patch 3.3.3
 	end
 	if (self.vType ~= "FAUX") then
 		self:SetVerticalScroll(self.vScroll:GetValue())
