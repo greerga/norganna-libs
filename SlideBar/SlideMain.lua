@@ -91,6 +91,7 @@ end
 
 local private = lib.private
 local frame
+local ldb = LibStub("LibDataBroker-1.1")
 
 
 
@@ -129,20 +130,25 @@ end
 --   priority = determines your button's position in the list (lower numbers = earlier).
 --   globalname = if specified, sets your button's "frame name".
 --   quiet = stops nsidebar from popping open to let the user know there's a new button.
-function lib.AddButton(id, texture, priority, globalname, quiet)
+function lib.AddButton(id, texture, priority, globalname, quiet, dataobj)
 	assert(type(id)=="string", "ButtonId must be a string")
 
 	local button
 	if not frame.buttons[id] then
 		button = CreateFrame("Button", globalname, frame)
 		button.frame = frame
+		button.dataobj = dataobj
 		button:SetPoint("TOPLEFT", frame, "TOPLEFT", 0,0)
 		button:SetWidth(30)
 		button:SetHeight(30)
+		button:RegisterForClicks("LeftButtonUp","RightButtonUp")
 		button:SetScript("OnMouseDown", function (...) private.MouseDown(this.frame, this, ...) end)
 		button:SetScript("OnMouseUp", function (...) private.MouseUp(this.frame, this, ...) end)
 		button:SetScript("OnEnter", function (...) private.PopOut(this.frame, this, ...) end)
 		button:SetScript("OnLeave", function (...) private.PopBack(this.frame, this, ...) end)
+		if dataobj and dataobj.OnClick then
+			button:SetScript("OnClick", dataobj.OnClick)
+		end
 		button.icon = button:CreateTexture("", "BACKGROUND")
 		button.icon:SetTexCoord(0.025, 0.975, 0.025, 0.975)
 		button.icon:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
@@ -155,6 +161,10 @@ function lib.AddButton(id, texture, priority, globalname, quiet)
 	end
 	if texture then
 		button.icon:SetTexture(texture)
+	end
+	--LDB textures
+	if dataobj and dataobj.icon then
+		button.icon:SetTexture(dataobj.icon)
 	end
 	if priority or not button.priority then
 		button.priority = priority or 200
@@ -451,7 +461,14 @@ if not lib.tooltip then
 		lib.tooltip:Show()
 		lib.tooltip:SetAlpha(0)
 		lib.tooltip:SetBackdropColor(0,0,0, 1)
-		lib.tooltip:SetPoint("TOP", frame, "BOTTOM", 10, -5)
+		--corrects tooltip overlaps
+		local _, _, _, X, Y = frame:GetPoint("BOTTOM") --Offset of button
+		local side = private.config.anchor or "right"
+		if side == "right" or side == "left" then
+			lib.tooltip:SetPoint("TOP", frame.frame, "BOTTOMLEFT", X + 10, -5)
+		else
+			lib.tooltip:SetPoint("LEFT", frame.frame, "TOPRIGHT", 0, Y + -10)
+		end
 		lib.tooltip.schedule = GetTime() + 1
 	end
 	lib.tooltip:SetScript("OnUpdate", function()
@@ -470,6 +487,47 @@ if not lib.tooltip then
 	})
 	lib.tooltip:SetBackdropColor(0,0,0.3, 1)
 	--lib.tooltip:SetClampedToScreen(true)
+	--no easy way to make our old and LDB tooltips play togather so created a new function
+	function lib:SetTipLDB(frame, ...)
+		if not frame  then
+			lib.tooltip.fadeInfo.finishedFunc = hide_tip
+			local curAlpha = lib.tooltip:GetAlpha()
+			UIFrameFadeOut(lib.tooltip, 0.25, curAlpha, 0)
+			lib.tooltip:SetAlpha(curAlpha)
+			lib.tooltip.schedule = nil
+			return
+		end
+		
+		if not frame.dataobj then return end
+		
+		if lib.tooltip:GetAlpha() > 0 then
+			-- Speed up this fade
+			UIFrameFadeOut(lib.tooltip, 0.01, 0, 0)
+			lib.tooltip:SetAlpha(0)
+		end
+		
+		lib.tooltip:SetOwner(frame, "ANCHOR_NONE")
+		lib.tooltip:ClearLines()
+		
+		if not frame.dataobj.OnTooltipShow then
+			--fake TT
+			lib.tooltip:AddLine(frame.dataobj.name)
+		else
+			frame.dataobj.OnTooltipShow(lib.tooltip)
+		end
+		
+		lib.tooltip:Show()
+		lib.tooltip:SetAlpha(0)
+		lib.tooltip:SetBackdropColor(0,0,0, 1)
+		local _, _, _, X, Y = frame:GetPoint("BOTTOM") --Offset of button
+		local side = private.config.anchor or "right"
+		if side == "right" or side == "left" then
+			lib.tooltip:SetPoint("TOP", frame.frame, "BOTTOMLEFT", X + 10, -5)
+		else
+			lib.tooltip:SetPoint("LEFT", frame.frame, "TOPRIGHT", 0, Y + -10)
+		end
+		lib.tooltip.schedule = GetTime() + .25 -- reduced show delay to .25 from 1 this is nicer IMO that "lag" like 1 sec delay
+	end
 end
 
 private.lastConfig = {}
@@ -506,6 +564,8 @@ function private:PopOut(...)
 		button.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
 		if (button.tip) then
 			lib:SetTip(button, button.tip)
+		else
+			lib:SetTipLDB(button) --LDB buttons use this tip method
 		end
 		if button.OnEnter then button:OnEnter(select(2, ...)) end
 	end
@@ -703,7 +763,10 @@ function private.CommandHandler(msg)
 		end
 		save = true
 	end
-
+	if (a == "config") then
+		frame.config:Show()
+		private.buttonGUI()
+	end
 	if (save) then
 		private.saveConfig()
 		lib.ApplyLayout()
@@ -753,3 +816,154 @@ function private.boxMover()
 
 	return anchor, pos - 16
 end
+
+--LibDataBroker  Launchers  LDB
+
+--core function adds LDB objects to our bar
+function private:LibDataBroker_DataObjectCreated(event, name, dataobj)
+	if not name or not dataobj or not dataobj.type then return end
+	if dataobj.type == "launcher" then
+		lib.AddButton(name, nil, nil, nil, nil, dataobj)
+	end	
+end
+ldb.RegisterCallback(private, "LibDataBroker_DataObjectCreated")
+--add any LDB objects created before we loaded
+for name, dataobj in ldb:DataObjectIterator() do
+	private:LibDataBroker_DataObjectCreated(nil, name, dataobj)
+end
+
+
+
+frame.config = CreateFrame("Frame", nil, UIParent)
+frame.config:SetWidth(420)
+frame.config:SetHeight(400)
+frame.config:SetToplevel(true)
+frame.config:Hide()
+frame.config:EnableMouse(true)
+frame.config:SetMovable(true) 
+frame.config:SetBackdrop({
+      bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+      edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+      tile = true, tileSize = 32, edgeSize = 16,
+      insets = { left = 4, right = 4, top = 4, bottom = 4 }
+})
+frame.config:SetPoint("CENTER", UIParent)
+frame.config:SetScript("OnMouseDown", function()frame.config:StartMoving()end )
+frame.config:SetScript("OnMouseUp", function() frame.config:StopMovingOrSizing() end )
+
+frame.config.closeButton = CreateFrame("Button", nil, frame.config, "UIPanelCloseButton")
+frame.config.closeButton:SetScript("OnClick", function() frame.config:Hide() end)
+frame.config.closeButton:SetPoint("BOTTOMRIGHT", frame.config, "BOTTOMRIGHT", 0,0)
+
+frame.config.buttons = {}
+
+
+function private.createIconGUI()
+	local pos = #frame.config.buttons + 1
+	local button = CreateFrame("Button", nil, frame.config, "PopupButtonTemplate")
+	button:SetScript("OnClick", function(self)
+					lib.FlashOpen(5)
+					if self:GetNormalTexture():IsDesaturated() then
+						self:GetNormalTexture():SetDesaturated(false)
+						self.tex:Hide()
+						lib.ShowButton(self.name)
+					elseif self:GetNormalTexture() then
+						self:GetNormalTexture():SetDesaturated(true)
+						self.tex:Show()
+						lib.HideButton(self.name)
+					end
+				end)
+	button.pos = pos
+	button:SetScale(.8)
+	
+	--should we use a X texture
+	button.tex = button:CreateTexture()
+	button.tex:SetTexture("Interface\\WorldMap\\X_Mark_64")
+	button.tex:SetPoint("TOPLEFT", button, "TOPLEFT",-5,5)
+	button.tex:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -20, 10)
+	button.tex:SetTexCoord(0,0.5,0.5,1)
+	button.tex:SetDrawLayer("OVERLAY")
+	button.tex:Hide()
+		
+	frame.config.buttons[pos] = button
+	return button
+end
+--Was gonna make this dynamic depending on how user resozed window. Decided on static for now
+do
+	for pos = 1, 50 do
+		private.createIconGUI()			
+	end
+
+	local width = frame.config:GetWidth()
+	local height = frame.config:GetHeight()
+	local spacer = 5
+	local row = 0
+	local column = 0
+	local total = 0
+	local button = frame.config.buttons
+	
+	--create 50 slots for our button icons
+	for pos = 1, #button do
+		if total + 45 > width then
+			column =  0
+			row = row + 45 + spacer
+			total = 0
+		end
+		button[pos]:ClearAllPoints()
+		
+		if column == 0 then
+			button[pos]:SetPoint("TOPLEFT", frame.config, "TOPLEFT",  column+20, -row - 20)
+		else
+			button[pos]:SetPoint("TOPLEFT", button[pos-1], "TOPLEFT",  45 + spacer, 0)
+		end
+		
+		column = column + 36 + spacer
+		total = total + 36 + spacer
+	end
+	
+end
+
+--apply GUI layout to match slidebars button order
+function private.buttonGUI()
+	local layout = {}
+	for id, button in pairs(frame.buttons) do
+		table.insert(layout, button)
+	end
+	table.sort(layout, private.buttonSort)
+	
+	local GUI = frame.config.buttons
+	for pos = 1, #GUI do
+		local button = layout[pos]
+		if button then
+			if  GUI[pos] and button.icon then
+				GUI[pos]:Enable()
+				GUI[pos]:SetNormalTexture(button.icon:GetTexture())
+				GUI[pos].name = button.id
+				if private.config[button.id..".hide"] then
+					GUI[pos]:GetNormalTexture():SetDesaturated(true)
+					if GUI[pos].tex then
+						GUI[pos].tex:Hide()
+					end
+				end
+			else
+				GUI[pos]:Disable()
+			end
+		else
+			GUI[pos]:Disable()
+		end
+	end
+end
+
+--[[not used atm. Will allow buttons to me dragged when we add user ordering to the button layout
+function  private.dragButton(event, self)
+	if event == "start" then
+		frame.config.start = self
+	else
+		--switch textures
+		local tex1 = frame.config.start:GetNormalTexture():GetTexture() --gets texture ref then texture path  :GetNormalTexture():GetTexture()
+		local tex2 = self:GetNormalTexture():GetTexture()
+		
+		self:SetNormalTexture(tex1)
+		frame.config.start:SetNormalTexture(tex2)
+	end
+end]]

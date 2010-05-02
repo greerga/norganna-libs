@@ -1,0 +1,5 @@
+<Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+	<Script file="CallbackHandler-1.0.lua"/>
+	<Script file="LibDataBroker-1.1.lua"/>
+</Ui>
+
