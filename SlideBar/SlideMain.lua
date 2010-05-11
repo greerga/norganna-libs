@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 6
+local LIBRARY_VERSION_MINOR = 8
 
 --[[-----------------------------------------------------------------
 
@@ -144,11 +144,8 @@ function lib.AddButton(id, texture, priority, globalname, quiet, dataobj)
 		button:RegisterForClicks("LeftButtonUp","RightButtonUp")
 		button:SetScript("OnMouseDown", function (...) private.MouseDown(this.frame, this, ...) end)
 		button:SetScript("OnMouseUp", function (...) private.MouseUp(this.frame, this, ...) end)
-		button:SetScript("OnEnter", function (...) private.PopOut(this.frame, this, ...) end)
-		button:SetScript("OnLeave", function (...) private.PopBack(this.frame, this, ...) end)
-		if dataobj and dataobj.OnClick then
-			button:SetScript("OnClick", dataobj.OnClick)
-		end
+		button:SetScript("OnEnter", function (...) private.PopOut(this.frame, this, ...) if dataobj and dataobj.OnEnter then dataobj.OnEnter(...) GameTooltip:Hide() end end) --LDB dataobjects can have possible on enter/leave scripts to execute as well
+		button:SetScript("OnLeave", function (...) private.PopBack(this.frame, this, ...) if dataobj and dataobj.OnLeave then dataobj.OnLeave(...) end end)
 		button.icon = button:CreateTexture("", "BACKGROUND")
 		button.icon:SetTexCoord(0.025, 0.975, 0.025, 0.975)
 		button.icon:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
@@ -163,8 +160,13 @@ function lib.AddButton(id, texture, priority, globalname, quiet, dataobj)
 		button.icon:SetTexture(texture)
 	end
 	--LDB textures
-	if dataobj and dataobj.icon then
-		button.icon:SetTexture(dataobj.icon)
+	if dataobj then
+		if dataobj.OnClick then
+			button:SetScript("OnClick", dataobj.OnClick)
+		end
+		if dataobj.icon then
+			button.icon:SetTexture(dataobj.icon)
+		end	
 	end
 	if priority or not button.priority then
 		button.priority = priority or 200
@@ -395,12 +397,18 @@ else
 	frame:SetScript("OnMouseDown", function(...) private.BeginMove(...) end)
 	frame:SetScript("OnMouseUp", function(...) private.EndMove(...) end)
 	frame:SetScript("OnUpdate", function(...) private.Popper(...) end)
-	frame:SetScript("OnEvent", function(...)
-		private.loadElements(strsplit(";", SlideBarConfig or ""))
-		private.startCounter = 10
-		frame:UnregisterEvent("PLAYER_LOGIN")
+	frame:SetScript("OnEvent", function(self, event, ...)
+		if event == "PLAYER_LOGIN" then
+			private.loadElements(strsplit(";", SlideBarConfig or ""))
+			private.startCounter = 10
+			frame:UnregisterEvent("PLAYER_LOGIN")
+		elseif event == "PLAYER_ENTERING_WORLD" then
+			private.RescanLDBObjects() --scan LibDataBroker objects for any additions or changes.
+			frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
+		end
 	end)
 	frame:RegisterEvent("PLAYER_LOGIN")
+	frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 	frame.Tab = frame:CreateTexture()
 	frame.Tab:SetTexture(0.98, 0.78, 0)
@@ -697,6 +705,7 @@ function private.CommandHandler(msg)
 	local a, b, c = strsplit(" ", msg:lower())
 	if (a == "help") then
 		DEFAULT_CHAT_FRAME:AddMessage("/nsb top | left | bottom | right  |cff1020ff Set the anchor for the sidebar |r")
+		DEFAULT_CHAT_FRAME:AddMessage("/nsb config  |cff1020ff Display the GUI to show or hide buttons|r")
 		DEFAULT_CHAT_FRAME:AddMessage("/nsb <n>  |cff1020ff Set the position for the sidebar |r")
 		DEFAULT_CHAT_FRAME:AddMessage("/nsb fadeout | nofade  |cff1020ff Set whether the sidebar fades or not |r")
 		DEFAULT_CHAT_FRAME:AddMessage("/nsb size <n>  |cff1020ff Set the number of icons before the bar wraps |r")
@@ -827,11 +836,12 @@ function private:LibDataBroker_DataObjectCreated(event, name, dataobj)
 	end	
 end
 ldb.RegisterCallback(private, "LibDataBroker_DataObjectCreated")
---add any LDB objects created before we loaded
-for name, dataobj in ldb:DataObjectIterator() do
-	private:LibDataBroker_DataObjectCreated(nil, name, dataobj)
+--add any LDB objects created before we loaded. Not all LDB objects initialize everything when they create themselves. So we need to recan after all are loded to get all methods
+function private.RescanLDBObjects()
+	for name, dataobj in ldb:DataObjectIterator() do
+		private:LibDataBroker_DataObjectCreated(nil, name, dataobj)
+	end
 end
-
 
 
 frame.config = CreateFrame("Frame", nil, UIParent)
@@ -888,7 +898,7 @@ function private.createIconGUI()
 	frame.config.buttons[pos] = button
 	return button
 end
---Was gonna make this dynamic depending on how user resozed window. Decided on static for now
+--Was gonna make this dynamic depending on how user resized window. Decided on static for now
 do
 	for pos = 1, 50 do
 		private.createIconGUI()			
@@ -909,7 +919,7 @@ do
 			row = row + 45 + spacer
 			total = 0
 		end
-		button[pos]:ClearAllPoints()
+		--button[pos]:ClearAllPoints()
 		
 		if column == 0 then
 			button[pos]:SetPoint("TOPLEFT", frame.config, "TOPLEFT",  column+20, -row - 20)
