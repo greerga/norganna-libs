@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 8
+local LIBRARY_VERSION_MINOR = 6
 
 --[[-----------------------------------------------------------------
 
