@@ -630,16 +630,29 @@ local function toggle()
 	end
 end
 
-local sideIcon
-local SlideBar = LibStub:GetLibrary("SlideBar", true)
-if SlideBar then
-	sideIcon = SlideBar.AddButton("nLog", "Interface\\AddOns\\!nLog\\Textures\\nLogIcon", 10000)
-	sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
-	sideIcon:SetScript("OnClick", toggle)
-	sideIcon.tip = {
-		"Norganna's Log",
-		"nLog is a debugging utility designed for use by AddOn authors or professional testers only.",
-		"If you have inadvertently found yourself with this addon installed, and are a normal end-user, we recommend that you disable it from loading.",
-		"{{Click}} to open the log window.",
-	}
-end
+if LibStub then
+	local LibDataBroker = LibStub:GetLibrary("LibDataBroker-1.1", true)
+	if not LibDataBroker then return end
+	local LDBButton = LibDataBroker:NewDataObject("nLog", {
+				type = "launcher",
+				icon = "Interface\\AddOns\\!nLog\\Textures\\nLogIcon",
+				OnClick = function(self, button) toggle(self, button) end,
+				})
+	
+	function LDBButton:OnTooltipShow()
+		self:AddLine("Norganna's Log",  1,1,0.5, 1)
+		self:AddLine("nLog is a debugging utility designed for use by AddOn authors or professional testers only.",  1,1,0.5, 1)
+		self:AddLine("If you have inadvertently found yourself with this addon installed, and are a normal end-user, we recommend that you disable it from loading.",  1,1,0.5, 1)
+		self:AddLine("|cff1fb3ff".."Click".."|r ".."to open the log window.",  1,1,0.5, 1)
+	end
+	function LDBButton:OnEnter()
+		GameTooltip:SetOwner(self, "ANCHOR_NONE")
+		GameTooltip:SetPoint("TOPLEFT", self, "BOTTOMLEFT")
+		GameTooltip:ClearLines()
+		LDBButton.OnTooltipShow(GameTooltip)
+		GameTooltip:Show()
+	end
+	function LDBButton:OnLeave()
+		GameTooltip:Hide()
+	end
+end	
