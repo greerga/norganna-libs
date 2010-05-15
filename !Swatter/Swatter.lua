@@ -78,9 +78,6 @@ hooksecurefunc("SetAddOnDetail", addOnDetail)
 
 LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
 
-
-local sideIcon
-
 local function toggle()
 	if Swatter.Error:IsVisible() then
 		Swatter.Error:Hide()
@@ -90,16 +87,30 @@ local function toggle()
 end
 
 local function addSlideIcon()
-	local SlideBar = LibStub:GetLibrary("SlideBar", true)
-	if SlideBar then
-		sideIcon = SlideBar.AddButton("Swatter", "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon", 9000)
-		sideIcon:RegisterForClicks("LeftButtonUp","RightButtonUp")
-		sideIcon:SetScript("OnClick", toggle)
-		sideIcon.tip = {
-			"Swatter",
-			"Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",
-			"{{Click}} to open the report.",
-		}
+	if LibStub then
+		local LibDataBroker = LibStub:GetLibrary("LibDataBroker-1.1", true)
+		if not LibDataBroker then return end
+		local LDBButton = LibDataBroker:NewDataObject("Swatter", {
+					type = "launcher",
+					icon = "Interface\\AddOns\\!Swatter\\Textures\\SwatterIcon",
+					OnClick = function(self, button) toggle(self, button) end,
+					})
+		
+		function LDBButton:OnTooltipShow()
+			self:AddLine("Swatter",  1,1,0.5, 1)
+			self:AddLine("Swatter is a bug catcher that performs additional backtracing to allow AddOn authors to easily trace errors when you send them error reports. You may disable this AddOn if you never get bugs, don't care about them, or never report them when you do get them.",  1,1,0.5, 1)
+			self:AddLine("|cff1fb3ff".."Click".."|r ".."to open the report.",  1,1,0.5, 1)
+		end
+		function LDBButton:OnEnter()
+			GameTooltip:SetOwner(self, "ANCHOR_NONE")
+			GameTooltip:SetPoint("TOPLEFT", self, "BOTTOMLEFT")
+			GameTooltip:ClearLines()
+			LDBButton.OnTooltipShow(GameTooltip)
+			GameTooltip:Show()
+		end
+		function LDBButton:OnLeave()
+			GameTooltip:Hide()
+		end
 	end
 end
 
@@ -345,8 +356,6 @@ function Swatter.OnEvent(frame, event, ...)
 			Swatter.loadCount = #SwatterData.errors
 			Swatter.lastShown = Swatter.loadCount
 			return
-		elseif (addon:lower() == "slidebar") then
-			addSlideIcon()
 		end
 	elseif (event == "ADDON_ACTION_BLOCKED" and SwatterData.warning) then
 		local addon, func = ...
@@ -359,6 +368,7 @@ function Swatter.OnEvent(frame, event, ...)
 		local addon, func = ...
 		Swatter.OnError(string.format("Error: AddOn %s attempted to call a forbidden function (%s) from a tainted execution path.", addon, func), Swatter.NamedFrame("AddOn: "..addon), debugstack(2, 20, 20), event, ...)
 	elseif (event == "PLAYER_LOGIN") then
+		addSlideIcon() --create ldb launcher button
 		-- Check to see if any events have happened since we loaded and the player is ready to view them
 		local curCount = #SwatterData.errors
 		local loadCount = Swatter.loadCount
