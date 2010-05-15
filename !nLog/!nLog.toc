@@ -2,7 +2,7 @@
 ## Notes: Debugging console to display debugging messages easily.
 ## Interface: 30300
 ## SavedVariables: nLogData
-## OptionalDeps: !Swatter, SlideBar
+## OptionalDeps: !Swatter, SlideBar, LibDataBroker
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
