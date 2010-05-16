@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 25
+local LIBRARY_VERSION_MINOR = 26
 
 do -- LibStub
 	-- LibStub is a simple versioning stub meant for use in Libraries.  http://www.wowace.com/wiki/LibStub for more info
@@ -1094,6 +1094,22 @@ function kit:MakeScrollable(id)
 	GSC = scroll
 end
 
+-- this is a helper function for the tooltip addition
+local function AddTipControl(self, control, tip)
+	if not self or not control or not tip then return end
+	local old_enter = control:GetScript("OnEnter")
+	local old_leave = control:GetScript("OnLeave")
+	local function help_enter(self, ...)
+		if old_enter then old_enter(self, ...) end
+		if tip then lib:SetTip(self, tip) end
+	end
+	local function help_leave(self, ...)
+		if old_enter then old_leave(self, ...) end
+		if tip then lib:SetTip() end
+	end
+	control:SetScript("OnEnter", help_enter)
+	control:SetScript("OnLeave", help_leave)
+end
 -- this is a text only tool tip
 function kit:AddTip(id, tip)
 	assert(isGuiObject(self), "Must be called on a valid object")
@@ -1112,19 +1128,14 @@ function kit:AddTip(id, tip)
 	elseif control.control and isGuiObject(control.control) then
 		control = control.control
 	end
-
-	local old_enter = control:GetScript("OnEnter")
-	local old_leave = control:GetScript("OnLeave")
-	local function help_enter(self, ...)
-		if old_enter then old_enter(self, ...) end
-		if tip then lib:SetTip(self, tip) end
+	--MoneyInput frames need a enter/leave  for each sub frame gold/silver/copper
+	if control.gold or control.silver or control.copper then
+		AddTipControl(self, control.gold, tip)
+		AddTipControl(self, control.silver, tip)
+		AddTipControl(self, control.copper, tip)
+	else
+		AddTipControl(self, control, tip)
 	end
-	local function help_leave(self, ...)
-		if old_enter then old_leave(self, ...) end
-		if tip then lib:SetTip() end
-	end
-	control:SetScript("OnEnter", help_enter)
-	control:SetScript("OnLeave", help_leave)
 end
 
 -- this will show the game tooltip for the link
@@ -1552,7 +1563,7 @@ function kit:AddControl(id, cType, column, ...)
 			last = el
 		end
 		-- MoneyFrame
-		frameName = lib.CreateAnonName();
+		local frameName = lib.CreateAnonName();
 		el = CreateFrame("Frame", frameName, content, "MoneyInputFrameTemplate")
 		el.isMoneyFrame = true
 
