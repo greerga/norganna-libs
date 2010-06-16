@@ -861,7 +861,7 @@ function private.GUI()
 
 
 	frame.config.fadeCheck = CreateFrame("CheckButton", "nSlideBarfadeCheck", frame.config, "InterfaceOptionsCheckButtonTemplate")
-	nSlideBarfadeCheckText:SetText("Set whether the sidebar fades")
+	nSlideBarfadeCheckText:SetText("Fade the slidebar when not in use.")
 	frame.config.fadeCheck:SetPoint("TOP",frame.config.lockCheck, "BOTTOM")
 	function frame.config.fadeCheck.setFunc(state)
 		SlideBarConfig.visibility = state
