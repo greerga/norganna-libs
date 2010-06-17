@@ -395,20 +395,23 @@ else
 	frame:SetScript("OnMouseDown", function(...) private.BeginMove(...) end)
 	frame:SetScript("OnMouseUp", function(...) private.EndMove(...) end)
 	frame:SetScript("OnUpdate", function(...) private.Popper(...) end)
-	frame:SetScript("OnEvent", function(self, event, ...)
+	frame:SetScript("OnEvent", function(self, event, arg, ...)
 		if event == "PLAYER_LOGIN" then
 			private.startCounter = 10
+			private.GUI() --create the configuration GUI
+			private.RescanLDBObjects() --scan LibDataBroker objects for any additions or changes.
+			frame:UnregisterEvent("PLAYER_LOGIN")
+		elseif event == "ADDON_LOADED" and arg == "SlideBar" then
 			--removed the needlessly complex string variable system. Were not using Cvar or embeded anymore
 			if not SlideBarConfig or type(SlideBarConfig) == "string" then 
 				SlideBarConfig = {} 
 			end
-			private.GUI() --create the configuration GUI
-			private.RescanLDBObjects() --scan LibDataBroker objects for any additions or changes.
-			frame:UnregisterEvent("PLAYER_LOGIN")
+			frame:UnregisterEvent("ADDON_LOADED")
 		end
 	end)
 	frame:RegisterEvent("PLAYER_LOGIN")
-
+	frame:RegisterEvent("ADDON_LOADED")
+	
 	frame.Tab = frame:CreateTexture()
 	frame.Tab:SetTexture(0.98, 0.78, 0)
 	frame.buttons = {}
