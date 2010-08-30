@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 17
+local LIBRARY_VERSION_MINOR = 18
 
 --[[-----------------------------------------------------------------
 
@@ -299,7 +299,7 @@ function kit:RowSelect(row, mouseButton)
 end
 
 function kit:ButtonClick(column, mouseButton)
-	if mouseButton == "RightButton" then lib.moveColumn(self, column, mouseButton) return end
+	if mouseButton == "RightButton" then lib.moveColumn(self, column) return end
 
 	if (self.curSort == column) then
 		self.curDir = self.curDir * -1
@@ -545,11 +545,15 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label:SetText(layout[i][1])
-		local colWidth = layout[i][3] or 0
+		local colWidth = layout[i][3] or 30 --Never us a nil width, causes issues with overlay highlight
 
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(16)
+		button:SetResizable(true)
+		button:SetMaxResize(400, 16)
+		button:SetMinResize(13, 16) --Makes the nice ... elipsies line up
+		
 		button:SetID(i)
 		button:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
 		button:SetScript("OnMouseDown", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
@@ -575,7 +579,21 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		background:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 0,0)
 		background:SetPoint("BOTTOM", content, "BOTTOM", 0,0)
 		background:SetAlpha(0.2)
-
+		
+		--small button in the gap between lables allows resizing the button its anchored too
+		--we use very small columns to store extra data thats not used in rendering. We dont want the player to be able to resize em
+		if colWidth > 1 then
+			local nub = CreateFrame("Button", nil, content)
+			nub:SetPoint("TOPLEFT", button, "TOPRIGHT", 0,0)
+			nub:SetHighlightTexture("Interface\\BUTTONS\\YELLOWORANGE64")
+			nub:SetWidth(3)
+			nub:SetHeight(content:GetHeight())
+			nub:SetScript("OnEnter", function(self) self:LockHighlight() end)
+			nub:SetScript("OnLeave", function(self) self:UnlockHighlight() end)
+			--buttons lose the proper anchor when resized, havnt figured out why. So store and then reattach
+			nub:SetScript("OnMouseDown", function() nub.point, nub.relativeTo, nub.relativePoint, nub.xOfs, nub.yOfs = button:GetPoint()  button:StartSizing() end )
+			nub:SetScript("OnMouseUp", function() button:StopMovingOrSizing() button:SetPoint(nub.point, nub.relativeTo, nub.relativePoint, nub.xOfs, nub.yOfs) lib.Processor("ColumnWidthSet", sheet, button, i) end )
+		end
 		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
 		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
 		label:SetJustifyH("CENTER")
@@ -584,6 +602,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 		label.button = button
 		label.texture = texture
+		label.nub = nub
 		label.sortTexture = sortTexture
 		label.background = background
 		label.sort = layout[i][4]
@@ -729,34 +748,6 @@ function  lib.moveColumn(self, column)
 	if self and column then
 		if IsControlKeyDown() then --reset column to default
 			lib.Processor("ColumnWidthReset", self, self.labels[column].button, column)
-						
-		elseif IsAltKeyDown() then
-			local originalScript = self.labels[column].button:GetScript("OnMouseDown") --store the original Sort onclick script will reset it when we are done resizing
-
-			local point, relativeTo, relativePoint, xOfs, yOfs = self.labels[column].button:GetPoint() --Store the anchor point since its niled when resized
-			--limit the size we will allow buttons to get
-			local height = self.labels[column].button:GetHeight()
-			self.labels[column].button:SetResizable(true)
-			self.labels[column].button:SetMaxResize(400, height)
-			self.labels[column].button:SetMinResize(13, height) --Makes the nice ... elipsies line up
-			--set the resize script
-			self.labels[column].button:SetScript("OnMouseDown", function() self.labels[column].button:StartSizing(self.labels[column].button) end)
-			--resets the original onclick as well as setting new anchor points for our buttons
-			self.labels[column].button:SetScript("OnMouseUp", function()
-										self.labels[column].button:StopMovingOrSizing()
-										self.labels[column].button:SetScript("OnMouseDown", originalScript)
-										self.labels[column].button:ClearAllPoints()
-										self.labels[column].button:SetPoint(point, relativeTo, relativePoint, xOfs,yOfs)
-										--store changed width on the order table, so we apply it when switching columns
-										if self.order then 
-											local width, name = self.labels[column].button:GetWidth(), self.labels[column]:GetText()
-											self.order[name][4] =  width or 80
-										end
-										--sends new width info to the module
-										lib.Processor("ColumnWidthSet", self, self.labels[column].button, column)
-						end)
-			--start resizing self
-			self.labels[column].button:StartSizing(self.labels[column].button)
 		else
 			local fakeButton = lib.fakeButton
 			local width, height, text = self.labels[column]:GetWidth(), self.labels[column]:GetHeight(), self.labels[column]:GetText()
