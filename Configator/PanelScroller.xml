@@ -98,8 +98,8 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
-				self.incrButton = getglobal(self:GetName().."ScrollRightButton")
-				self.decrButton = getglobal(self:GetName().."ScrollLeftButton")
+				self.incrButton = _G[self:GetName().."ScrollRightButton"]
+				self.decrButton = _G[self:GetName().."ScrollLeftButton"]
 			</OnLoad>
 			<OnValueChanged>
 				self:GetParent():ScrollToCoords(arg1, nil);
@@ -141,8 +141,8 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
-				self.incrButton = getglobal(self:GetName().."ScrollUpButton")
-				self.decrButton = getglobal(self:GetName().."ScrollDownButton")
+				self.incrButton = _G[self:GetName().."ScrollUpButton"]
+				self.decrButton = _G[self:GetName().."ScrollDownButton"]
 			</OnLoad>
 			<OnValueChanged>
 				self:GetParent():ScrollToCoords(nil, arg1);
@@ -193,7 +193,7 @@
 				self:Update()
 			</OnVerticalScroll>
 			<OnMouseWheel>
-				self:MouseScroll(arg1);
+				self:MouseScroll(delta);
 			</OnMouseWheel>
 		</Scripts>
 	</ScrollFrame>

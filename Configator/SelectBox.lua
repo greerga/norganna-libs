@@ -135,8 +135,8 @@ function kit:SetWidth(width)
 	local fname = self:GetName()
 	self:origSetWidth(width + 50)
 	self.curWidth = width
-	getglobal(fname.."Middle"):SetWidth(width)
-	getglobal(fname.."Text"):SetWidth(width - 25)
+	_G[fname.."Middle"]:SetWidth(width)
+	_G[fname.."Text"]:SetWidth(width - 25)
 	self:UpdateInset()
 end
 
@@ -146,23 +146,23 @@ function kit:UpdateInset()
 		leftInset = 5-self.curWidth
 	end
 	local fname = self:GetName()
-	getglobal(fname.."Button"):SetHitRectInsets(leftInset, -2,-2,-2)
+	_G[fname.."Button"]:SetHitRectInsets(leftInset, -2,-2,-2)
 end
 
 function kit:SetInputHidden(hide)
 	local fname = self:GetName()
 	if hide then
 		self.hiddenInput = true
-		getglobal(fname.."Left"):Hide()
-		getglobal(fname.."Middle"):Hide()
-		getglobal(fname.."Right"):Hide()
-		getglobal(fname.."Text"):Hide()
+		_G[fname.."Left"]:Hide()
+		_G[fname.."Middle"]:Hide()
+		_G[fname.."Right"]:Hide()
+		_G[fname.."Text"]:Hide()
 	else
 		self.hiddenInput = nil
-		getglobal(fname.."Left"):Show()
-		getglobal(fname.."Middle"):Show()
-		getglobal(fname.."Right"):Show()
-		getglobal(fname.."Text"):Show()
+		_G[fname.."Left"]:Show()
+		_G[fname.."Middle"]:Show()
+		_G[fname.."Right"]:Show()
+		_G[fname.."Text"]:Show()
 	end
 	self:UpdateInset()
 end
@@ -179,7 +179,7 @@ end
 
 function kit:SetText(text)
 	local fname = self:GetName()
-	getglobal(fname.."Text"):SetText(text)
+	_G[fname.."Text"]:SetText(text)
 end
 
 function kit:UpdateValue()
@@ -380,7 +380,7 @@ if not lib.menu then
 		l:SetScript("OnEnter", lib.MouseIn)
 		l:SetScript("OnLeave", lib.MouseOut)
 		l:SetScript("OnClick", lib.OnClick)
-	--	getglobal("SelectBoxMenuButton"..i.."Text"):SetJustifyH("LEFT")
+	--	_G["SelectBoxMenuButton"..i.."Text"]:SetJustifyH("LEFT")
 		l:Show()
 	end
 

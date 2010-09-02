@@ -1444,8 +1444,8 @@ function kit:AddControl(id, cType, column, ...)
 		el = CreateFrame("Slider", tmpName, content, "OptionsSliderTemplate")
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 13 + column + indent, swidth, 20, 4)
-		getglobal(tmpName.."Low"):SetText("")
-		getglobal(tmpName.."High"):SetText("")
+		_G[tmpName.."Low"]:SetText("")
+		_G[tmpName.."High"]:SetText("")
 		el.setting = setting
 		el.textFmt = text
 		el.fmtFunc = fmtfunc
@@ -1572,8 +1572,8 @@ function kit:AddControl(id, cType, column, ...)
 --		lib:TabLink(frame, el)
 
 -- for the time being, set to cycle around the fields of the current money frame
-		MoneyInputFrame_SetPreviousFocus(el, getglobal(frameName.."Copper"))
-		MoneyInputFrame_SetNextFocus(el, getglobal(frameName.."Gold"))
+		MoneyInputFrame_SetPreviousFocus(el, _G[frameName.."Copper"])
+		MoneyInputFrame_SetNextFocus(el, _G[frameName.."Gold"])
 
 		local cur = el
 		local MoneyInputFrame_SetOnValueChangedFunc = MoneyInputFrame_SetOnvalueChangedFunc or MoneyInputFrame_SetOnValueChangedFunc -- WotLK Hack
