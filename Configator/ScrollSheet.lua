@@ -586,6 +586,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			local nub = CreateFrame("Button", nil, content)
 			nub:SetPoint("TOPLEFT", button, "TOPRIGHT", 0,0)
 			nub:SetHighlightTexture("Interface\\BUTTONS\\YELLOWORANGE64")
+			nub:SetAlpha(0.5)
 			nub:SetWidth(3)
 			nub:SetHeight(content:GetHeight())
 			nub:SetScript("OnEnter", function(self) self:LockHighlight() end)
