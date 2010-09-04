@@ -398,6 +398,8 @@ function kit:SetOrder(saved)
 		if #saved[1] == #self.labels then
 			for i,v in pairs(self.labels) do
 				local text = v:GetText()
+				--if unnamed column, create the null fake name
+				if text == nil then text = "null "..v.button:GetID() end
 				passed = checkValidOrder(text, saved[1])
 				if not passed then
 					break
