@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 9
+local LIBRARY_VERSION_MINOR = 10
 
 --[[-----------------------------------------------------------------
 
@@ -161,11 +161,16 @@ function lib.AddButton(id, texture, priority, globalname, quiet, dataobj)
 	end
 	--LDB textures
 	if dataobj then
+		dataobj.button = button
 		if dataobj.OnClick then
 			button:SetScript("OnClick", dataobj.OnClick)
 		end
 		if dataobj.icon then
 			button.icon:SetTexture(dataobj.icon)
+			--check the desaturated method.  true if icon starts in a desaturated state
+			if dataobj.iconDesaturated then
+				button.icon:SetDesaturated(true)	
+			end			
 		end	
 	end
 	if priority or not button.priority then
@@ -832,7 +837,7 @@ function private.GUI()
 		lib.ApplyLayout()
 	end
 
-	frame.config.searchBox = CreateFrame("EditBox", nil, frame.config, "InputBoxTemplate")
+	frame.config.searchBox = CreateFrame("EditBox", "nSlideBarLengthEditBox", frame.config, "InputBoxTemplate") --has to have a name or the template bugs
 	frame.config.searchBox:SetMaxLetters(2)
 	frame.config.searchBox:SetNumeric(true)
 	local wide = SlideBarConfig.maxWidth or 12
