@@ -495,7 +495,7 @@ nLog.Message.ChatPrint = CreateFrame("CheckButton", "nLogChatPrint", nLog.Messag
 nLog.Message.ChatPrint:SetPoint("TOPLEFT", nLog.Message.LevelFilt, "TOPRIGHT", 50, 10)
 nLog.Message.ChatPrint:SetScript("OnClick", nLog.OnClickChatPrintButton)
 nLog.Message.ChatPrint:SetHitRectInsets(0, 0, 0, 0)
-getglobal("nLogChatPrintText"):SetText("ChatPrint")
+_G["nLogChatPrintText"]:SetText("ChatPrint")
 
 nLog.Message.Done = CreateFrame("Button", nil, nLog.Message, "OptionsButtonTemplate")
 nLog.Message.Done:SetText("Close")
