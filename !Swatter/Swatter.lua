@@ -270,10 +270,10 @@ function Swatter.GetAddOns()
 		name = name:gsub("[^a-zA-Z0-9]+", "")
 
 		if not version then
-			local class = getglobal(name)
-			if not class or type(class)~='table' then class = getglobal(name:lower()) end
-			if not class or type(class)~='table' then class = getglobal(name:sub(1,1):upper()..name:sub(2):lower()) end
-			if not class or type(class)~='table' then class = getglobal(name:upper()) end
+			local class = _G[name]
+			if not class or type(class)~='table' then class = _G[name:lower()] end
+			if not class or type(class)~='table' then class = _G[name:sub(1,1):upper()..name:sub(2):lower()] end
+			if not class or type(class)~='table' then class = _G[name:upper()] end
 			if class and type(class)=='table' then
 				if (class.version) then
 					version = class.version
@@ -286,7 +286,7 @@ function Swatter.GetAddOns()
 		end
 
 		if not version then
-			local const = getglobal(name:upper().."_VERSION")
+			local const = _G[name:upper().."_VERSION"]
 			if (const) then version = const end
 		end
 
