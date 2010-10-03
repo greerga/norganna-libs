@@ -287,8 +287,8 @@ end
 
 function lib:Create(name, parent)
 	local scroller = CreateFrame("ScrollFrame", name, parent, "PanelScrollerTemplate_v1")
-	scroller.hScroll = getglobal(name.."HorizontalScrollBar");
-	scroller.vScroll = getglobal(name.."VerticalScrollBar");
+	scroller.hScroll = _G[name.."HorizontalScrollBar"];
+	scroller.vScroll = _G[name.."VerticalScrollBar"];
 	for k,v in pairs(kit) do
 		scroller[k] = v
 	end

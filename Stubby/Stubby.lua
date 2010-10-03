@@ -475,7 +475,7 @@ function unhookFrom(triggerFunction)
 	end
 
 	-- make sure, that no other addon hooked this function meanwhile
-	if getglobal(triggerFunction) == config.hooks.origFuncs[triggerFunction] then
+	if _G[triggerFunction] == config.hooks.origFuncs[triggerFunction] then
 		triggerFunction = config.hooks.origFuncs[triggerFunction]
 		config.hooks.origFuncs[triggerFunction] = nil
 		config.hooks.functions[triggerFunction] = nil

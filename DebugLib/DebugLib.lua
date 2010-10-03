@@ -932,7 +932,7 @@ function lib.Assert(addon, test, ...)
 
 	local message = private.format(...)
 
-	getglobal("ChatFrame1"):AddMessage(message, 1.0, 0.3, 0.3)
+	_G["ChatFrame1"]:AddMessage(message, 1.0, 0.3, 0.3)
 
 	if nLog then
 		nLog.AddMessage(addon, "Assertion", N_CRITICAL, "assertion failed", message)
@@ -982,7 +982,7 @@ function lib.SimpleAssert(addon, test, ...)
 
 	local message = private.format(...)
 
-	getglobal("ChatFrame1"):AddMessage(message, 1.0, 0.3, 0.3)
+	_G["ChatFrame1"]:AddMessage(message, 1.0, 0.3, 0.3)
 
 	return false -- test failed
 end
