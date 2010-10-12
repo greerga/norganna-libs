@@ -1460,6 +1460,7 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetScript("OnEnter", kit.CaptureKeys)
 		el:SetScript("OnLeave", kit.ReleaseKeys)
 		el:SetScript("OnKeyUp", kit.KeyPress)
+		el:EnableKeyboard(false)
 		el:SetScript("OnMouseWheel", kit.MouseScroll)
 		self:GetSetting(el) -- We need to have set or the hasNumber part will always start at 0
 		if hasNumber then
