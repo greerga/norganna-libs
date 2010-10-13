@@ -102,7 +102,7 @@
 				self.decrButton = _G[self:GetName().."ScrollLeftButton"]
 			</OnLoad>
 			<OnValueChanged>
-				self:GetParent():ScrollToCoords(arg1, nil);
+				self:GetParent():ScrollToCoords(value, nil);
 			</OnValueChanged>
 		</Scripts>
 		<ThumbTexture name="$parentThumbTexture" inherits="PanelScrollerScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob">
@@ -145,7 +145,7 @@
 				self.decrButton = _G[self:GetName().."ScrollDownButton"]
 			</OnLoad>
 			<OnValueChanged>
-				self:GetParent():ScrollToCoords(nil, arg1);
+				self:GetParent():ScrollToCoords(nil, value);
 			</OnValueChanged>
 		</Scripts>
 		<ThumbTexture name="$parentThumbTexture" inherits="PanelScrollerScrollBarButton" file="Interface\Buttons\UI-ScrollBar-Knob">
