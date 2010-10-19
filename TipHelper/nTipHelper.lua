@@ -178,10 +178,6 @@ do -- tooltip class definition
 			return
 		end
 		local newlink, test = gsub(link, "(|Hitem:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+):%d+([|:][^h]*h)", "%1:80%2")
-		if test ~= 1 then
-			print("TipHelper Sanitize Link: Unable to sanitize "..link)
-			--return
-		end
 		lastSaneLink = newlink
 		lastSanitized = link
 		return lastSaneLink
