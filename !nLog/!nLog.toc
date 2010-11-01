@@ -6,8 +6,12 @@
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
-## URL: http://auctioneeraddon.com/dl/nLog/
 ## Author: Norganna's AddOns
+## X-Part-Of: Libraries
+## X-Category: Library
+## X-Max-Interface: 40000
+## X-URL: http://zip.norganna.org/libs/!nLog/
+## X-Feedback: http://forums.norganna.org
 ##
 Support\Load.xml
 Libs\Load.xml

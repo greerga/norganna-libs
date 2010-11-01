@@ -7,7 +7,10 @@
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
 ## Author: Norganna's AddOns
-## URL: http://AuctioneerAddOn.Com/
-## X-Feedback:  http://Forums.Norganna.Org
+## X-Part-Of: Libraries
+## X-Category: Library
+## X-Max-Interface: 40000
+## X-URL: http://zip.norganna.org/libs/Configator/
+## X-Feedback: http://forums.norganna.org
 ##
 Load.xml
