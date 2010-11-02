@@ -382,8 +382,3 @@ do -- tooltip class definition
 	end
 
 end -- tooltip class definition
-
-function _debug(link)
-	print(gsub(link, "|", "||"))
-	print(gsub(AucAdvanced.SanitizeLink(link), "|", "||"))
-end
