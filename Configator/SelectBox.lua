@@ -197,7 +197,6 @@ end
 function buttonKit:Open()
 	local box = self
 	if not box.items then box = self:GetParent() end
-	if not box.items then box = this:GetParent() end
 	if not box.items then error("Unable to open menu") end
 
 	PlaySound("igMainMenuOptionCheckBoxOn")
@@ -384,5 +383,5 @@ if not lib.menu then
 		l:Show()
 	end
 
-	cmenu = lib.menu
+-- 	cmenu = lib.menu --no refrence anywhere to cmenu  its appears to be a leftover global
 end

@@ -90,6 +90,7 @@ local kit = {
 	hPos = 0, hSize = 0, hWin = 0, hType = "AUTO",
 	vPos = 0, vSize = 0, vWin = 0, vType = "YES",
 }
+local abs = abs
 
 -- Set whether to allow horizontal scrolling ("YES", "NO" or "AUTO")
 function kit:SetScrollBarVisible(axis, visibility)

@@ -584,8 +584,9 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		
 		--small button in the gap between lables allows resizing the button its anchored too
 		--we use very small columns to store extra data thats not used in rendering. We dont want the player to be able to resize em
+		local nub
 		if colWidth > 1 then
-			local nub = CreateFrame("Button", nil, content)
+			nub = CreateFrame("Button", nil, content)
 			nub:SetPoint("TOPLEFT", button, "TOPRIGHT", 0,0)
 			nub:SetHighlightTexture("Interface\\BUTTONS\\YELLOWORANGE64")
 			nub:SetAlpha(0.5)
