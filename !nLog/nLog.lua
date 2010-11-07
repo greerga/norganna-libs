@@ -204,6 +204,8 @@ function nLog.OnEvent(frame, event, ...)
 			-- create nLogData for the first time
 			if not nLogData then
 				nLogData = {}
+			elseif (nLogData.saveData) then
+				nLogData.saveData = nil
 			end
 
 			-- enable nlog each session
@@ -429,6 +431,40 @@ function nLog.ClearLog()
 	chat("Clearing nLog messages.")
 end
 
+function nLog.SaveFilteredMessages()
+	nLog.FilterUpdate()
+	
+	local save = { }
+	chat( ("Filtered Count: %d"):format(#nLog.filtered))
+
+	local idx, midx, message
+	for idx = 1, #nLog.filtered do
+		midx = nLog.filtered[idx]
+		if (midx) then
+			message = nLog.messages[midx]
+			if (message) then
+				local tmsg = { }
+				ts, mId, mAddon, mType, mLevel, mTitle, msg = unpack(message)
+				mLevelName = nLog.levels[mLevel]
+				tmsg.timeStamp = ts
+				tmsg.addon = mAddon
+				tmsg.type = mType
+				tmsg.level = mLevelName
+				tmsg.title = mTitle	
+				tmsg.message = msg
+				tinsert(save, tmsg)
+			else
+				chat( ("Missing message for record %d"):format(idx))
+			end
+		else
+			chat( ("Missing midx for record %d"):format(idx))
+		end
+	end
+	if (not nLogData.saveData) then nLogData.saveData = { } end
+	tinsert(nLogData.saveData, save)
+	chat("Log Saved")
+end
+
 local function showTooltip(obj)
 	local tooltip = obj.tooltip
 	GameTooltip:SetOwner(obj, "ANCHOR_RIGHT")
@@ -533,6 +569,11 @@ nLog.Message.Next:SetText("Next")
 nLog.Message.Next:SetPoint("BOTTOMRIGHT", nLog.Message.Previous, "BOTTOMLEFT", -10, 0)
 nLog.Message.Next:SetScript("OnClick", nLog.NextMessage)
 
+nLog.Message.Save = CreateFrame("Button", nil, nLog.Message, "OptionsButtonTemplate")
+nLog.Message.Save:SetText("Save")
+nLog.Message.Save:SetPoint("BOTTOMRIGHT", nLog.Message.Next, "BOTTOMLEFT", -10, 0)
+nLog.Message.Save:SetScript("OnClick", nLog.SaveFilteredMessages)
+
 nLog.Message.AutoScroll = CreateFrame("CheckButton", "nLogAutoScroll", nLog.Message, "OptionsCheckButtonTemplate")
 nLog.Message.AutoScroll:SetPoint("BOTTOMLEFT", nLog.Message.AddonFilt, "TOPLEFT", 0, 10)
 nLog.Message.AutoScroll:SetScript("OnClick", nLog.OnClickAutoScroll)
@@ -546,9 +587,9 @@ nLog.Message.MsgScroll:SetPoint("RIGHT", nLog.Message, "RIGHT", -40, 0)
 nLog.Message.MsgScroll:SetHeight(200)
 if select(4, GetBuildInfo() ) >= 30000 then
 	-- ccox - WoW 3.0 changed the FauxScrollFrame_OnVerticalScroll function
-	nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function (args, offset) FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, offset, LOG_LINES, nLog.UpdateDisplay) end)
+	nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function (args, offset) FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, offset, ENTRY_SIZE, nLog.UpdateDisplay) end)
 else
-	nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function () FauxScrollFrame_OnVerticalScroll(LOG_LINES, nLog.UpdateDisplay) end)
+	nLog.Message.MsgScroll:SetScript("OnVerticalScroll", function () FauxScrollFrame_OnVerticalScroll(ENTRY_SIZE, nLog.UpdateDisplay) end)
 end
 nLog.Message.MsgScroll:SetScript("OnShow", function() nLog.UpdateDisplay() end)
 
@@ -623,6 +664,9 @@ SlashCmdList["NLOG"] = function(msg)
 		chat("  /nlog disable     -  Disables nLog")
 		chat("  /nlog show        -  Shows the nLog frame")
 		chat("  /nlog clear       -  Clears current nLog messages")
+		chat("  /nlog save        -  Saves the current message view (with filters on) into the LUA store")
+		chat("                       Note that the save is deleted next time WoW is (re)started")
+		chat("                       You can also save multiple views to file during a single session if desired")
 		chat("  /nlog chatEnable  -  Prints debug level messages also to the chat channel")
 		chat("  /nlog chatDisable -  Do no longer print debug level messages to the chat channel")
 	elseif (msg == "show") then
@@ -641,6 +685,8 @@ SlashCmdList["NLOG"] = function(msg)
 	elseif (msg == "chatDisable") then
 		nLogData.chatPrint = false
 		nLog.Message.ChatPrint:SetChecked(false)
+	elseif (msg == "save") then
+		nLog.SaveFilteredMessages()
 	else
 		chat("Unknown nLog command: "..(msg or "nil"))
 	end
