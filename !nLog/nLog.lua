@@ -185,8 +185,15 @@ end
 
 -- ccox - for those days when you don't want to think too hard about what you're trying to log
 function nLog.AddSimpleMessage(...)
-	nLog.AddMessage("SimpleMessage", "", N_DEBUG, "", ...)
+	nLog.AddMessage("SimpleMessage", "", N_DEBUG, ...)
 end
+
+-- blloyd aka prowell -- for those days when you don't want to think too hard about what you're trying to log
+--  and don't want to have to view the message itself.
+function nLog.AddSimpleTitledMessage(title, ...)
+	nLog.AddMessage("SimpleMessage", title, N_DEBUG, ...)
+end
+
 
 function nLog.OnEvent(frame, event, ...)
 	if (event == "ADDON_LOADED") then
@@ -212,6 +219,7 @@ function nLog.OnEvent(frame, event, ...)
 		end
 	end
 end
+
 
 local updateInterval = 1
 local updated = 0
@@ -250,6 +258,11 @@ end
 -- invalidate this when the filter changes?
 nLog.currentFilteredMessage = nil;
 
+local lastLine = 0
+local LOG_LINES = 16
+local ENTRY_SIZE = 16  -- number of pixels per entry
+
+
 -- display a particular message
 function nLog.ShowFilteredMessage(fidx)
 	nLog.currentFilteredMessage = fidx;
@@ -259,6 +272,16 @@ function nLog.ShowFilteredMessage(fidx)
 		local mLevelName = nLog.levels[mLevel]
 		local text = string.format("|cffffaa11Date:|r  %s\n|cffffaa11MsgId:|r %s\n|cffffaa11AddOn:|r %s\n|cffffaa11Type:|r  %s\n|cffffaa11Level:|r %s\n|cffffaa11Title:|r %s\n|cffffaa11Message:|r\n%s\n", ts, mId, mAddon, mType, mLevelName, mTitle, msg)
 		nLog.Message.Box:SetText(text)
+		if select(4, GetBuildInfo() ) >= 30000 then
+			local nPos = FauxScrollFrame_GetOffset(nLogMessageScroll)	
+			if (nPos >= fidx) then
+				chat( ("Scrolling down (nPos:%d, fidx:%d"):format(nPos, fidx))
+				FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, (fidx-1)*ENTRY_SIZE, LOG_LINES, nLog.UpdateDisplay)
+			elseif (nPos + LOG_LINES < fidx) then
+				chat( ("Scrolling up (nPos:%d, fidx:%d"):format(nPos, fidx))
+				FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, (fidx-LOG_LINES)*ENTRY_SIZE, LOG_LINES, nLog.UpdateDisplay)
+			end
+		end
 	end
 end
 
@@ -267,7 +290,6 @@ function nLog.LineClicked(frame)
 	nLog.ShowFilteredMessage(frame.fidx);
 end
 
--- TODO: these also need to scroll the list to match the current location, see nLog.UpdateDisplay()
 function nLog.PreviousMessage()
 	if (nLog.currentFilteredMessage) then
 		-- message displayed, go to previous if we can
@@ -360,10 +382,13 @@ function nLog.FilterUpdate()
 			table.insert(nLog.filtered, fIdx)
 		end
 	end
+
+	if (nLog.Message.AutoScroll:GetChecked() == 1) then
+		nLog.ShowFilteredMessage(#nLog.filtered)
+	end	
+
 end
 
-local lastLine = 0
-local LOG_LINES = 16
 function nLog.UpdateDisplay()
 	local message, ts, mId, mAddon, mType, mLevel, mLevelName, mTitle, msg, idx, midx
 	nLog.FilterUpdate()
@@ -371,7 +396,7 @@ function nLog.UpdateDisplay()
 	local rows = #nLog.filtered
 	local scrollrows = rows
 	if (scrollrows > 0 and scrollrows < LOG_LINES+1) then scrollrows = LOG_LINES+1 end
-	FauxScrollFrame_Update(nLogMessageScroll, scrollrows, LOG_LINES, 16)
+	FauxScrollFrame_Update(nLogMessageScroll, scrollrows, LOG_LINES, ENTRY_SIZE)
 
 	local cpos = FauxScrollFrame_GetOffset(nLogMessageScroll)
 	if (cpos ~= lastline) then
@@ -510,6 +535,11 @@ nLog.Message.Next:SetText("Next")
 nLog.Message.Next:SetPoint("BOTTOMRIGHT", nLog.Message.Previous, "BOTTOMLEFT", -10, 0)
 nLog.Message.Next:SetScript("OnClick", nLog.NextMessage)
 
+nLog.Message.AutoScroll = CreateFrame("CheckButton", "nLogAutoScroll", nLog.Message, "OptionsCheckButtonTemplate")
+nLog.Message.AutoScroll:SetPoint("BOTTOMLEFT", nLog.Message.AddonFilt, "TOPLEFT", 0, 10)
+nLog.Message.AutoScroll:SetScript("OnClick", nLog.OnClickAutoScroll)
+nLog.Message.AutoScroll:SetHitRectInsets(0, 0, 0, 0)
+_G["nLogAutoScrollText"]:SetText("Auto Show Latest")
 
 -- scroll bar for the list
 nLog.Message.MsgScroll = CreateFrame("ScrollFrame", "nLogMessageScroll", nLog.Message, "FauxScrollFrameTemplate")
