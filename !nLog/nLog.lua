@@ -157,13 +157,9 @@ function nLog.AddMessage(mAddon, mType, mLevel, mTitle, ...)
 	if (mLevel > N_DEBUG) then mLevel = N_DEBUG end
 
 	-- Once we fill up to 64k entries, treat the table like a loop buffer
-	if (#nLog.messages >= 65535) then
+	if (#nLog.messages >= 65536) then
 		local ofs = nLog.Message.ofs or 0
-		ofs = ((ofs+1) % 65535)
-		-- lots of fun cases thanks to the modulus operation, but an index of zero is bad
-		if (ofs == 0) then
-			ofs = 1;
-		end
+		ofs = (ofs % 65536) + 1
 		-- reuse the old message table
 		local message = nLog.messages[ofs]
 		if (not message) then chat("Error logging message at offset("..ofs..")") broken = true return end
@@ -353,7 +349,7 @@ function nLog.FilterUpdate()
 	if (fType == "") then fType = nil end
 	if (fLabel == "") then fLabel = nil end
 	for i = 0, #nLog.messages-1 do
-		local fIdx = ((i + fOfs) % 65535)+1
+		local fIdx = ((i + fOfs) % 65536)+1
 		message = nLog.messages[fIdx]
 		mAddon, mType, mLevel, mLabel = message[3], message[4], message[5], message[6]
 		if (not fLevel or fLevel >= mLevel)
