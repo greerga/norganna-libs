@@ -185,13 +185,13 @@ end
 
 -- ccox - for those days when you don't want to think too hard about what you're trying to log
 function nLog.AddSimpleMessage(...)
-	nLog.AddMessage("SimpleMessage", "", N_DEBUG, ...)
+	nLog.AddMessage("SimpleMessage", "", N_DEBUG, "", ...)
 end
 
 -- blloyd aka prowell -- for those days when you don't want to think too hard about what you're trying to log
 --  and don't want to have to view the message itself.
 function nLog.AddSimpleTitledMessage(title, ...)
-	nLog.AddMessage("SimpleMessage", title, N_DEBUG, ...)
+	nLog.AddMessage("SimpleMessage", "", N_DEBUG, title, ...)
 end
 
 
