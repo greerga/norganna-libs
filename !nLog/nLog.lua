@@ -275,10 +275,8 @@ function nLog.ShowFilteredMessage(fidx)
 		if select(4, GetBuildInfo() ) >= 30000 then
 			local nPos = FauxScrollFrame_GetOffset(nLogMessageScroll)	
 			if (nPos >= fidx) then
-				chat( ("Scrolling down (nPos:%d, fidx:%d"):format(nPos, fidx))
 				FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, (fidx-1)*ENTRY_SIZE, LOG_LINES, nLog.UpdateDisplay)
 			elseif (nPos + LOG_LINES < fidx) then
-				chat( ("Scrolling up (nPos:%d, fidx:%d"):format(nPos, fidx))
 				FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, (fidx-LOG_LINES)*ENTRY_SIZE, LOG_LINES, nLog.UpdateDisplay)
 			end
 		end
