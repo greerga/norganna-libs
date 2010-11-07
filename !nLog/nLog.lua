@@ -444,8 +444,8 @@ function nLog.SaveFilteredMessages()
 			message = nLog.messages[midx]
 			if (message) then
 				local tmsg = { }
-				ts, mId, mAddon, mType, mLevel, mTitle, msg = unpack(message)
-				mLevelName = nLog.levels[mLevel]
+				local ts, mId, mAddon, mType, mLevel, mTitle, msg = unpack(message)
+				local mLevelName = nLog.levels[mLevel]
 				tmsg.timeStamp = ts
 				tmsg.addon = mAddon
 				tmsg.type = mType
