@@ -450,6 +450,8 @@ function Swatter.ErrorDisplay(id)
 	local context = err.context or "Anonymous"
 
 	local message = err.message:gsub("(.-):(%d+): ", "%1 line %2:\n   "):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)`", ": %1"):gsub("|", "||"):gsub("{{{", "|cffff8855"):gsub("}}}", "|r")
+	--Hide users account name if it is a saved variable related error
+	message = message:gsub("(.-Account\\)(.-)(\\SavedVariables.*)", "%1BLANK%3")
 	local trace = "   "..err.stack:gsub("Interface\\AddOns\\", ""):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)'", ": %1()"):gsub(": in function <(.-)>", ":\n   %1"):gsub(": in main chunk ", ": "):gsub("\n$",""):gsub("\n", "\n   ")
 	local count = err.count
 	if (count > 999) then count = "\226\136\158" --[[Infinity]] end
