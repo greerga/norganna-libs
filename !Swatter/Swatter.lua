@@ -130,13 +130,21 @@ function Swatter.OnError(msg, frame, stack, etype, ...)
 		if (not etype) then
 			return Swatter.origHandler(msg, frame)
 		else
-			return UIParent_OnEvent(etype, ...)
+			return UIParent_OnEvent(Swatter.Frame, etype, ...)
 		end
 	end
 
-	msg = msg or ""
-	frame = frame or Swatter.nilFrame
-	stack = stack or debugstack(2, 20, 20)
+	-- check for correct parameter types
+	-- todo: report if incorrect types are supplied, and consider etype and ...
+	if type(msg) ~= "string" then
+		msg = "Unknown Error"
+	end
+	if type(frame) ~= "table" or type(frame.GetName) ~= "function" then
+		frame = Swatter.nilFrame
+	end
+	if type(stack) ~= "string" then
+		stack = debugstack(2, 20, 20)
+	end
 
 	local context
 	if (not frame.Swatter) then frame.Swatter = {} end
