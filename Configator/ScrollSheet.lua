@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 18
+local LIBRARY_VERSION_MINOR = 19
 
 --[[-----------------------------------------------------------------
 
@@ -243,25 +243,32 @@ function kit:EnableSelect(enable)
 		self.enableselect = false
 	end
 end
-
-function kit:GetSelection()
+--Generic function for getting data from any row. Will always return values in default column order
+function kit:GetRowData(row)
 	local selection = {}
-	if self.selected then
-		if not self.order then
-			for i = 1, self.hSize do
-				local pos = i + ((self.selected-1)*self.hSize)
-				selection[i] = self.data[pos]
-			end
-		else--reorginize data so the calling module gets them back in expected order
-			for i = 1, self.hSize do
-				local pos = i + ((self.selected-1)*self.hSize)
-				local name = self.order[i]
-				local index = self.order[name][3]
-				selection[index] = self.data[pos]
-			end
+	if not self.order then
+		for i = 1, self.hSize do
+			local pos = i + ((row-1)*self.hSize)
+			selection[i] = self.data[pos]
+		end
+	else--reorginize data so the calling module gets them back in expected order
+		for i = 1, self.hSize do
+			local pos = i + ((row-1)*self.hSize)
+			local name = self.order[i]
+			local index = self.order[name][3]
+			selection[index] = self.data[pos]
 		end
 	end
 	return selection
+end
+
+--Used to get the user selected row. Use GetRowData for generic querys
+function kit:GetSelection()
+	local selection
+	if self.selected then
+		selection = self:GetRowData(self.selected)
+	end
+	return selection or {}
 end
 
 function kit:RowSelect(row, mouseButton)
