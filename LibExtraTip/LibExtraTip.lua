@@ -718,13 +718,16 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			OnTooltipCleared(self)
 			local reg = tooltipRegistry[self]
 			reg.ignoreOnCleared = true
-			local _,q,l,_,r= GetContainerItemInfo(bag,slot)
-			reg.quantity = q
-			reg.additional.event = "SetBagItem"
-			reg.additional.eventContainer = bag
-			reg.additional.eventIndex = slot
-			reg.additional.readable = r
-			reg.additional.locked = l
+			local tex,q,l,_,r,loot = GetContainerItemInfo(bag,slot)
+			if tex then -- texture (only used as a test for occupied bagslot)
+				reg.quantity = q
+				reg.additional.event = "SetBagItem"
+				reg.additional.eventContainer = bag
+				reg.additional.eventIndex = slot
+				reg.additional.readable = r
+				reg.additional.locked = l
+				reg.additional.lootable = loot
+			end
 		end,
 
 		SetBuybackItem = function(self,index)
