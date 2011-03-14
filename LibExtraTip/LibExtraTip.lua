@@ -1126,10 +1126,10 @@ do -- ExtraTip "class" definition
 	end
 
 	function class:InitLines()
-		local n = self:NumLines()
-		local changedLines = self.changedLines
-		if not changedLines or changedLines < n then
-			for i = (changedLines or 0) + 1, n do
+		local nlines = self:NumLines()
+		local changedLines = self.changedLines or 0
+		if changedLines < nlines then
+			for i = changedLines + 1, nlines do
 				local left,right = self.Left[i],self.Right[i]
 				local font
 				if i == 1 then
@@ -1148,7 +1148,7 @@ do -- ExtraTip "class" definition
 				right:SetFontObject(font)
 				right:SetTextColor(r,g,b,a)
 			end
-			self.changedLines = n
+			self.changedLines = nlines
 		end
 	end
 
@@ -1228,8 +1228,8 @@ do -- ExtraTip "class" definition
 	end
 
 	function class:Show()
-		show(self)
 		self:InitLines()
+		show(self)
 	end
 
 end
