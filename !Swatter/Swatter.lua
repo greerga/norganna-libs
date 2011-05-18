@@ -696,5 +696,3 @@ SlashCmdList["SWATTER"] = function(msg)
 		chat("Swatter errors have been cleared")
 	end
 end
-
-addSlideIcon()
