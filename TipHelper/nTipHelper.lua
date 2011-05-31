@@ -1,6 +1,6 @@
 --[[
 	Norganna's Tooltip Helper class
-	Version: 1.0
+	Version: 1.1
 	Revision: $Id$
 	URL: http://norganna.org/tthelp
 
@@ -34,51 +34,16 @@
 		liable to change without notice and could possibly destroy any code that relies
 		on it staying the same.
 		We will attempt to avoid this happening where possible (of course).
+
+	Requires:
+		LibExtraTip must be loaded first. If the libraries are embedded it is up to the
+		packager to ensure they load in the correct order.
 ]]
 
-local MAJOR,MINOR,REVISION = "nTipHelper", 1, 1
-
---[[-----------------------------------------------------------------
-
-LibStub is a simple versioning stub meant for use in Libraries.
-See <http://www.wowwiki.com/LibStub> for more info.
-LibStub is hereby placed in the Public Domain.
-Credits:
-    Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke
-
---]]-----------------------------------------------------------------
-do
-	local LIBSTUB_MAJOR, LIBSTUB_MINOR = "LibStub", 2
-	local LibStub = _G[LIBSTUB_MAJOR]
-
-	if not LibStub or LibStub.minor < LIBSTUB_MINOR then
-		LibStub = LibStub or {libs = {}, minors = {} }
-		_G[LIBSTUB_MAJOR] = LibStub
-		LibStub.minor = LIBSTUB_MINOR
-
-		function LibStub:NewLibrary(major, minor)
-			assert(type(major) == "string", "Bad argument #2 to `NewLibrary' (string expected)")
-			minor = assert(tonumber(strmatch(minor, "%d+")), "Minor version must either be a number or contain a number.")
-
-			local oldminor = self.minors[major]
-			if oldminor and oldminor >= minor then return nil end
-			self.minors[major], self.libs[major] = minor, self.libs[major] or {}
-			return self.libs[major], oldminor
-		end
-
-		function LibStub:GetLibrary(major, silent)
-			if not self.libs[major] and not silent then
-				error(("Cannot find a library instance of %q."):format(tostring(major)), 2)
-			end
-			return self.libs[major], self.minors[major]
-		end
-
-		function LibStub:IterateLibraries() return pairs(self.libs) end
-		setmetatable(LibStub, { __call = LibStub.GetLibrary })
-	end
+if not LibStub then -- LibStub is included in LibExtraTip
+	error("TipHelper cannot load because LibExtraTip is not loaded (LibStub missing)")
 end
---[End of LibStub]---------------------------------------------------
-
+local MAJOR,MINOR,REVISION = "nTipHelper", 1, 1.1
 local LIBSTRING = MAJOR..":"..MINOR
 local lib = LibStub:NewLibrary(LIBSTRING,REVISION)
 if not lib then return end
@@ -87,7 +52,11 @@ local type = type
 local gsub = gsub
 
 do -- tooltip class definition
-	local libTT = LibStub("LibExtraTip-1")
+	local libTT = LibStub("LibExtraTip-1", true)
+	if not libTT then
+		lib.LoadError = "Missing LibExtraTip"
+		error("TipHelper cannot load because LibExtraTip is not loaded (LibExtraTip-1 missing)")
+	end
 	local MoneyViewClass = LibStub("LibMoneyFrame-1")
 
 	local curFrame = nil
@@ -382,3 +351,5 @@ do -- tooltip class definition
 	end
 
 end -- tooltip class definition
+
+LibStub("LibRevision"):Set("$URL$","$Rev$","5.12.DEV.", 'auctioneer', 'libs')
