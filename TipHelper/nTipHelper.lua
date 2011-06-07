@@ -1,6 +1,6 @@
 --[[
 	Norganna's Tooltip Helper class
-	Version: 1.1
+	Version: 1.2
 	Revision: $Id$
 	URL: http://norganna.org/tthelp
 
@@ -43,7 +43,7 @@
 if not LibStub then -- LibStub is included in LibExtraTip
 	error("TipHelper cannot load because LibExtraTip is not loaded (LibStub missing)")
 end
-local MAJOR,MINOR,REVISION = "nTipHelper", 1, 1.1
+local MAJOR,MINOR,REVISION = "nTipHelper", 1, 1.2
 local LIBSTRING = MAJOR..":"..MINOR
 local lib = LibStub:NewLibrary(LIBSTRING,REVISION)
 if not lib then return end
@@ -58,6 +58,7 @@ do -- tooltip class definition
 		error("TipHelper cannot load because LibExtraTip is not loaded (LibExtraTip-1 missing)")
 	end
 	local MoneyViewClass = LibStub("LibMoneyFrame-1")
+	local libACL = LibStub("LibAltChatLink")
 
 	local curFrame = nil
 	local asText = false
@@ -348,6 +349,16 @@ do -- tooltip class definition
 	function lib:CreateMoney(high, wide, red,green,blue)
 		local m = MoneyViewClass:new(high, wide, red,green,blue);
 		return m
+	end
+	
+	function lib:AltChatLinkRegister(callback)
+		-- 'callback' is a function which should take the same parameters as SetItemRef
+		-- and should return one of the LibAltChatLink constants (may return nil instead of NO_ACTION)
+		libACL:AddCallback(callback)
+	end
+	
+	function lib:AltChatLinkConstants()
+		return libACL.OPEN_TOOLTIP, libACL.NO_ACTION, libACL.BLOCK_TOOLTIP
 	end
 
 end -- tooltip class definition
