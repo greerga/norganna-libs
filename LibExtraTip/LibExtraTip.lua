@@ -1151,6 +1151,7 @@ do -- ExtraTip "class" definition
 				right:SetTextColor(r,g,b,a)
 			end
 			self.changedLines = nlines
+			return true
 		end
 	end
 
@@ -1230,8 +1231,12 @@ do -- ExtraTip "class" definition
 	end
 
 	function class:Show()
-		self:InitLines()
 		show(self)
+		if self:InitLines() then
+			-- sometimes 'show' needs to be called twice to correctly resize the tooltip
+			-- calling it once (before OR after InitLines) doesn't always work {LTT-42}
+			show(self)
+		end
 	end
 
 end
