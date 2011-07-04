@@ -9,7 +9,7 @@
 ## Author: Norganna's AddOns
 ## X-Part-Of: Libraries
 ## X-Category: Library
-## X-Max-Interface: 40000
+## X-Max-Interface: 40200
 ## X-URL: http://zip.norganna.org/libs/!Swatter/
 ## X-Feedback: http://forums.norganna.org
 ##

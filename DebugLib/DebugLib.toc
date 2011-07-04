@@ -1,7 +1,7 @@
 ## Title: DebugLib |cff224477(lib)
 ## Notes: A embeddable debugging library that transparently supports the nLog logging system, if present.
 ##
-## Interface: 40100
+## Interface: 40200
 ## LoadOnDemand: 0
 ## OptionalDependencies: !nLog
 ##
@@ -10,7 +10,7 @@
 ## Author: Norganna's AddOns
 ## X-Part-Of: Libraries
 ## X-Category: Library
-## X-Max-Interface: 40000
+## X-Max-Interface: 40200
 ## X-URL: http://zip.norganna.org/libs/DebugLib/
 ## X-Feedback: http://forums.norganna.org
 ##
