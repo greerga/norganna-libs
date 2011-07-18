@@ -35,7 +35,7 @@
 
 
 local LIBRARY_VERSION_MAJOR = "LibAltChatLink"
-local LIBRARY_VERSION_MINOR = 1.0
+local LIBRARY_VERSION_MINOR = 1
 
 local lib, oldminor = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
