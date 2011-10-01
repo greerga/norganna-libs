@@ -50,6 +50,7 @@ SWATTER_VERSION = Swatter.Version
 SwatterData = {
 	enabled = true,
 	autoshow = true,
+	warning = true,
 	errors = {},
 }
 
@@ -200,8 +201,8 @@ local function OnError(msg, frame, stack, etype, ...)
 	local count = err.count or 0
 	if (count < 1000) then err.count = count + 1 end
 	if count == 0 and SwatterData.enabled then
-		if (etype == "ADDON_ACTION_BLOCKED") then
-			if (not Swatter.blockWarn) then
+		if etype == "ADDON_ACTION_BLOCKED" then
+			if SwatterData.warning and not Swatter.blockWarn then
 				chat("|cffffaa11Warning only: Swatter found blocked actions:|r "..SwatterLink(id, context))
 				chat("|cffffaa11Note: Swatter will continue to catch blocked actions but this is the last time this session that we'll tell you about it.|r")
 				Swatter.blockWarn = true
@@ -381,7 +382,7 @@ function Swatter.OnEvent(frame, event, ...)
 			Swatter.lastShown = Swatter.loadCount
 			return
 		end
-	elseif (event == "ADDON_ACTION_BLOCKED" and SwatterData.warning) then
+	elseif event == "ADDON_ACTION_BLOCKED" then
 		if SwatterData.enabled then
 			local addon, func = ...
 			if (InCombatLockdown()) then
