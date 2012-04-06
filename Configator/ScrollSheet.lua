@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 19
+local LIBRARY_VERSION_MINOR = 20
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -189,7 +189,7 @@ function kit:SetData(input, instyle)
 		self.panel.vScroll:SetValue(0)--always reset scroll to vertical home position when new data is set.
 	end
 
-	self.panel.vSize = nRows
+	self.panel.vSize = max(0, nRows - #self.rows + 1) -- set max scroll 1 line beyond end, as a visual indicator of reaching the end
 	self:PerformSort()
 end
 
