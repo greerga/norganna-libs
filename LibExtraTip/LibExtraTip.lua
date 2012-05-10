@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 321
+local VERSION_MINOR = 322
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -647,6 +647,23 @@ function lib:Deactivate()
 			end
 		end
 	end
+
+	-- deactivate and discard any existing extra tooltips
+	-- (should be extremely rare that any would exist at this point
+	-- therefore minimal code just to prevent errors in those rare instances)
+	if self.tooltipRegistry then
+		for _, reg in pairs(self.tooltipRegistry) do
+			local tip = reg.extraTip
+			if tip then
+				tip:Hide()
+				tip:Release()
+			end
+			reg.extraTip = nil
+			reg.extraTipUsed = nil
+
+		end
+	end
+	self.extraTippool = nil
 end
 
 --[[ INTERNAL USE ONLY
