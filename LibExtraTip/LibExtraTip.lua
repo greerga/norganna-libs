@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 322
+local VERSION_MINOR = 323
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -253,7 +253,7 @@ end
 
 	if we are updating, keep the old hookStore table IF it has the right version, so that we can reuse the hook stubs
 --]]
-local HOOKSTORE_VERSION = "A"
+local HOOKSTORE_VERSION = "B"
 if not lib.hookStore or lib.hookStore.version ~= HOOKSTORE_VERSION then
 	lib.hookStore = {version = HOOKSTORE_VERSION}
 end
@@ -282,17 +282,17 @@ local function hook(tip, method, prehook, posthook)
 	lib.hookStore[tip][method] = control
 	-- install hook stub
 	local stub = function(...)
-		local h
+		local hook
 		-- prehook
-		h = control[1]
-		if h then h(...) end
+		hook = control[1]
+		if hook then hook(...) end
 		-- original hook
-		local a,b,c,d = orig(...)
+		local a,b,c,d,e,f,g,h,i,j,k = orig(...)
 		-- posthook
-		h = control[2]
-		if h then h(...) end
+		hook = control[2]
+		if hook then hook(...) end
 		-- return values from original
-		return a,b,c,d
+		return a,b,c,d,e,f,g,h,i,j,k
 	end
 	tip[method] = stub
 	--[[
