@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 27
+local LIBRARY_VERSION_MINOR = 28
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -1295,7 +1295,7 @@ function kit:AddControl(id, cType, column, ...)
 		control = el
 		last = el
 	elseif (cType == "Selectbox") then
-		local level, list, setting, text = ...
+		local level, list, setting, text, maxLabelLength = ...
 		local indent = 10 * (level or 1)
 		-- Selectbox
 		local tmpName = lib.CreateAnonName()
@@ -1316,11 +1316,21 @@ function kit:AddControl(id, cType, column, ...)
 		el.list = list
 		el.setting = setting
 		el.stype = "SelectBox";
-		el.clearance = 10
+		el.clearance = 3
 		self.elements[setting] = el
 		self:GetSetting(el)
 		control = el
-		last = el
+		if ( type(text) == "string" ) then
+			-- FontString
+			el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+			el:SetJustifyH("LEFT")
+			kpos = kpos+1 kids[kpos] = el
+			if (colwidth) then colwidth = colwidth - 15 end
+			anchorPoint(content, el, last, (colwidth or 140)+35+column+indent, (colwidth or maxLabelLength), 14, -3)
+			el:SetText(text)
+			control.textEl = el
+		end
+		last = control
 	elseif (cType == "Button") then
 		local level, setting, text = ...
 		local indent = 10 * (level or 1)
