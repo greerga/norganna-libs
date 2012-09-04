@@ -20,6 +20,8 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ]]
 
+local DEBUG_LEVEL = 4
+
 -- Check to see if another debugging aid has been loaded.
 for addon, name in pairs({
 	['!buggrabber'] = 'BugGrabber',
@@ -162,12 +164,9 @@ local function OnError(msg, frame, stack, etype, ...)
 		frame = Swatter.nilFrame
 	end
 	if type(stack) ~= "string" or stack == "" then
-		stack = debugstack(3, 20, 20)
+		stack = debugstack(DEBUG_LEVEL, 20, 20)
 	end
-	local locals = debuglocals(4)
-	if locals == "" then
-		locals = nil
-	end
+	local locals = debuglocals(DEBUG_LEVEL)
 
 	local context
 	if (not frame.Swatter) then frame.Swatter = {} end
@@ -489,8 +488,15 @@ function Swatter.ErrorDisplay(id)
 	local errPos = id - Swatter.loadCount
 	if errPos <= 0 then errPos = errPos - 1 end
 
-	--Swatter.Error.curError = "|cffff5533Date:|r "..timestamp.."\n|cffff5533ID:|r "..errPos.."\n|cffff5533Error occured in:|r "..context.."\n|cffff5533Count:|r "..count.."\n|cffff5533Message:|r "..message.."\n|cffff5533Debug:|r\n"..trace.."\n|cffff5533Locals:|r\n"..locals.."\n|cffff5533AddOns:|r\n"..addlist.."\n"
-	Swatter.Error.curError = ERROR_FORMAT:format(timestamp, errPos, context, count, message, trace, locals, addlist)
+	Swatter.Error.curError = "|cffff5533Date:|r "..timestamp..
+		"\n|cffff5533ID:|r "..errPos..
+		"\n|cffff5533Error occured in:|r "..context..
+		"\n|cffff5533Count:|r "..count..
+		"\n|cffff5533Message:|r "..message..
+		"\n|cffff5533Debug:|r\n"..trace..
+		"\n|cffff5533Locals:|r\n"..locals..
+		"\n|cffff5533AddOns:|r\n"..addlist..
+		"\n"
 	Swatter.Error.selected = false
 	Swatter.ErrorUpdate()
 	Swatter.Error:Show()
