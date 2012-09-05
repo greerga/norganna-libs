@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 20
+local LIBRARY_VERSION_MINOR = 21
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -708,6 +708,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	panel.callback = function() sheet:Render() end
 	panel.sheet = sheet -- panel needs access to sheet values, particularly for vSize calculations
 	panel:SetScript("OnSizeChanged", calculateMaxScroll)
+	panel:ScrollSync()
 
 	_G[name] = sheet
 
