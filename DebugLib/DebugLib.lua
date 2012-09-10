@@ -125,7 +125,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "DebugLib"
-local LIBRARY_VERSION_MINOR = 1
+local LIBRARY_VERSION_MINOR = 2
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -518,7 +518,7 @@ end
 --    explanation about this function.
 -------------------------------------------------------------------------------
 function lib.SimpleDebugPrint(addon, message, category, title, errorCode, level, ...)
-	_, message, _, _, errorCode = private.normalizeParameters(addon, message, category, title, errorCode, level)
+	local _, message, _, _, errorCode = private.normalizeParameters(addon, message, category, title, errorCode, level)
 
 	return errorCode, message
 end
