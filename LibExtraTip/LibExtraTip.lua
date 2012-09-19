@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 323
+local VERSION_MINOR = 324
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -77,6 +77,12 @@ local defaultEnable = {
 	SetHyperlinkAndCount = true, -- Creating a tooltip via lib:SetHyperlinkAndCount()
 }
 
+--[[ The following callback types are always enabled regardless of the event ]]
+local alwaysEnable = {
+	extrashow = true,
+	extrahide = true,
+}
+
 -- Money Icon setup
 local iconpath = "Interface\\MoneyFrame\\UI-"
 local goldicon = "%d|T"..iconpath.."GoldIcon:0|t"
@@ -85,17 +91,18 @@ local coppericon = "%s|T"..iconpath.."CopperIcon:0|t"
 
 -- Function that calls all the interested tooltips
 local function ProcessCallbacks(reg, tiptype, tooltip, ...)
-	local self = lib
 	if not reg then return end
 
 	local event = reg.additional.event or "Unknown"
 	local default = defaultEnable[event]
 
-	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
-		for i,options in ipairs(self.sortedCallbacks) do
-			if options.type == tiptype and options.callback and type(options.callback) == "function" then
+	if lib.sortedCallbacks and #lib.sortedCallbacks > 0 then
+		for i,options in ipairs(lib.sortedCallbacks) do
+			if options.type == tiptype then
 				local enable = default
-				if options.enable and options.enable[event] ~= nil then
+				if options.allevents or alwaysEnable[tiptype] then
+					enable = true
+				elseif options.enable and options.enable[event] ~= nil then
 					enable = options.enable[event]
 				end
 				if enable then
@@ -147,7 +154,10 @@ local function OnTooltipSetItem(tooltip)
 
 				ProcessCallbacks(reg, "item", tooltip, item,quantity,name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture)
 				tooltip:Show()
-				if reg.extraTipUsed then reg.extraTip:Show() end
+				if reg.extraTipUsed then
+					reg.extraTip:Show()
+					ProcessCallbacks(reg, "extrashow", tooltip, reg.extraTip)
+				end
 			end
 		end
 	end
@@ -161,7 +171,7 @@ local function OnTooltipSetSpell(tooltip)
 
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
-		local name, rank = tooltip:GetSpell()
+		local name, category, spellID = tooltip:GetSpell()
 		local link = reg.additional.link
 
 		if name and not reg.hasItem then
@@ -171,9 +181,16 @@ local function OnTooltipSetSpell(tooltip)
 			extraTip:Attach(tooltip)
 			extraTip:AddLine(name, 1,0.8,0)
 
-			ProcessCallbacks(reg, "spell", tooltip, link, name,rank)
+			reg.additional.name = name
+			reg.additional.category = category
+			reg.additional.spellID = spellID
+
+			ProcessCallbacks(reg, "spell", tooltip, link, name, category, spellID)
 			tooltip:Show()
-			if reg.extraTipUsed then reg.extraTip:Show() end
+			if reg.extraTipUsed then
+				reg.extraTip:Show()
+				ProcessCallbacks(reg, "extrashow", tooltip, reg.extraTip)
+			end
 		end
 	end
 end
@@ -195,9 +212,12 @@ local function OnTooltipSetUnit(tooltip)
 			extraTip:Attach(tooltip)
 			extraTip:AddLine(name, 0.8,0.8,0.8)
 
-			ProcessCallbacks(reg, "unit", tooltip, name,unitId)
+			ProcessCallbacks(reg, "unit", tooltip, name, unitId)
 			tooltip:Show()
-			if reg.extraTipUsed then reg.extraTip:Show() end
+			if reg.extraTipUsed then
+				reg.extraTip:Show()
+				ProcessCallbacks(reg, "extrashow", tooltip, reg.extraTip)
+			end
 		end
 	end
 end
@@ -211,19 +231,20 @@ local function OnTooltipCleared(tooltip)
 	if reg.ignoreOnCleared then return end
 	tooltip:SetFrameLevel(1)
 
-	if reg.extraTip then
-		table.insert(self.extraTippool, reg.extraTip)
-		reg.extraTip:Hide()
-		reg.extraTip:Release()
-		reg.extraTip:SetHeight(0)
-		reg.extraTip = nil
-	end
 	reg.extraTipUsed = nil
 	reg.minWidth = 0
 	reg.quantity = nil
 	reg.hasItem = nil
 	reg.item = nil
 	table.wipe(reg.additional)
+	if reg.extraTip then
+		tinsert(self.extraTippool, reg.extraTip)
+		reg.extraTip:Hide()
+		reg.extraTip:Release()
+		reg.extraTip:SetHeight(0)
+		ProcessCallbacks(reg, "extrahide", tooltip, reg.extraTip)
+		reg.extraTip = nil
+	end
 end
 
 -- Function that gets run when a registered tooltip's size changes.
@@ -240,7 +261,7 @@ end
 
 function lib:GetFreeExtraTipObject()
 	if not self.extraTippool then self.extraTippool = {} end
-	return table.remove(self.extraTippool) or ExtraTipClass:new()
+	return tremove(self.extraTippool) or ExtraTipClass:new()
 end
 
 --[[ hookStore:
@@ -389,7 +410,22 @@ function lib:IsRegistered(tooltip)
 	return true
 end
 
-local sortFunc
+--[[-
+	Returns a reference to the extra tip currently attached to the specified tooltip (if any)
+	Intended for tooltip styling AddOns - should only be used to alter cosmetic elements of the tooltip
+	(Use caution when modifying Text line fonts, as LibExtraTip also modifies the fonts)
+	@param tooltip as registered tooltip
+	@return extratip if any attached to tooltip (may be hidden and/or empty)
+	@since 1.324
+]]
+function lib:GetExtraTip(tooltip)
+	if not self.tooltipRegistry then return end
+	local reg = self.tooltipRegistry[tooltip]
+	if reg then
+		return reg.extraTip
+	end
+end
+
 
 --[[-
 	Adds a callback to be informed of any registered tooltip's activity.
@@ -398,17 +434,39 @@ local sortFunc
 		* item: The item being shown (in {@wowwiki:ItemLink} format)
 		* quantity: The quantity of the item being shown (may be nil when the quantity is unavailable)
 		* return values from {@wowwiki:API_GetItemInfo|GetItemInfo} (in order)
-	@param options a table containing the callback type and callback function
+	@param options a table containing entries defining the required callback
+		type (string, required) the callback type, e.g. "item", "spell", and others
+		callback (function, required) the function to be called back when the appropriate event occurs
+		enable (table, optional) a table containing <event>=<boolean> pairs, specifying which events to respond to
+			callbacks are usually only generated for events enabled either by this table, or by the defaultEnable table
+		allevents (boolean, optional) if true always triggers a callback regardless of the event, overrides defaultEnable and options.event table
 	@param priority the priority of the callback (optional, default 200)
 	@since 1.0
 ]]
+local sortFunc
 function lib:AddCallback(options,priority)
 -- Lower priority gets called before higher priority.  Default is 200.
 	if not options then return end
 	local otype = type(options)
 	if otype == "function" then
-		options = { type = "item", callback = options }
-	elseif otype ~= "table" then return end
+		options = {type = "item", callback = options}
+	elseif otype == "table" then
+		-- check required keys
+		if type(options.type) ~= "string" or type(options.callback) ~= "function" then
+			return
+		end
+		-- copy into a new table for our internal use
+		local copyoptions = {type = options.type, callback = options.callback}
+		if options.allevents == true then
+			copyoptions.allevents = true
+		elseif type(options.enable) == "table" then
+			copyoptions.enable = options.enable
+		end
+
+		options = copyoptions
+	else
+		return
+	end
 
 	if not sortFunc then
 		local callbacks = self.callbacks
@@ -423,8 +481,8 @@ function lib:AddCallback(options,priority)
 	end
 
 	self.callbacks[options] = priority or 200
-	table.insert(self.sortedCallbacks,options)
-	table.sort(self.sortedCallbacks,sortFunc)
+	tinsert(self.sortedCallbacks,options)
+	sort(self.sortedCallbacks,sortFunc)
 end
 
 --[[-
@@ -448,7 +506,7 @@ function lib:RemoveCallback(callback)
 	self.callbacks[callback] = nil
 	for index,options in ipairs(self.sortedCallbacks) do
 		if options == callback then
-			table.remove(self.sortedCallbacks, index)
+			tremove(self.sortedCallbacks, index)
 			return true
 		end
 	end
@@ -668,15 +726,22 @@ end
 
 --[[ INTERNAL USE ONLY
 	Activates this version of the library.
-	Configures this library for use by setting up its variables and reregistering any previously registered tooltips.
+	Configures this library for use by setting up its variables and reregistering any previously registered tooltips and callbacks.
 	@since 1.0
 ]]
 function lib:Activate()
-	if self.tooltipRegistry then
-		local oldreg = self.tooltipRegistry
+	local oldreg = self.tooltipRegistry
+	if oldreg then
 		self.tooltipRegistry = nil
 		for tooltip in pairs(oldreg) do
 			self:RegisterTooltip(tooltip)
+		end
+	end
+	local oldcallbacks = self.callbacks
+	if oldcallbacks then
+		self.callbacks = nil
+		for options, priority in pairs(oldcallbacks) do
+			self:AddCallback(options, priority)
 		end
 	end
 end
@@ -996,7 +1061,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			end
 		end,
 
-		SetTalent = function(self, type, index)
+		SetTalent = function(self, index, isInspect, talentGroup, inspectedUnit, classID)
 			OnTooltipCleared(self)
 			local reg = tooltipRegistry[self]
 			reg.ignoreOnCleared = true
