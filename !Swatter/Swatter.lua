@@ -488,15 +488,7 @@ function Swatter.ErrorDisplay(id)
 	local errPos = id - Swatter.loadCount
 	if errPos <= 0 then errPos = errPos - 1 end
 
-	Swatter.Error.curError = "|cffff5533Date:|r "..timestamp..
-		"\n|cffff5533ID:|r "..errPos..
-		"\n|cffff5533Error occured in:|r "..context..
-		"\n|cffff5533Count:|r "..count..
-		"\n|cffff5533Message:|r "..message..
-		"\n|cffff5533Debug:|r\n"..trace..
-		"\n|cffff5533Locals:|r\n"..locals..
-		"\n|cffff5533AddOns:|r\n"..addlist..
-		"\n"
+	Swatter.Error.curError = ERROR_FORMAT:format(timestamp, errPos, context, count, message, trace, locals, addlist)
 	Swatter.Error.selected = false
 	Swatter.ErrorUpdate()
 	Swatter.Error:Show()
