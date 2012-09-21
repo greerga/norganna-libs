@@ -203,7 +203,7 @@ do -- tooltip class definition
 						ret4 = tonumber(s4) or 0 -- health
 						ret5 = tonumber(s5) or 0 -- power
 						ret6 = tonumber(s6) or 0 -- speed
-						if ret7 then
+						if s7 then
 							ret7 = tonumber((strsplit("|", s7))) or 0 -- battlepetID (journal ID. usually 0 for caged pets)
 						else
 							ret7 = 0
