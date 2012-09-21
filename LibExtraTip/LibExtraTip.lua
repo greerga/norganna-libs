@@ -814,7 +814,7 @@ function lib:SetBattlePetAndCount(tooltip, link, quantity, detail)
 	if not link then return end
 	local reg = self.tooltipRegistry[tooltip]
 	if not reg or not reg.NoColumns then return end -- identify BattlePet tooltips by their NoColumns flag
-	local head, speciesID, level, breedQuality, maxHealth, power, speed, battlePetID, tail = strsplit(":", link)
+	local head, speciesID, level, breedQuality, maxHealth, power, speed, tail = strsplit(":", link)
 	if not tail or head:sub(-9) ~= "battlepet" then return end
 	speciesID = tonumber(speciesID)
 	if not speciesID or speciesID < 1 then return end
