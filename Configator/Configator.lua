@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 28
+local LIBRARY_VERSION_MINOR = 29
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -1187,7 +1187,10 @@ function kit:AddControl(id, cType, column, ...)
 	local kids = ctrl.kids
 	local kpos = 0
 
-	local framewidth = frame:GetWidth() - 20
+	local framewidth = frame:GetWidth() - 25
+	if ( self.tabs[id].scroll ) then
+		framewidth = framewidth - 14
+	end
 	column = (column or 0) * framewidth
 	local colwidth = nil
 	if (self.scalewidth) then
@@ -1854,7 +1857,9 @@ function kit:ColumnCheckboxes(id, cols, options)
 	for pos, option in ipairs(options) do
 		setting, text = unpack(option)
 		col = math.floor(row / rows)
-		el = self:AddControl(id, "Checkbox", col/cols, 1, setting, text, true, 1/cols)
+		-- the last agrument (text length) divides by a special factor to improve spacing
+		-- a hard coded number would be better, but I'm doing this as a quick fix for now
+		el = self:AddControl(id, "Checkbox", col/cols, 1, setting, text, true, 1/cols/1.03)
 		row = row + 1
 		if (row % rows == 0) then
 			if (col == 0) then
