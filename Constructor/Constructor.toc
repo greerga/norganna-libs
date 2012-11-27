@@ -1,7 +1,7 @@
 ## Title: Constructor |cff224477(lib)
 ## Notes: Easily build frames in Lua using a table-based definition.
 ##
-## Interface: 50001
+## Interface: 50100
 ## LoadOnDemand: 0
 ##
 ## Version: <%version%> (<%codename%>)

@@ -1,7 +1,7 @@
 ## Title: nLog |cff224477(lib)
 ## Notes: Debugging console to display debugging messages easily.
 ##
-## Interface: 50001
+## Interface: 50100
 ## SavedVariables: nLogData
 ## OptionalDeps: !Swatter, SlideBar, LibDataBroker
 ##
@@ -10,7 +10,7 @@
 ## Author: Norganna's AddOns
 ## X-Part-Of: Libraries
 ## X-Category: Library
-## X-Max-Interface: 50001
+## X-Max-Interface: 50100
 ## X-URL: http://zip.norganna.org/libs/!nLog/
 ## X-Feedback: http://forums.norganna.org
 ##
