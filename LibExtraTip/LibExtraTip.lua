@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 325
+local VERSION_MINOR = 326
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -90,6 +90,9 @@ local iconpath = "Interface\\MoneyFrame\\UI-"
 local goldicon = "%d|T"..iconpath.."GoldIcon:0|t"
 local silvericon = "%s|T"..iconpath.."SilverIcon:0|t"
 local coppericon = "%s|T"..iconpath.."CopperIcon:0|t"
+
+-- Other constants
+local MATHHUGE = math.huge
 
 -- Function that calls all the interested tooltips
 local function ProcessCallbacks(reg, tiptype, tooltip, ...)
@@ -269,7 +272,11 @@ local function OnTooltipSetBattlePet(tooltip, data)
 		local maxHealth = data.maxHealth
 		local power = data.power
 		local speed = data.speed
-		local battlePetID = data.battlePetID or 0
+		local battlePetID = data.battlePetID
+		if not battlePetID or battlePetID >= MATHHUGE then
+			-- it appears Blizzard functions may (rarely) set battlePetID to math.huge
+			battlePetID = 0
+		end
 		local name = data.name
 		local customName = data.customName
 		local petType = data.petType
@@ -278,7 +285,7 @@ local function OnTooltipSetBattlePet(tooltip, data)
 			colcode = NORMAL_FONT_COLOR_CODE
 			r, g, b = NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b
 		else
-			local coltable = ITEM_QUALITY_COLORS[breedQuality]
+			local coltable = ITEM_QUALITY_COLORS[breedQuality] or ITEM_QUALITY_COLORS[0]
 			colcode = coltable.hex
 			r, g, b = coltable.r, coltable.g, coltable.b
 		end
