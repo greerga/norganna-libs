@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 326
+local VERSION_MINOR = 327
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -272,11 +272,7 @@ local function OnTooltipSetBattlePet(tooltip, data)
 		local maxHealth = data.maxHealth
 		local power = data.power
 		local speed = data.speed
-		local battlePetID = data.battlePetID
-		if not battlePetID or battlePetID >= MATHHUGE then
-			-- it appears Blizzard functions may (rarely) set battlePetID to math.huge
-			battlePetID = 0
-		end
+		local battlePetID = data.battlePetID or "0x0000000000000000"
 		local name = data.name
 		local customName = data.customName
 		local petType = data.petType
@@ -295,7 +291,7 @@ local function OnTooltipSetBattlePet(tooltip, data)
 		local link = reg.item
 		if not link then
 			-- it's a bit of a pain that we need to reconstruct a link here, just so it can be chopped up again...
-			link = format("%s|Hbattlepet:%d:%d:%d:%d:%d:%d:%d|h[%s]|h|r", colcode, speciesID, level, breedQuality, maxHealth, power, speed, battlePetID, customName or name)
+			link = format("%s|Hbattlepet:%d:%d:%d:%d:%d:%d:%s|h[%s]|h|r", colcode, speciesID, level, breedQuality, maxHealth, power, speed, battlePetID, customName or name)
 		end
 
 		reg.hasItem = true
@@ -652,28 +648,29 @@ end
 	Adds a line to a registered tooltip.
 	@param tooltip GameTooltip object
 	@param text the contents of the tooltip line
-	@param r red component of the tooltip line color (optional)
-	@param g green component of the tooltip line color (optional)
-	@param b blue component of the tooltip line color (optional)
-	@param embed override the lib's embedMode setting (optional)
+	@param r (0-1) red component of the tooltip line color (optional)
+	@param g (0-1) green component of the tooltip line color (optional)
+	@param b (0-1) blue component of the tooltip line color(optional)
+	@param embed (boolean) override the lib's embedMode setting (optional)
+	@param wrap (boolean) specify line-wrapping for long lines (optional)
 	@see SetEmbedMode
 	@since 1.0
 ]]
-function lib:AddLine(tooltip,text,r,g,b,embed)
+function lib:AddLine(tooltip, text, r, g, b, embed, wrap)
 	local reg = self.tooltipRegistry[tooltip]
 	if not reg then return end
 
 	if reg.NoColumns then
 		embed = false
 	else
-		if r and not g then embed = r r = nil end
+		if r and not g then embed = r r = nil end -- deprecated: (tooltip, text, embed) form
 		if embed == nil then embed = self.embedMode end
 	end
 	if not embed then
-		reg.extraTip:AddLine(text,r,g,b)
+		reg.extraTip:AddLine(text, r, g, b, wrap)
 		reg.extraTipUsed = true
 	else
-		tooltip:AddLine(text,r,g,b)
+		tooltip:AddLine(text, r, g, b, wrap)
 	end
 end
 
