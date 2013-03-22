@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 327
+local VERSION_MINOR = 328
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -804,7 +804,6 @@ end
 
 --[[-
 	Set a (BattlePet) tooltip to (battlepetpet)link
-	(partially based on Blizzard code in BattlePetTooltip.lua)
 	Although Pet Cages cannot be stacked, some Addons may wish to group identical Pets together for display purposes
 	@param tooltip Frame(BattlePetTooltipTemplate) object
 	@param link battlepet link to display in the tooltip
@@ -812,6 +811,9 @@ end
 	@param detail additional detail items to set for the callbacks (optional)
 	@return true if successful
 	@since 1.325
+	
+	-- ref: BattlePetToolTip_Show in FrameXML\BattlePetTooltip.lua
+	-- ref: FloatingBattlePet_Show in FrameXML\FloatingPetBattleTooltip.lua
 ]]
 local BATTLE_PET_TOOLTIP = {}
 function lib:SetBattlePetAndCount(tooltip, link, quantity, detail)
@@ -836,9 +838,9 @@ function lib:SetBattlePetAndCount(tooltip, link, quantity, detail)
 	BATTLE_PET_TOOLTIP.speed = tonumber(speed)
 	local customName = strmatch(tail, "%[(.+)%]")
 	if (customName ~= BATTLE_PET_TOOLTIP.name) then
-		BATTLE_PET_TOOLTIP.customName = customName;
+		BATTLE_PET_TOOLTIP.customName = customName
 	else
-		BATTLE_PET_TOOLTIP.customName = nil;
+		BATTLE_PET_TOOLTIP.customName = nil
 	end
 
 	-- set up reg
@@ -856,6 +858,28 @@ function lib:SetBattlePetAndCount(tooltip, link, quantity, detail)
 	-- load the tooltip (will trigger a call to OnTooltipSetBattlePet)
 	reg.ignoreOnCleared = true
 	BattlePetTooltipTemplate_SetBattlePet(tooltip, BATTLE_PET_TOOLTIP)
+
+	local owned = C_PetJournal.GetOwnedBattlePetString(speciesID)
+	tooltip.Owned:SetText(owned)
+	if owned == nil then
+		if tooltip.Delimiter then
+			-- if .Delimiter is present it requires special handling (FloatingBattlePetTooltip)
+			tooltip:SetSize(260,150)
+			tooltip.Delimiter:ClearAllPoints()
+			tooltip.Delimiter:SetPoint("TOPLEFT",tooltip.SpeedTexture,"BOTTOMLEFT",-6,-5)
+		else
+			tooltip:SetSize(260,122)
+		end
+	else
+		if tooltip.Delimiter then
+			tooltip:SetSize(260,164)
+			tooltip.Delimiter:ClearAllPoints()
+			tooltip.Delimiter:SetPoint("TOPLEFT",tooltip.SpeedTexture,"BOTTOMLEFT",-6,-19)
+		else
+			tooltip:SetSize(260,136)
+		end
+	end
+
 	tooltip:Show()
 	reg.ignoreOnCleared = nil
 	return true
