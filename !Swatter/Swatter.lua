@@ -53,6 +53,7 @@ SwatterData = {
 	enabled = true,
 	autoshow = true,
 	warning = true,
+	combat = false,
 	errors = {},
 }
 
@@ -211,7 +212,7 @@ local function OnError(msg, frame, stack, etype, ...)
 				chat("|cffffaa11Note: Swatter will continue to catch blocked actions but this is the last time this session that we'll tell you about it.|r")
 				Swatter.blockWarn = true
 			end
-		elseif (SwatterData.autoshow) then
+		elseif SwatterData.autoshow and (not InCombatLockdown() or SwatterData.combat) then
 			Swatter.ErrorUpdate()
 			Swatter.Error:Show()
 		else
@@ -683,6 +684,8 @@ SlashCmdList["SWATTER"] = function(msg)
 		chat("  /swat noauto    -  Swatter will only show an error in chat")
 		chat("  /swat warn      -  Enables swatter's blocked warnings")
 		chat("  /swat nowarn    -  Disables swatter's blocked warnings")
+		chat("  /swat combat    -  Enable autopopup during combat, if autoshow is also enabled")
+		chat("  /swat nocombat  -  Prevent autopopup during combat")
 		chat("  /swat clear     -  Swatter will clear the list of errors")
 	elseif (msg == "show") then
 		Swatter.ErrorShow()
@@ -704,6 +707,12 @@ SlashCmdList["SWATTER"] = function(msg)
 	elseif (msg == "noauto") then
 	   SwatterData.autoshow = false
 	   chat("Swatter will print into chat instead of popping up")
+	elseif msg == "combat" then
+		SwatterData.combat = true
+		chat("Swatter will popup errors during combat (if autoshow is enabled as well).")
+	elseif msg == "nocombat" then
+		SwatterData.combat = false
+		chat("Swatter will not popup errors during combat")
 	elseif (msg == "clear") then
 		Swatter.Error:Hide()
 		SwatterData.errors = {}
