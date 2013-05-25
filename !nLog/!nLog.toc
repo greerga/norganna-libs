@@ -1,7 +1,7 @@
 ## Title: nLog |cff224477(lib)
 ## Notes: Debugging console to display debugging messages easily.
 ##
-## Interface: 50200
+## Interface: 50300
 ## SavedVariables: nLogData
 ## OptionalDeps: !Swatter, SlideBar, LibDataBroker
 ##
