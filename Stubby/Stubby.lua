@@ -219,13 +219,14 @@ local config = {
 	events = {},
 }
 
-local DebugLib = LibStub("DebugLib")
-local debug, assert
+local DebugLib = LibStub("DebugLib", true)
+local debug
+local assert = assert -- fallback to standard lua assert function
 if DebugLib then
 	debug, assert = DebugLib("Stubby")
 else
 	function debug() end
-	assert = debug
+	-- leave assert as it is
 end
 
 StubbyConfig = {}
