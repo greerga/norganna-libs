@@ -10,7 +10,7 @@
 ## Author: Norganna's AddOns
 ## X-Part-Of: Libraries
 ## X-Category: Library
-## X-Max-Interface: 50300
+## X-Max-Interface: 50400
 ## X-URL: http://zip.norganna.org/libs/TipHelper/
 ## X-Feedback: http://forums.norganna.org
 ##
