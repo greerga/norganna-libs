@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 29
+local LIBRARY_VERSION_MINOR = 30
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -1454,6 +1454,29 @@ function kit:AddControl(id, cType, column, ...)
 			el.slave = slave
 		end
 		el:SetScript("OnValueChanged", function(...)
+			if el.isReEntering then
+				el.isReEntering = nil
+			else
+				local minValue, maxValue = el:GetMinMaxValues()
+				local value = el:GetValue()
+				if value > minValue and value < maxValue then
+					-- value is no longer aligned to SetValueStep after WoW5.4, we need to check it ourselves
+					local step = el:GetValueStep()
+					local newValue = floor(value / step + 0.5) * step
+					-- check to see if realigning the value has pushed it outside min/max limits
+					if newValue < minValue then
+						newValue = minValue
+					elseif newValue > maxValue then
+						newValue = maxValue
+					end
+					if value ~= newValue then
+						-- setting a new value will trigger a re-entrant call to OnValueChanged...
+						el.isReEntering = true -- notify the triggered call that we are re-entering
+						el:SetValue(newValue)
+						return -- let the triggered call take over
+					end
+				end
+			end
 			self:ChangeSetting(...)
 			if (slave) then
 				local myVal = el:GetValue()
