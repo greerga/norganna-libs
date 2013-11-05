@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 30
+local LIBRARY_VERSION_MINOR = 31
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -1453,31 +1453,21 @@ function kit:AddControl(id, cType, column, ...)
 			slave:SetNumber((el:GetValue())/100)
 			el.slave = slave
 		end
-		el:SetScript("OnValueChanged", function(...)
-			if el.isReEntering then
-				el.isReEntering = nil
-			else
-				local minValue, maxValue = el:GetMinMaxValues()
-				local value = el:GetValue()
-				if value > minValue and value < maxValue then
-					-- value is no longer aligned to SetValueStep after WoW5.4, we need to check it ourselves
-					local step = el:GetValueStep()
-					local newValue = floor(value / step + 0.5) * step
-					-- check to see if realigning the value has pushed it outside min/max limits
-					if newValue < minValue then
-						newValue = minValue
-					elseif newValue > maxValue then
-						newValue = maxValue
-					end
-					if value ~= newValue then
-						-- setting a new value will trigger a re-entrant call to OnValueChanged...
-						el.isReEntering = true -- notify the triggered call that we are re-entering
-						el:SetValue(newValue)
-						return -- let the triggered call take over
-					end
-				end
-			end
-			self:ChangeSetting(...)
+		el:SetScript("OnValueChanged", function(element, value)
+			-- From WoW 5.4, dragging the slider's thumb results in values that are not correctly aligned to ValueStep [CNFG-107]
+			-- Values set by calling SetValue will be correctly aligned: use this to correct any erroneous values
+			-- When calling SetValue from within OnValueChanged, protect against function re-entry
+			-- Retrieve corrected value from GetValue; check it has actually changed before continuing
+			if element.isReEntering then return end
+			element.isReEntering = true
+			element:SetValue(value)
+			element.isReEntering = nil
+			value = element:GetValue()
+			if value == element.prevValue then return end
+			element.prevValue = value
+			-- (this correction code should be removed when Blizzard fixes the problem)
+
+			self:ChangeSetting(element, value)
 			if (slave) then
 				local myVal = el:GetValue()
 				if slave:GetNumber() ~= myVal/100 then
