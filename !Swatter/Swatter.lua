@@ -115,8 +115,13 @@ local function addSlideIcon()
 	end
 end
 
-function Swatter.ChatMsg(msg)
-	DEFAULT_CHAT_FRAME:AddMessage(msg)
+do -- wrap chat output in a pcall - it fails if called during logout
+	local function protectChat(msg)
+		DEFAULT_CHAT_FRAME:AddMessage(msg)
+	end
+	function Swatter.ChatMsg(msg)
+		pcall(protectChat, msg)
+	end
 end
 
 local chat = Swatter.ChatMsg
@@ -155,7 +160,10 @@ local function SwatterLink(id, context, hex)
 	-- Otherwise it would cause a disconnect {SWAT-12}
 end
 
+local flagBlockReentry = false -- Prevent re-entering OnError if an error occurs within it. This then disables OnError for the rest of the session.
+
 local function OnError(msg, frame, stack, etype, ...)
+	flagBlockReentry = true
 	if type(msg) ~= "string" or msg == "" then
 		msg = "Unknown Error"
 	end
@@ -165,9 +173,17 @@ local function OnError(msg, frame, stack, etype, ...)
 		frame = Swatter.nilFrame
 	end
 	if type(stack) ~= "string" or stack == "" then
-		stack = debugstack(DEBUG_LEVEL, 20, 20)
+		local test, result = pcall(debugstack, DEBUG_LEVEL, 20, 20)
+		if test then
+			stack = result
+		else
+			stack = "debugstack error :"..result
+		end
 	end
-	local locals = debuglocals(DEBUG_LEVEL)
+	local test, locals = pcall(debuglocals, DEBUG_LEVEL)
+	if not test then
+		locals = "debuglocals error :"..locals
+	end
 
 	local context
 	if (not frame.Swatter) then frame.Swatter = {} end
@@ -219,12 +235,13 @@ local function OnError(msg, frame, stack, etype, ...)
 			chat("|cffffaa11Swatter caught error:|r "..SwatterLink(id, context))
 		end
 	end
+	flagBlockReentry = false
 end
 
 -- Wrappers around OnError to control which parameters get passed through
 local origHandler = geterrorhandler()
 local function OnErrorHandler(msg)
-	if SwatterData.enabled then
+	if not flagBlockReentry and SwatterData.enabled then
 		OnError(msg)
 	else
 		return origHandler(msg) -- trying tailcall here, to see if it removes this stub from the stack
