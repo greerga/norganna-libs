@@ -20,7 +20,7 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ]]
 
-local DEBUG_LEVEL = 4
+local DEBUG_LEVEL = 5
 
 -- Check to see if another debugging aid has been loaded.
 for addon, name in pairs({
@@ -244,6 +244,7 @@ local function OnErrorHandler(msg)
 	if not flagBlockReentry and SwatterData.enabled then
 		OnError(msg)
 	else
+		flagBlockReentry = false
 		return origHandler(msg) -- trying tailcall here, to see if it removes this stub from the stack
 	end
 end
@@ -708,6 +709,7 @@ SlashCmdList["SWATTER"] = function(msg)
 		Swatter.ErrorShow()
 	elseif (msg == "enable") then
 		SwatterData.enabled = true
+		flagBlockReentry = false
 		chat("Swatter will now catch errors")
 	elseif (msg == "disable") then
 		SwatterData.enabled = false
@@ -736,6 +738,7 @@ SlashCmdList["SWATTER"] = function(msg)
 		Swatter.errorOrder = {}
 		Swatter.loadCount = 0
 		Swatter.lastShown = 0
+		flagBlockReentry = false
 		--Note: we are not killing the frame.Swatter values - I am hoping that they are transient to the game session and aren't saved anywhere
 		--Swatter.ErrorUpdate()
 		chat("Swatter errors have been cleared")
