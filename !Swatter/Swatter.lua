@@ -20,7 +20,7 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ]]
 
-local DEBUG_LEVEL = 5
+local DEBUG_LEVEL = 4
 
 -- Check to see if another debugging aid has been loaded.
 for addon, name in pairs({
@@ -115,9 +115,11 @@ local function addSlideIcon()
 	end
 end
 
-do -- wrap chat output in a pcall - it fails if called during logout
+do -- protect chat function, AddMessage can fail during certain events, e.g. at logout
 	local function protectChat(msg)
-		DEFAULT_CHAT_FRAME:AddMessage(msg)
+		if DEFAULT_CHAT_FRAME then
+			DEFAULT_CHAT_FRAME:AddMessage(msg)
+		end
 	end
 	function Swatter.ChatMsg(msg)
 		pcall(protectChat, msg)
@@ -160,29 +162,18 @@ local function SwatterLink(id, context, hex)
 	-- Otherwise it would cause a disconnect {SWAT-12}
 end
 
-local flagBlockReentry = false -- Prevent re-entering OnError if an error occurs within it. This then disables OnError for the rest of the session.
+local flagBlockReentry -- Prevent re-entering OnError if an error occurs within it
 
 local function OnError(msg, frame, stack, etype, ...)
-	flagBlockReentry = true
 	if type(msg) ~= "string" or msg == "" then
 		msg = "Unknown Error"
 	end
+	flagBlockReentry = msg
+
 	if type(frame) == "string" then
 		frame = Swatter.NamedFrame(frame) or Swatter.nilFrame
 	elseif type(frame) ~= "table" or type(frame.GetName) ~= "function" then
 		frame = Swatter.nilFrame
-	end
-	if type(stack) ~= "string" or stack == "" then
-		local test, result = pcall(debugstack, DEBUG_LEVEL, 20, 20)
-		if test then
-			stack = result
-		else
-			stack = "debugstack error :"..result
-		end
-	end
-	local test, locals = pcall(debuglocals, DEBUG_LEVEL)
-	if not test then
-		locals = "debuglocals error :"..locals
 	end
 
 	local context
@@ -194,19 +185,26 @@ local function OnError(msg, frame, stack, etype, ...)
 	if not (id and SwatterData.errors[id]) then
 		context = frame:GetName()
 		if type(context) ~= "string" or context == "" then context = "Unknown" end -- paranoia
-		local timestamp = date("%Y-%m-%d %H:%M:%S");
-		local addons = Swatter.GetAddOns()
-		tinsert(SwatterData.errors, {
+		local newentry = {
 			context = context,
-			timestamp = timestamp,
-			addons = addons,
+			timestamp = date("%Y-%m-%d %H:%M:%S"),
 			message = msg,
-			stack = stack,
-			locals = locals,
 			count = 0,
-		})
+		}
+		tinsert(SwatterData.errors, newentry)
 		id = #(SwatterData.errors)
 		frame.Swatter[msg] = id
+		tinsert(Swatter.errorOrder, id)
+
+
+		if type(stack) ~= "string" or stack == "" then
+			stack = debugstack(DEBUG_LEVEL, 20, 20)
+		end
+		newentry.stack = stack
+
+		newentry.locals = debuglocals(DEBUG_LEVEL)
+
+		newentry.addons = Swatter.GetAddOns()
 	else
 		context = SwatterData.errors[id].context
 		for pos, errid in ipairs(Swatter.errorOrder) do
@@ -215,8 +213,8 @@ local function OnError(msg, frame, stack, etype, ...)
 				break
 			end
 		end
+		tinsert(Swatter.errorOrder, id)
 	end
-	tinsert(Swatter.errorOrder, id)
 
 	local err = SwatterData.errors[id]
 	local count = err.count or 0
@@ -235,17 +233,24 @@ local function OnError(msg, frame, stack, etype, ...)
 			chat("|cffffaa11Swatter caught error:|r "..SwatterLink(id, context))
 		end
 	end
-	flagBlockReentry = false
+	flagBlockReentry = nil
 end
 
 -- Wrappers around OnError to control which parameters get passed through
 local origHandler = geterrorhandler()
 local function OnErrorHandler(msg)
-	if not flagBlockReentry and SwatterData.enabled then
-		OnError(msg)
+	if not SwatterData.enabled then
+		return origHandler(msg) -- tailcall here, to remove this stub from the stack
+	elseif flagBlockReentry then
+		-- simple fallback handler: just report old and new messages to chat
+		-- (we do not call origHandler in case that encounters the same error, causing an infinite loop)
+		chat("Swatter: Error detected within OnError function")
+		chat("Old error: "..flagBlockReentry)
+		chat("New error: "..msg)
+		flagBlockReentry = nil
+		return
 	else
-		flagBlockReentry = false
-		return origHandler(msg) -- trying tailcall here, to see if it removes this stub from the stack
+		OnError(msg)
 	end
 end
 seterrorhandler(OnErrorHandler)
@@ -495,12 +500,13 @@ function Swatter.ErrorDisplay(id)
 	local timestamp = err.timestamp or "Unavailable"
 	local addlist = err.addons or "  Unavailable"
 	local context = err.context or "Anonymous"
+	local trace = err.stack or "Unavailable"
 	local locals = err.locals or "None"
 
 	local message = err.message:gsub("(.-):(%d+): ", "%1 line %2:\n   "):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)`", ": %1"):gsub("|", "||"):gsub("{{{", "|cffff8855"):gsub("}}}", "|r")
 	--Hide users account name if it is a saved variable related error
 	message = message:gsub("(.-Account\\)(.-)(\\SavedVariables.*)", "%1BLANK%3")
-	local trace = "   "..err.stack:gsub("Interface\\AddOns\\", ""):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)'", ": %1()"):gsub(": in function <(.-)>", ":\n   %1"):gsub(": in main chunk ", ": "):gsub("\n$",""):gsub("\n", "\n   ")
+	trace = "   "..trace:gsub("Interface\\AddOns\\", ""):gsub("Interface(\\%w+\\)", "..%1"):gsub(": in function `(.-)'", ": %1()"):gsub(": in function <(.-)>", ":\n   %1"):gsub(": in main chunk ", ": "):gsub("\n$",""):gsub("\n", "\n   ")
 	local count = err.count
 	if (count > 999) then count = "\226\136\158" --[[Infinity]] end
 
