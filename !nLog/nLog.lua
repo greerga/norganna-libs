@@ -235,7 +235,7 @@ function nLog.OnUpdate(frame, delay)
 end
 
 function nLog.OnClickChatPrintButton()
-	nLogData.chatPrint = (nLog.Message.ChatPrint:GetChecked() == 1)
+	nLogData.chatPrint = not not nLog.Message.ChatPrint:GetChecked() -- force to boolean
 end
 
 function nLog.MessageShow()
@@ -275,7 +275,7 @@ function nLog.ShowFilteredMessage(fidx)
 		local text = string.format("|cffffaa11Date:|r  %s\n|cffffaa11MsgId:|r %s\n|cffffaa11AddOn:|r %s\n|cffffaa11Type:|r  %s\n|cffffaa11Level:|r %s\n|cffffaa11Title:|r %s\n|cffffaa11Message:|r\n%s\n", ts, mId, mAddon, mType, mLevelName, mTitle, msg)
 		nLog.Message.Box:SetText(text)
 		if select(4, GetBuildInfo() ) >= 30000 then
-			local nPos = FauxScrollFrame_GetOffset(nLogMessageScroll)	
+			local nPos = FauxScrollFrame_GetOffset(nLogMessageScroll)
 			if (nPos >= fidx) then
 				FauxScrollFrame_OnVerticalScroll(nLog.Message.MsgScroll, (fidx-1)*ENTRY_SIZE, LOG_LINES, nLog.UpdateDisplay)
 			elseif (nPos + LOG_LINES < fidx) then
@@ -383,9 +383,9 @@ function nLog.FilterUpdate()
 		end
 	end
 
-	if (nLog.Message.AutoScroll:GetChecked() == 1) then
+	if nLog.Message.AutoScroll:GetChecked() then
 		nLog.ShowFilteredMessage(#nLog.filtered)
-	end	
+	end
 
 end
 
@@ -433,7 +433,7 @@ end
 
 function nLog.SaveFilteredMessages()
 	nLog.FilterUpdate()
-	
+
 	local save = { }
 	chat( ("Filtered Count: %d"):format(#nLog.filtered))
 
@@ -450,7 +450,7 @@ function nLog.SaveFilteredMessages()
 				tmsg.addon = mAddon
 				tmsg.type = mType
 				tmsg.level = mLevelName
-				tmsg.title = mTitle	
+				tmsg.title = mTitle
 				tmsg.message = msg
 				tinsert(save, tmsg)
 			else
@@ -708,7 +708,7 @@ if LibStub then
 				icon = "Interface\\AddOns\\!nLog\\Textures\\nLogIcon",
 				OnClick = function(self, button) toggle(self, button) end,
 				})
-	
+
 	function LDBButton:OnTooltipShow()
 		self:AddLine("Norganna's Log",  1,1,0.5, 1)
 		self:AddLine("nLog is a debugging utility designed for use by AddOn authors or professional testers only.",  1,1,0.5, 1)
@@ -725,4 +725,4 @@ if LibStub then
 	function LDBButton:OnLeave()
 		GameTooltip:Hide()
 	end
-end	
+end
