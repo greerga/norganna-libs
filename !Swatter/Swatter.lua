@@ -23,15 +23,26 @@
 local DEBUG_LEVEL = 4
 
 -- Check to see if another debugging aid has been loaded.
-for addon, name in pairs({
+local otherdebug = {
 	['!buggrabber'] = 'BugGrabber',
 	['!improvederrorframe'] = 'ImprovedErrorFrame',
-}) do
-  local enabled = select(4, GetAddOnInfo(addon))
-  if enabled then
-	  DEFAULT_CHAT_FRAME:AddMessage("|cffffaa11Swatter is not loaded, because you are running "..name.."|r")
-	  return
-  end
+}
+if GetAddOnEnableState then -- WoW 6.0 or later
+	for addon, name in pairs(otherdebug) do
+		local enabled = GetAddOnEnableState(UnitName("player"), addon)
+		if enabled and enabled > 0 then
+		  DEFAULT_CHAT_FRAME:AddMessage("|cffffaa11Swatter is not loaded, because you are running "..name.."|r")
+		  return
+		end
+	end
+else -- WoW 5.X - delete this section after 6.0 goes fully live
+	for addon, name in pairs(otherdebug) do
+		local enabled = select(4, GetAddOnInfo(addon))
+		if enabled then
+		  DEFAULT_CHAT_FRAME:AddMessage("|cffffaa11Swatter is not loaded, because you are running "..name.."|r")
+		  return
+		end
+	end
 end
 
 Swatter = {
@@ -45,7 +56,7 @@ Swatter = {
 
 Swatter.Version="<%version%>"
 if (Swatter.Version == "<%".."version%>") then
-	Swatter.Version = "5.1.DEV"
+	Swatter.Version = "6.0.DEV"
 end
 SWATTER_VERSION = Swatter.Version
 
@@ -77,7 +88,7 @@ hooksecurefunc("SetAddOnDetail", addOnDetail)
 
 -- End SetAddOnDetail function hook.
 
-LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
+LibStub("LibRevision"):Set("$URL$","$Rev$","6.0.DEV.", 'auctioneer', 'libs')
 
 local function toggle()
 	if Swatter.Error:IsVisible() then
@@ -298,9 +309,8 @@ function Swatter.GetAddOns()
 
 	local addons = {}
 	for i = 1, GetNumAddOns() do
-		local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(i)
-		local loaded = IsAddOnLoaded(i)
-		if (loaded) then
+		if IsAddOnLoaded(i) then
+			local name = GetAddOnInfo(i)
 			local version = GetAddOnMetadata(i, "Version")
 			local addition = GetAddOnMetadata(i, "X-Swatter-Extra")
 			if not version then
