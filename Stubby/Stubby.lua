@@ -198,6 +198,11 @@
 ]]
 LibStub("LibRevision"):Set("$URL$","$Rev$","5.1.DEV.", 'auctioneer', 'libs')
 
+-- ### Hybrid code to enable use in both WoW5.4 and WoW6.0
+-- ### Set a flag HYBRID5 to indicate when we are *not* in WoW6.0 or later
+local _,_,_,tocVersion = GetBuildInfo()
+local HYBRID5 = (tocVersion < 60000)
+
 -------------------------------------------------------------------------------
 -- Error codes
 -------------------------------------------------------------------------------
@@ -888,10 +893,10 @@ end
 
 function searchForNewAddOns()
 	local addonCount = GetNumAddOns()
-	local name, title, notes, enabled, loadable, reason, security, requiresLoad
 	for i=1, addonCount do
-		requiresLoad = false
-		name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(i)
+		local requiresLoad = false
+		local name, title, notes, loadable, oldloadable = GetAddOnInfo(i)
+		if HYBRID5 then loadable = oldloadable end
 		if (IsAddOnLoadOnDemand(i) and shouldInspectAddOn(name) and loadable) then
 			local addonDeps = { GetAddOnDependencies(i) }
 			for _, dependancy in pairs(addonDeps) do
@@ -911,8 +916,9 @@ function runBootCodes()
 	if (not StubbyConfig.boots) then return end
 	for addon, boots in pairs(StubbyConfig.boots) do
 		if (not IsAddOnLoaded(addon) and IsAddOnLoadOnDemand(addon)) then
-			local _, _, _, _, loadable = GetAddOnInfo(addon)
-			if (loadable) then
+			local _, _, _, loadable, oldloadable = GetAddOnInfo(addon)
+			if HYBRID5 then loadable = oldloadable end
+			if loadable then
 				for bootname, boot in pairs(boots) do
 					RunScript(boot)
 				end
