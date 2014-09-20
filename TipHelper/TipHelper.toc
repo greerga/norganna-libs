@@ -3,7 +3,8 @@
 ##
 ## Interface: 50400
 ## LoadOnDemand: 0
-## OptionalDependencies: !nLog, LibExtraTip
+## Dependencies: LibExtraTip
+## OptionalDependencies: !nLog
 ##
 ## Version: <%version%> (<%codename%>)
 ## Revision: $Id$
