@@ -1,5 +1,5 @@
 ## Title: SlideBar |cff224477(lib)
-## Notes: Allows alternative placement of minimap icons into an expanding bar that sits off the side of the screen, just below the Minimap, by default.
+## Notes: Allows alternative placement of minimap icons into an expanding bar that sits off the side of the screen.
 ## OptionalDeps: !Swatter, LibDataBroker
 ##
 ## Interface: 60000
