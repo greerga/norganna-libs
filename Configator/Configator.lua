@@ -1298,7 +1298,7 @@ function kit:AddControl(id, cType, column, ...)
 		control = el
 		last = el
 	elseif (cType == "Selectbox") then
-		local level, list, setting, text, maxLabelLength = ...
+		local level, list, setting, width, text, maxLabelLength = ...
 		local indent = 10 * (level or 1)
 		-- Selectbox
 		local tmpName = lib.CreateAnonName()
@@ -1311,11 +1311,19 @@ function kit:AddControl(id, cType, column, ...)
 				list = function() return self.getter(listVar) end
 			end
 		end
+		
+		if type(width) ~= "number" then
+			if type(width) == "string" then
+				maxLabelLength = text
+				text = width
+			end
+			width = 140
+		end
 
 		local SelectBox = LibStub:GetLibrary("SelectBox")
-		el = SelectBox:Create(tmpName, content, 140, function(...) self:ChangeSetting(...) end, list, "Default")
+		el = SelectBox:Create(tmpName, content, width, function(...) self:ChangeSetting(...) end, list, "Default")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, column+indent - 5, colwidth or 140, 22, 4)
+		anchorPoint(content, el, last, column+indent - 5, colwidth or width, 22, 4)
 		el.list = list
 		el.setting = setting
 		el.stype = "SelectBox";
@@ -1329,7 +1337,7 @@ function kit:AddControl(id, cType, column, ...)
 			el:SetJustifyH("LEFT")
 			kpos = kpos+1 kids[kpos] = el
 			if (colwidth) then colwidth = colwidth - 15 end
-			anchorPoint(content, el, last, (colwidth or 140)+35+column+indent, (colwidth or maxLabelLength), 14, -3)
+			anchorPoint(content, el, last, (colwidth or width)+35+column+indent, (colwidth or maxLabelLength), 14, -3)
 			el:SetText(text)
 			control.textEl = el
 		end
