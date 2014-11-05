@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 31
+local LIBRARY_VERSION_MINOR = 32
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -1311,7 +1311,7 @@ function kit:AddControl(id, cType, column, ...)
 				list = function() return self.getter(listVar) end
 			end
 		end
-		
+
 		if type(width) ~= "number" then
 			if type(width) == "string" then
 				maxLabelLength = text
