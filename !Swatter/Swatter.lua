@@ -27,21 +27,12 @@ local otherdebug = {
 	['!buggrabber'] = 'BugGrabber',
 	['!improvederrorframe'] = 'ImprovedErrorFrame',
 }
-if GetAddOnEnableState then -- WoW 6.0 or later
-	for addon, name in pairs(otherdebug) do
-		local enabled = GetAddOnEnableState(UnitName("player"), addon)
-		if enabled and enabled > 0 then
-		  DEFAULT_CHAT_FRAME:AddMessage("|cffffaa11Swatter is not loaded, because you are running "..name.."|r")
-		  return
-		end
-	end
-else -- WoW 5.X - delete this section after 6.0 goes fully live
-	for addon, name in pairs(otherdebug) do
-		local enabled = select(4, GetAddOnInfo(addon))
-		if enabled then
-		  DEFAULT_CHAT_FRAME:AddMessage("|cffffaa11Swatter is not loaded, because you are running "..name.."|r")
-		  return
-		end
+local player = UnitName("player")
+for addon, name in pairs(otherdebug) do
+	local enabled = GetAddOnEnableState(player, addon)
+	if enabled and enabled > 0 then
+	  DEFAULT_CHAT_FRAME:AddMessage("|cffffaa11Swatter is not loaded, because you are running "..name.."|r")
+	  return
 	end
 end
 
