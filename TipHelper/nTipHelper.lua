@@ -43,8 +43,13 @@
 if not LibStub then -- LibStub is included in LibExtraTip
 	error("TipHelper cannot load because LibExtraTip is not loaded (LibStub missing)")
 end
-local MAJOR,MINOR,REVISION = "nTipHelper", 1, 6
+local MAJOR,MINOR = "nTipHelper", 1
 local LIBSTRING = MAJOR..":"..MINOR
+
+-- REVISION cannot be a SVN Revison in case this library is used in multiple repositories
+-- Should be updated manually with each (non-trivial) change
+local REVISION = 7
+
 local lib = LibStub:NewLibrary(LIBSTRING,REVISION)
 if not lib then return end
 
