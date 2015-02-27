@@ -161,12 +161,15 @@ do -- tooltip class definition
 	-- where they are assigned values, comments will show what each one represents
 	local lastDecodeLink
 	local linkType,ret1,ret2,ret3,ret4,ret5,ret6,ret7,ret8,ret9,ret10
-	function lib:DecodeLink(link, info)
+	function lib:DecodeLink(link, info, bonus)
 		if not link then
 			return
 		end
 		if type(info) ~= "table" then
 			info = nil
+		end
+		if type(bonus) ~= "table" then
+			bonus = nil
 		end
 
 		if link ~= lastDecodeLink then
@@ -174,7 +177,7 @@ do -- tooltip class definition
 			linkType = nil
 			local vartype = type(link)
 			if (vartype == "string") then
-				local header,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10 = strsplit(":", link)
+				local header,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12 = strsplit(":", link, 13)
 				lType = header:sub(-4) -- get last 4 letters of link type
 				if lType == "item" then
 					ret1 = tonumber(s1) -- itemId
@@ -186,11 +189,11 @@ do -- tooltip class definition
 						ret9 = tonumber(s6) or 0 -- gem 4 (gem bonus)
 						ret2 = tonumber(s7) or 0 -- suffix
 						ret5 = tonumber(s8) or 0 -- seed
-						-- s9 uLevel is not used
-						if s10 then
-							ret10 = tonumber((strsplit("|", s10))) or 0 -- reforge
+						-- s9 (uLevel), s10 (upgrades), s11 (instanceID) not used
+						if s12 and s12:byte(1) ~= 48 then -- bonus counter is not '0'
+							ret10 = s12:match("%d+:([^|]+)") -- string containing the bonusIDs (separated by ':')
 						else
-							ret10 = 0 -- reforge
+							ret10 = nil
 						end
 						ret3 = lib:GetFactor(ret2, ret5) -- factor
 						linkType = "item"
@@ -227,9 +230,9 @@ do -- tooltip class definition
 				end
 			elseif (vartype == "number") then
 				-- link is the itemId
-				-- linkType,itemId, suffix,factor,enchant,seed, gem1,gem2,gem3,gemBonus, reforge
+				-- linkType,itemId, suffix,factor,enchant,seed, gem1,gem2,gem3,gemBonus, bonuses(string)
 				linkType,ret1, ret2,ret3,ret4,ret5, ret6,ret7,ret8,ret9, ret10 =
-					"item",link, 0,0,0,0, 0,0,0,0, 0
+					"item",link, 0,0,0,0, 0,0,0,0, nil
 				if info then
 					-- only need to create a proper link if it will be needed for the info table
 					local _, newlink = GetItemInfo(link)
@@ -254,10 +257,17 @@ do -- tooltip class definition
 				info.itemGem2 = ret7
 				info.itemGem3 = ret8
 				info.itemGemBonus = ret9
-				info.itemReforge = ret10
+				info.itemBonuses = ret10
 			end
-			-- linkType,itemId, suffix,factor,enchant,seed, gem1,gem2,gem3,gemBonus, reforge
-			 return linkType,ret1, ret2,ret3,ret4,ret5, ret6,ret7,ret8,ret9, ret10
+			if bonus and ret10 then
+				-- this is potentially an expensive operation, we only perform it if caller provided a table for us to store bonuses into
+				-- caller is expected to pre-wipe the table (or caller can accumulate data from several items by not wiping)
+				for b in ret10:gmatch("%d+") do
+					tinsert(bonus, tonumber(b))
+				end
+			end
+			-- linkType,itemId, suffix,factor,enchant,seed, gem1,gem2,gem3,gemBonus, bonuses(string)
+			return linkType,ret1, ret2,ret3,ret4,ret5, ret6,ret7,ret8,ret9, ret10
 		elseif linkType == "battlepet" then
 			if info then
 				info.linkType = linkType
