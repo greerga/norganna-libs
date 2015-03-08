@@ -644,6 +644,7 @@ for i=1, 16 do
 	line.text:SetPoint("RIGHT", line, "RIGHT")
 	line.text:SetFont("Interface\\AddOns\\!nLog\\VeraMono.TTF", 11)
 	line.text:SetJustifyH("LEFT")
+	line.text:SetWordWrap(false)
 	line.SetText = function(obj, ...) obj.text:SetText(...) end
 	line:SetText("LINE "..i)
 end
