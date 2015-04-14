@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 330
+local VERSION_MINOR = 331
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -1404,6 +1404,7 @@ do -- ExtraTip "class" definition
 		local n = numTips + 1
 		numTips = n
 		local o = CreateFrame("GameTooltip",LIBSTRING.."Tooltip"..n,UIParent,"GameTooltipTemplate")
+		o:SetClampedToScreen(false) -- workaround for tooltip overlap problem [LTT-55]: allow extra tip to get pushed off screen instead
 
 		for _,method in pairs(methods) do
 			o[method] = self[method]
