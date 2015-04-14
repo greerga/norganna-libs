@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 10
+local LIBRARY_VERSION_MINOR = 11
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
