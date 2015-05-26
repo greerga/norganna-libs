@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 11
+local LIBRARY_VERSION_MINOR = 12
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -363,7 +363,11 @@ else
 		elseif event == "ADDON_LOADED" and arg == "SlideBar" then
 			if type(SlideBarConfig) == "table" then
 				-- check/update existing saved vars
-				SlideBarConfig.enabled = toboolean(SlideBarConfig.enabled)
+				if SlideBarConfig.enabled == nil then
+					SlideBarConfig.enabled = true -- old default
+				else
+					SlideBarConfig.enabled = toboolean(SlideBarConfig.enabled)
+				end
 				SlideBarConfig.locked = toboolean(SlideBarConfig.locked)
 				SlideBarConfig.visibility = toboolean(SlideBarConfig.visibility)
 				SlideBarConfig.position = tonumber(SlideBarConfig.position)
@@ -775,8 +779,7 @@ function private.GUI()
 
 	frame.config.help = frame.config:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	frame.config.help:SetText("Click on a button above to Show or Hide it from the Slidebar addon")
-	frame.config.help:SetPoint("TOPLEFT", frame.config,"LEFT" , 15, 150)
-	frame.config.help:SetPoint("BOTTOMRIGHT", frame.config,"BOTTOMRIGHT" , -15, 0)
+	frame.config.help:SetPoint("TOPLEFT", frame.config,"TOPLEFT" , 15, -240)
 
 	frame.config.enableCheck = CreateFrame("CheckButton", "nSlideBarenableCheck", frame.config, "InterfaceOptionsCheckButtonTemplate")
 	nSlideBarenableCheckText:SetText("Enable SlideBar")
@@ -894,7 +897,6 @@ function private.GUI()
 				row = row + 45 + spacer
 				total = 0
 			end
-			--button[pos]:ClearAllPoints()
 
 			if column == 0 then
 				button[pos]:SetPoint("TOPLEFT", frame.config, "TOPLEFT",  column+20, -row - 20)
