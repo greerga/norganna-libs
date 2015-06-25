@@ -155,7 +155,7 @@ do -- tooltip class definition
 		if type(link) ~= "string" then
 			return
 		end
-		local newlink, test = gsub(link, "(|Hitem:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+):%d+([|:][^h]*h)", "%1:80%2")
+		local newlink, test = gsub(link, "(|Hitem:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+):%d+:%d+", "%1:80:0")
 		lastSaneLink = newlink
 		lastSanitized = link
 		return lastSaneLink
@@ -182,7 +182,7 @@ do -- tooltip class definition
 			linkType = nil
 			local vartype = type(link)
 			if (vartype == "string") then
-				local header,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12 = strsplit(":", link, 13)
+				local header,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13 = strsplit(":", link, 14)
 				lType = header:sub(-4) -- get last 4 letters of link type
 				if lType == "item" then
 					ret1 = tonumber(s1) -- itemId
@@ -194,9 +194,9 @@ do -- tooltip class definition
 						ret9 = tonumber(s6) or 0 -- gem 4 (gem bonus)
 						ret2 = tonumber(s7) or 0 -- suffix
 						ret5 = tonumber(s8) or 0 -- seed
-						-- s9 (uLevel), s10 (upgrades), s11 (instanceID) not used
-						if s12 and s12:byte(1) ~= 48 then -- bonus counter is not '0'
-							ret10 = s12:match("%d+:([^|]+)") -- string containing the bonusIDs (separated by ':')
+						-- s9 (uLevel), s10 (specializationID), s11 (upgrades), s12 (instanceID) not used
+						if s13 and s13:byte(1) ~= 48 then -- bonus counter is not '0'
+							ret10 = s13:match("%d+:([^|]+)") -- string containing the bonusIDs (separated by ':')
 						else
 							ret10 = nil
 						end
