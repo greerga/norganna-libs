@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 331
+local VERSION_MINOR = 332
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -127,9 +127,17 @@ local function OnTooltipSetItem(tooltip)
 	if self.sortedCallbacks and #self.sortedCallbacks > 0 then
 		tooltip:Show()
 
-		local _,item = tooltip:GetItem()
-		-- For generated tooltips
-		if not item and reg.item then item = reg.item end
+		local testname, item = tooltip:GetItem()
+		if not item then
+			item = reg.item or reg.additional.link
+		elseif testname == "" then
+			-- Blizzard broke tooltip:GetItem() in 6.2. Detect and fix the bug if possible. Remove workaround when fixed by Blizzard. [LTT-56]
+			-- thanks to sapu for identifying bug and suggesting workaround
+			local checkItemID = strmatch(item, ":(%d+):") -- this match string should find the itemID in any link
+			if not checkItemID or checkItemID == "0" then -- it's usually "0"
+				item = reg.item or reg.additional.link -- try to find a valid link from another source (or set to nil if we can't find one)
+			end
+		end
 
 		if item and not reg.hasItem then
 			local name,link,quality,ilvl,minlvl,itype,isubtype,stack,equiploc,texture = GetItemInfo(item)
@@ -1010,6 +1018,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.highBidder = hb
 			reg.additional.owner = own
 			reg.additional.ownerFull = ownf
+			reg.item = GetAuctionItemLink(type,index) -- Workaround [LTT-56], Remove when fixed by Blizzard
 		end,
 
 		SetAuctionSellItem = function(self)
@@ -1114,6 +1123,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.numAvailable = na
 			reg.additional.canUse = cu
 			reg.additional.extendedCost = ec
+			reg.item = GetMerchantItemLink(index) -- Workaround [LTT-56], Remove when fixed by Blizzard
 		end,
 
 		SetQuestItem = function(self,type,index)
