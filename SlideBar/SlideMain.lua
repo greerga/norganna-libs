@@ -28,7 +28,7 @@
 ]]
 
 local LIBRARY_VERSION_MAJOR = "SlideBar"
-local LIBRARY_VERSION_MINOR = 12
+local LIBRARY_VERSION_MINOR = 13
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -846,23 +846,37 @@ function private.GUI()
 						end)
 
 	frame.config.buttons = {}
+	local function IconGUIOnClick(self)
+		lib.FlashOpen(5)
+		local normtex = self:GetNormalTexture()
+		if SlideBarConfig[self.name..".hide"] then
+			if normtex then normtex:SetDesaturated(false) end
+			self.tex:Hide()
+			lib.ShowButton(self.name)
+		else
+			if normtex then normtex:SetDesaturated(true) end
+			self.tex:Show()
+			lib.HideButton(self.name)
+		end
+	end
+	local function IconGUIOnEnter(self)
+		if self.name then
+			GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
+			GameTooltip:SetText(self.name)
+		end
+	end
+	local function IconGUIOnLeave(self)
+		GameTooltip:Hide()
+	end
 	function private.createIconGUI()
 		local pos = #frame.config.buttons + 1
 		local button = CreateFrame("Button", nil, frame.config, "PopupButtonTemplate")
-		button:SetScript("OnClick", function(self)
-						lib.FlashOpen(5)
-						if self:GetNormalTexture():IsDesaturated() then
-							self:GetNormalTexture():SetDesaturated(false)
-							self.tex:Hide()
-							lib.ShowButton(self.name)
-						elseif self:GetNormalTexture() then
-							self:GetNormalTexture():SetDesaturated(true)
-							self.tex:Show()
-							lib.HideButton(self.name)
-						end
-					end)
+		button:SetScript("OnClick", IconGUIOnClick)
+		button:SetScript("OnEnter", IconGUIOnEnter)
+		button:SetScript("OnLeave", IconGUIOnLeave)
 		button.pos = pos
 		button:SetScale(.8)
+		button:Disable()
 
 		--should we use a X texture
 		button.tex = button:CreateTexture()
@@ -912,6 +926,7 @@ function private.GUI()
 
 	--apply GUI layout to match slidebars button order
 	--Blizzards frame calls this when options are opened
+	--Be aware that any errors triggered within this function will NOT be passed to the error handler
 	function frame.config.refresh()
 		local layout = {}
 		for id, button in pairs(frame.buttons) do
@@ -921,23 +936,29 @@ function private.GUI()
 
 		local GUI = frame.config.buttons
 		for pos = 1, #GUI do
+			local guibutton = GUI[pos]
 			local button = layout[pos]
-			if button then
-				if  GUI[pos] and button.icon then
-					GUI[pos]:Enable()
-					GUI[pos]:SetNormalTexture(button.icon:GetTexture())
-					GUI[pos].name = button.id
-					if SlideBarConfig[button.id..".hide"] then
-						GUI[pos]:GetNormalTexture():SetDesaturated(true)
-						if GUI[pos].tex then
-							GUI[pos].tex:Hide()
-						end
-					end
-				else
-					GUI[pos]:Disable()
+			if button and button.id and button.icon then
+				guibutton:Enable()
+				guibutton.name = button.id
+				guibutton:SetNormalTexture(button.icon:GetTexture())
+				local normtex = guibutton:GetNormalTexture()
+				if not normtex then
+					guibutton:SetNormalTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+					normtex = guibutton:GetNormalTexture()
 				end
-			else
-				GUI[pos]:Disable()
+				if SlideBarConfig[button.id..".hide"] then
+					if normtex then normtex:SetDesaturated(true) end
+					guibutton.tex:Show()
+				else
+					if normtex then normtex:SetDesaturated(false) end
+					guibutton.tex:Hide()
+				end
+			elseif guibutton.name then
+				guibutton.name = nil
+				guibutton:SetNormalTexture()
+				guibutton:Disable()
+				guibutton.tex:Hide()
 			end
 		end
 	end
