@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 332
+local VERSION_MINOR = 333
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -1117,7 +1117,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.ignoreOnCleared = true
 			local _,_,p,q,na,cu,ec = GetMerchantItemInfo(index)
 			reg.quantity = q
-			reg.additional.event = "SetLootItem"
+			reg.additional.event = "SetMerchantItem"
 			reg.additional.eventIndex = index
 			reg.additional.price = p
 			reg.additional.numAvailable = na
@@ -1136,6 +1136,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.eventType = type
 			reg.additional.eventIndex = index
 			reg.additional.canUse = cu
+			reg.additional.link = GetQuestItemLink(type,index) -- Workaround [LTT-56], Remove when fixed by Blizzard
 		end,
 
 		SetQuestLogItem = function(self,type,index)
@@ -1153,6 +1154,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.eventType = type
 			reg.additional.eventIndex = index
 			reg.additional.canUse = cu
+			reg.additional.link = GetQuestLogItemLink(type,index) -- Workaround [LTT-56], Remove when fixed by Blizzard
 		end,
 
 		SetSendMailItem = function(self,index)
@@ -1196,6 +1198,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 				local _,_,q,rc = GetTradeSkillReagentInfo(index,reagentIndex)
 				reg.quantity = q
 				reg.additional.playerReagentCount = rc
+				reg.additional.link = GetTradeSkillReagentItemLink(index,reagentIndex) -- Workaround [LTT-56], Remove when fixed by Blizzard
 			else
 				local link = GetTradeSkillItemLink(index)
 				reg.additional.link = link
