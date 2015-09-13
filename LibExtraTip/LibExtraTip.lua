@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 333
+local VERSION_MINOR = 334
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -249,7 +249,7 @@ local function OnTooltipCleared(tooltip)
 	reg.quantity = nil
 	reg.hasItem = nil
 	reg.item = nil
-	table.wipe(reg.additional)
+	wipe(reg.additional)
 	if reg.extraTip then
 		tinsert(self.extraTippool, reg.extraTip)
 		reg.extraTip:Hide()
@@ -775,7 +775,7 @@ function lib:AddMoneyLine(tooltip,text,money,r,g,b,embed,concise)
 		reg.extraTip:AddDoubleLine(text,moneyText,r,g,b,1,1,1)
 		reg.extraTipUsed = true
 	else
-		tooltip:AddDoubleLine(text,moneyText,lr,lg,lb,1,1,1)
+		tooltip:AddDoubleLine(text,moneyText,r,g,b,1,1,1)
 	end
 end
 
@@ -974,17 +974,16 @@ end
 
 -- Sets all the complex spell details
 local function SetSpellDetail(reg, link)
-	local name, rank, icon, cost, funnel, power, ctime, min, max = GetSpellInfo(link)
+	local name, subname, icon, ctime, minRange, maxRange, spellID = GetSpellInfo(link)
 	reg.additional.name = name
 	reg.additional.link = link
-	reg.additional.rank = rank
+	reg.additional.rank = subname
+	reg.additional.subname = subname
 	reg.additional.icon = icon
-	reg.additional.cost = cost
-	reg.additional.powerType = power
-	reg.additional.isFunnel = funnel
 	reg.additional.castTime = ctime
-	reg.additional.minRange = min
-	reg.additional.maxRange = max
+	reg.additional.minRange = minRange
+	reg.additional.maxRange = maxRange
+	reg.additional.spellID = spellID
 end
 
 --[[ INTERNAL USE ONLY
@@ -1033,10 +1032,10 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 
 		SetBagItem = function(self,bag,slot)
 			OnTooltipCleared(self)
-			local reg = tooltipRegistry[self]
-			reg.ignoreOnCleared = true
 			local tex,q,l,_,r,loot = GetContainerItemInfo(bag,slot)
-			if tex then -- texture (only used as a test for occupied bagslot)
+			if tex then -- only process occupied slots
+				local reg = tooltipRegistry[self]
+				reg.ignoreOnCleared = true
 				reg.quantity = q
 				reg.additional.event = "SetBagItem"
 				reg.additional.eventContainer = bag
@@ -1057,16 +1056,19 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.eventIndex = index
 		end,
 
-		SetGuildBankItem = function(self,tab,index)
+		SetGuildBankItem = function(self, tab, index)
 			OnTooltipCleared(self)
-			local reg = tooltipRegistry[self]
-			reg.ignoreOnCleared = true
-			local texture,quantity,locked = GetGuildBankItemInfo(tab,index)
-			reg.quantity = quantity
-			reg.additional.event = "SetGuildBankItem"
-			reg.additional.eventContainer = tab
-			reg.additional.eventIndex = index
-			reg.additional.locked = locked
+			local texture, quantity, locked = GetGuildBankItemInfo(tab, index)
+			if texture then -- only process occupied slots
+				local reg = tooltipRegistry[self]
+				reg.ignoreOnCleared = true
+				reg.quantity = quantity
+				reg.additional.event = "SetGuildBankItem"
+				reg.additional.eventContainer = tab
+				reg.additional.eventIndex = index
+				reg.additional.locked = locked
+				reg.item = GetGuildBankItemLink(tab,index) -- Workaround [LTT-56], Remove when fixed by Blizzard
+			end
 		end,
 
 		SetInboxItem = function(self,index)
@@ -1080,15 +1082,18 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.canUse = cu
 		end,
 
-		SetInventoryItem = function(self,unit,index)
+		SetInventoryItem = function(self, unit, index)
 			OnTooltipCleared(self)
-			local reg = tooltipRegistry[self]
-			reg.ignoreOnCleared = true
-			local q = GetInventoryItemCount(unit,index)
-			reg.quantity = q
-			reg.additional.event = "SetInventoryItem"
-			reg.additional.eventIndex = index
-			reg.additional.eventUnit = unit
+			local link = GetInventoryItemLink(unit, index)
+			if link then -- only process occupied slots
+				local reg = tooltipRegistry[self]
+				reg.ignoreOnCleared = true
+				reg.quantity = GetInventoryItemCount(unit, index)
+				reg.additional.event = "SetInventoryItem"
+				reg.additional.eventIndex = index
+				reg.additional.eventUnit = unit
+				reg.additional.link = link
+			end
 		end,
 
 		SetLootItem = function(self,index)
