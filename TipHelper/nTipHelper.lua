@@ -48,10 +48,17 @@ local LIBSTRING = MAJOR..":"..MINOR
 
 -- REVISION cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
-local REVISION = 7
+local REVISION = 8
 
 local lib = LibStub:NewLibrary(LIBSTRING,REVISION)
 if not lib then return end
+
+-- Legion Hybrid code check: flag HYBRID6 is used to indicate that the client is NOT yet updated to Legion
+local _,build,_,tocVersion = GetBuildInfo()
+if tocVersion < 70000 then
+	lib.HYBRID6 = true
+end
+
 
 local type = type
 local gsub = gsub
@@ -141,6 +148,12 @@ do -- tooltip class definition
 	end
 
 	local lastSaneLink, lastSanitized
+	local sanePattern, saneSubst
+	if lib.HYBRID6 then
+		sanePattern, saneSubst = "(|Hitem:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+):%d+:%d+", "%1:80:0"
+	else
+		sanePattern, saneSubst = "(|Hitem:[^:]+:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*):%d+:%d*", "%1:80:"
+	end
 	function lib:SanitizeLink(link)
 		if not link then
 			return
@@ -155,7 +168,7 @@ do -- tooltip class definition
 		if type(link) ~= "string" then
 			return
 		end
-		local newlink, test = gsub(link, "(|Hitem:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+):%d+:%d+", "%1:80:0")
+		local newlink, test = gsub(link, sanePattern, saneSubst)
 		lastSaneLink = newlink
 		lastSanitized = link
 		return lastSaneLink
@@ -166,6 +179,13 @@ do -- tooltip class definition
 	-- where they are assigned values, comments will show what each one represents
 	local lastDecodeLink
 	local linkType,ret1,ret2,ret3,ret4,ret5,ret6,ret7,ret8,ret9,ret10
+	-- Fixed patterns to lift out BonusIDs from the tail of the string.
+	local bonusIDPatterns = {
+		["1"] = "%d+",
+		["2"] = "%d+:%d+",
+		["3"] = "%d+:%d+:%d+",
+		["4"] = "%d+:%d+:%d+:%d+",
+	}
 	function lib:DecodeLink(link, info, bonus)
 		if not link then
 			return
@@ -182,7 +202,7 @@ do -- tooltip class definition
 			linkType = nil
 			local vartype = type(link)
 			if (vartype == "string") then
-				local header,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13 = strsplit(":", link, 14)
+				local header,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14 = strsplit(":", link, 15)
 				lType = header:sub(-4) -- get last 4 letters of link type
 				if lType == "item" then
 					ret1 = tonumber(s1) -- itemId
@@ -195,8 +215,32 @@ do -- tooltip class definition
 						ret2 = tonumber(s7) or 0 -- suffix
 						ret5 = tonumber(s8) or 0 -- seed
 						-- s9 (uLevel), s10 (specializationID), s11 (upgrades), s12 (instanceID) not used
-						if s13 and s13:byte(1) ~= 48 then -- bonus counter is not '0'
-							ret10 = s13:match("%d+:([^|]+)") -- string containing the bonusIDs (separated by ':')
+						if s14 and s14 ~= "" and s13 ~= "" and s13 ~= "0" then
+							-- s13 contains count of bonusIDs, s14 contains tail of string starting with bonusIDs plus other stuff after
+							-- we need to snip the bonudIDs off the front of s14
+							local pattern = bonusIDPatterns[s13]
+							if pattern then -- for small numbers of bonusIDs we can look up a pattern to save time
+								ret10 = s14:match(pattern)
+							else
+								-- we have to search for the end of the bonusIDs section within s14
+								-- if there are x bonusIDs, they should have x-1 ':' separators
+								-- look for the position x'th ':' seperator; we want everything before that point
+								local count = tonumber(s13)
+								if not count then -- probably an incomplete or invalid link, but can occur for certain obscure valid links too in 6.2.4
+									ret10 = nil
+								else
+									local found = 0
+									for i = 1, count do
+										found = s14:find(":", found + 1)
+										if not found then break end
+									end
+									if found and found > 0 then
+										ret10 = s14:sub(1, found - 1)
+									else
+										ret10 = s14
+									end
+								end
+							end
 						else
 							ret10 = nil
 						end
@@ -492,3 +536,6 @@ do -- tooltip class definition
 end -- tooltip class definition
 
 LibStub("LibRevision"):Set("$URL$","$Rev$","5.12.DEV.", 'auctioneer', 'libs')
+
+TipHelper = lib -- ### DEBUG CODE: REMOVE THIS ###
+
