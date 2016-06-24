@@ -536,6 +536,3 @@ do -- tooltip class definition
 end -- tooltip class definition
 
 LibStub("LibRevision"):Set("$URL$","$Rev$","5.12.DEV.", 'auctioneer', 'libs')
-
-TipHelper = lib -- ### DEBUG CODE: REMOVE THIS ###
-
