@@ -237,7 +237,7 @@ do -- tooltip class definition
 									if found and found > 0 then
 										ret10 = s14:sub(1, found - 1)
 									else
-										ret10 = s14
+										ret10 = s14:match("([^|]+)")
 									end
 								end
 							end
