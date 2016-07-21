@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 local LIBNAME = "LibExtraTip"
 local VERSION_MAJOR = 1
-local VERSION_MINOR = 334
+local VERSION_MINOR = 335
 -- Minor Version cannot be a SVN Revison in case this library is used in multiple repositories
 -- Should be updated manually with each (non-trivial) change
 
@@ -1071,15 +1071,18 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			end
 		end,
 
-		SetInboxItem = function(self,index)
+		SetInboxItem = function(self, index, itemIndex)
 			OnTooltipCleared(self)
 			local reg = tooltipRegistry[self]
 			reg.ignoreOnCleared = true
-			local _,_,q,_,cu = GetInboxItem(index)
-			reg.quantity = q
 			reg.additional.event = "SetInboxItem"
 			reg.additional.eventIndex = index
-			reg.additional.canUse = cu
+			reg.additional.eventSubIndex = itemIndex -- may be nil
+			if itemIndex then
+				local _,_,q,_,cu = GetInboxItem(index, itemIndex)
+				reg.quantity = q
+				reg.additional.canUse = cu
+			end
 		end,
 
 		SetInventoryItem = function(self, unit, index)
@@ -1315,6 +1318,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.eventIndex = index
 		end,
 
+		--[[ may also be causing taint? disabled just in case - we don't use it for anything
 		SetUnit = function(self, unit)
 			OnTooltipCleared(self)
 			local reg = tooltipRegistry[self]
@@ -1322,6 +1326,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.event = "SetUnit"
 			reg.additional.eventUnit= unit
 		end,
+		--]]
 
 		--[[ disabled due to taint issues
 		SetUnitAura = function(self, unit, index, filter)
@@ -1393,7 +1398,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 		SetSpellBookItem = posthookClearIgnore,
 		SetTalent = posthookClearIgnore,
 		SetTrainerService = posthookClearIgnore,
-		SetUnit = posthookClearIgnore,
+		--SetUnit = posthookClearIgnore,
 		--SetUnitAura = posthookClearIgnore,
 		SetUnitBuff = posthookClearIgnore,
 		SetUnitDebuff = posthookClearIgnore,
