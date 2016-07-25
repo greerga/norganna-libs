@@ -1079,7 +1079,7 @@ function lib:GenerateTooltipMethodTable() -- Sets up hooks to give the quantity 
 			reg.additional.eventIndex = index
 			reg.additional.eventSubIndex = itemIndex -- may be nil
 			if itemIndex then
-				local _,_,q,_,cu = GetInboxItem(index, itemIndex)
+				local _,_,_,q,_,cu = GetInboxItem(index, itemIndex)
 				reg.quantity = q
 				reg.additional.canUse = cu
 			end
