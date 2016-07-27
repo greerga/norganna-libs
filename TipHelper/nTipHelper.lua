@@ -53,13 +53,6 @@ local REVISION = 8
 local lib = LibStub:NewLibrary(LIBSTRING,REVISION)
 if not lib then return end
 
--- Legion Hybrid code check: flag HYBRID6 is used to indicate that the client is NOT yet updated to Legion
-local _,build,_,tocVersion = GetBuildInfo()
-if tocVersion < 70000 then
-	lib.HYBRID6 = true
-end
-
-
 local type = type
 local gsub = gsub
 local tonumber = tonumber
@@ -148,12 +141,6 @@ do -- tooltip class definition
 	end
 
 	local lastSaneLink, lastSanitized
-	local sanePattern, saneSubst
-	if lib.HYBRID6 then
-		sanePattern, saneSubst = "(|Hitem:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+):%d+:%d+", "%1:80:0"
-	else
-		sanePattern, saneSubst = "(|Hitem:[^:]+:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*):%d+:%d*", "%1:80:"
-	end
 	function lib:SanitizeLink(link)
 		if not link then
 			return
@@ -168,7 +155,7 @@ do -- tooltip class definition
 		if type(link) ~= "string" then
 			return
 		end
-		local newlink, test = gsub(link, sanePattern, saneSubst)
+		local newlink, test = gsub(link, "(|Hitem:[^:]+:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*):%d+:%d*", "%1:80:")
 		lastSaneLink = newlink
 		lastSanitized = link
 		return lastSaneLink
